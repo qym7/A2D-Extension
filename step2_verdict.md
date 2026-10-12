@@ -1,4 +1,13 @@
-# STEP2 — 完整结果与判定（2026-10-12）
+# STEP2 — Verdict and TODO: what died, what survives, and what comes next (2026-10-12)
+
+> **TODO (in order)**
+> 1. Fill the mechanism-ablation table in `step1_methods.md` §2 (both_gated / schedule_gated / unconditional random on Ins ⇐ A(2.0) and M(.4,.6) ⇐ M(0,1); M(0,1) θ = 0.6/0.8/0.9 on the last 300) — jobs running.
+> 2. Decide, from those ablations, whether confidence selectivity is real; if not, rename the method to "token-level mixing at dose f".
+> 3. Two 1× controls still unrun: noise injection (student samples ~5% of its own tokens at temperature) and student @2048 tokens — "does the +4 need a second model?"
+> 4. Lazy teacher call (teacher forward only on low-confidence steps) → identical outputs at ≈1.15× compute; implement before any cost claim.
+> 5. Pipeline with fixed rules for every hyperparameter (student, teacher line, teacher dose β, θ or f), then generalise to a second family (Dream-Coder/HumanEval or DreamReasoner/AIME) without re-tuning.
+> 6. STEP3 (distillation): distil the mixture's outputs into the student (sequence-level first, selective token weighting second); success = 1× ≥ 2× mixture on MATH and no IFEval loss.
+> 7. If the goal stays "beat AR": find a benchmark/family where diffusion is within reach of AR under *lenient* scoring; on MATH-500 with Dream-7B it is not (71 vs ≤ 55).
 
 所有数字：MATH-500，lockstep 解码 @1024 token / 1024 步，top_p 0.9，conf_temp 0.1。前 200 = id 0–199，后 300 = id 200–499，全 500 = 两者合并。
 硬件：9/30 的 run 是 B300 整卡（标 †），其余 H200·0.51。空格 = 没跑。写法见 `technical_details/step0_naming.md`；生成脚本 `scripts/step1_main_table.py`，分片合并 `merge_shards.py`。
