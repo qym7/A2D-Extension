@@ -1,0 +1,14 @@
+# raw outputs, checkpoints, logs, result data — never tracked (new_ideas/CLAUDE.md)
+outputs/
+details/logs/
+results/
+trash/
+commands_gen/
+# generated figures / result json
+*.png
+technical_details/figs/*.json
+technical_details/subset_checks/*.json
+# python / editor
+__pycache__/
+*.pyc
+*.bak
