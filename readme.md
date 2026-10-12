@@ -21,4 +21,4 @@ Job submitters shared across ideas live one level up in `../modules/` (`run_gate
 `spec.md` / `task.md` / `analysis.md` are the working documents.
 Raw outputs (`outputs/`, `details/logs/`, `results/`), checkpoints and `trash/` are not tracked.
 
-Current state (2026-10-12): the content gate M(.4,.6) ⇐ A(2.0) @0.8 reaches 54.2 on MATH-500 (best single point 51.4) at 2× decode; confidence-selectivity and decode-order explanations are under ablation (`step1_methods.md` §2); the AR reference under lenient scoring (71) is out of reach of this model family on MATH.
+Current state (2026-10-13): the content gate M(.4,.6) ⇐ A(2.0) @0.8 reaches 54.2 on MATH-500 (best single point 51.4) at 2× decode; the mechanism is ablated (`step1_methods.md` §2): confidence selectivity is real (random at the same dose = student), the teacher's decode order adds nothing; the AR reference under lenient scoring (71) is out of reach of this model family on MATH.
