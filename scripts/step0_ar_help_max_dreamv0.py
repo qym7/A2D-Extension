@@ -15,7 +15,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 OE = Path("/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/official_eval")
-FIGS = Path(__file__).resolve().parents[2] / "results" / "figs"
+FIGS = Path(__file__).resolve().parents[1] / "technical_details" / "figs"
 SKIP = ("steps256", "b300ref", "-h200", "smoke", "val0406", "flatctrl", "concise")
 
 

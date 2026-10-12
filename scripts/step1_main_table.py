@@ -10,7 +10,7 @@ from pathlib import Path
 os.environ.setdefault("HF_HOME", "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/hf_cache")
 from transformers import AutoTokenizer
 TOK = AutoTokenizer.from_pretrained("Dream-org/Dream-v0-Instruct-7B", trust_remote_code=True)
-I1 = Path(__file__).resolve().parents[2]
+I1 = Path(__file__).resolve().parents[1]
 L = I1 / "details/logs"
 N = 200
 def load(p):

@@ -2,16 +2,16 @@
 
 Protocol: MATH-500, Dream-v0 family, lockstep decoder @1024 tokens / 1024 steps (one token committed per step), top_p 0.9, conf_temp 0.1.
 Subsets: first 200 = ids 0–199 (screening), last 300 = ids 200–499 (harder; the default since 2026-10-12), all 500.
-Notation in `technical_details/naming.md`; generated numbers in `technical_details/main_table.md`; sharded runs merged by `details/draft_scripts/merge_shards.py`.
+Notation in `technical_details/step0_naming.md`; generated numbers in `technical_details/step1_main_table.md`; sharded runs merged by `scripts/step1_merge_shards.py`.
 
 **The method (content gate).** Two models decode the same canvas in lockstep. At every step the *student* picks the position to
 write (its own confidence ranking) and proposes a token with raw probability p. If p < θ the *teacher's* token for that position is
 written instead; otherwise the student's. The teacher never changes the order. (Implementation note: the teacher currently runs every
 step; since p is known before the teacher is needed, it could be called only on the ~15% low-confidence steps, i.e. ≈1.15× compute.)
 
-Earlier dead ends, one line each: item-level routing by sequence confidence = random (offline, `technical_details/figs/confidence_rerun_sim.md`);
-the 512-token gate was truncation-bound (`technical_details/e1_e3_e4_gate_summary.md`); answer-level voting works (59.6 at 3 decodes) but is not
-online and the AR reference under lenient scoring is 71 (`technical_details/theta_vote.md`).
+Earlier dead ends, one line each: item-level routing by sequence confidence = random (offline, `technical_details/step0_figs/confidence_rerun_sim.md`);
+the 512-token gate was truncation-bound (`technical_details/step1_gate512_e1_e3_e4.md`); answer-level voting works (59.6 at 3 decodes) but is not
+online and the AR reference under lenient scoring is 71 (`technical_details/step1_theta_vote.md`).
 
 ## 1. All student ⇐ teacher pairs (big table)
 
@@ -90,6 +90,6 @@ Reading rules, fixed in advance: position+content ≈ content → order adds not
 content gate ≫ unconditional random → confidence knows where to ask (the earlier "random among disagreements" control did not test
 this: it was handed the disagreement positions for free and matched the token-changed count instead, see `tmp.md` 2026-10-12).
 
-Supporting decomposition (student M(.4,.6), teacher A(2.0), `technical_details/dose_curve_mechanism.md`): the teacher's tokens raise the finish rate
+Supporting decomposition (student M(.4,.6), teacher A(2.0), `technical_details/step1_dose_curve_mechanism.md`): the teacher's tokens raise the finish rate
 (81% → 89–95%), the student's remaining tokens keep the precision on finished problems (51.9 → 57.3; 100% teacher content collapses
 to the teacher's 49.5); the weight midpoint (0.7,1.3) gets the finish rate but not the precision; A(3.0) is past the dose optimum.

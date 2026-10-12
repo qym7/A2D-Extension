@@ -1,0 +1,42 @@
+{
+ "IFEval (prompt-strict, n=541)": {
+  "merge": {
+   "help_inh": 68,
+   "synergy": 27,
+   "harm_inh": 12,
+   "own_loss": 29,
+   "help_pool": 127,
+   "harm_pool": 52,
+   "n": 541
+  },
+  "add": {
+   "help_inh": 85,
+   "synergy": 37,
+   "harm_inh": 11,
+   "own_loss": 27,
+   "help_pool": 127,
+   "harm_pool": 52,
+   "n": 541
+  }
+ },
+ "MATH-500 (n=500)": {
+  "merge": {
+   "help_inh": 55,
+   "synergy": 17,
+   "harm_inh": 14,
+   "own_loss": 25,
+   "help_pool": 140,
+   "harm_pool": 52,
+   "n": 500
+  },
+  "add": {
+   "help_inh": 64,
+   "synergy": 33,
+   "harm_inh": 10,
+   "own_loss": 29,
+   "help_pool": 140,
+   "harm_pool": 52,
+   "n": 500
+  }
+ }
+}

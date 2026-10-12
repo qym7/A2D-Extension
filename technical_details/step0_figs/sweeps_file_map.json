@@ -1,0 +1,988 @@
+{
+ "Dream-Coder \u00b7 HumanEval": {
+  "loader": "evalplus",
+  "parent": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/dream_coder_official_eval/instruct/code_eval/evalplus/evalplus_official/humaneval/Dream-org--Dream-Coder-v0-Instruct-7B_dllm_temp_0.1_len_512.eval_results.json",
+  "parent_acc": 81.71,
+  "parent_pool": "Hopper (H100/H200, Jun-Jul evalplus_official)",
+  "ar": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding_ar/qwencoder-inst-tok2048/humaneval/samples-sanitized/eval_results.json",
+  "ar_loader": "evalplus",
+  "n": 164,
+  "merge": [
+   {
+    "beta": 0.1,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/dream_coder_official_eval/instruct/code_eval/evalplus/evalplus_official/humaneval/mnt--lts4--scratch--home--yqin--DllmAR--dream_study--step2_instruct--outputs--checkpoints--dreamcoderbase_plus_0.9vdreamcoder_0.1vqwencoder_dllm_temp_0.1_len_512.eval_results.json",
+    "acc": 80.49,
+    "pool": "Hopper (H100/H200, Jun-Jul evalplus_official)"
+   },
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/dream_coder_official_eval/instruct/code_eval/evalplus/evalplus_official/humaneval/mnt--lts4--scratch--home--yqin--DllmAR--dream_study--step2_instruct--outputs--checkpoints--dreamcoderbase_plus_0.8vdreamcoder_0.2vqwencoder_dllm_temp_0.1_len_512.eval_results.json",
+    "acc": 84.76,
+    "pool": "Hopper (H100/H200, Jun-Jul evalplus_official)",
+    "doc_acc": 84.8
+   },
+   {
+    "beta": 0.25,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/dream_coder_official_eval/instruct/code_eval/evalplus/evalplus_official/humaneval/mnt--lts4--scratch--home--yqin--DllmAR--dream_study--step2_instruct--outputs--checkpoints--dreamcoderbase_plus_0.75vdreamcoder_0.25vqwencoder_dllm_temp_0.1_len_512.eval_results.json",
+    "acc": 85.37,
+    "pool": "Hopper (H100/H200, Jun-Jul evalplus_official)"
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/dream_coder_official_eval/instruct/code_eval/evalplus/evalplus_official/humaneval/mnt--lts4--scratch--home--yqin--DllmAR--dream_study--step2_instruct--outputs--checkpoints--dreamcoderbase_plus_0.7vdreamcoder_0.3vqwencoder_dllm_temp_0.1_len_512.eval_results.json",
+    "acc": 82.32,
+    "pool": "Hopper (H100/H200, Jun-Jul evalplus_official)"
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/dream_coder_official_eval/instruct/code_eval/evalplus/evalplus_official/humaneval/mnt--lts4--scratch--home--yqin--DllmAR--dream_study--step2_instruct--outputs--checkpoints--dreamcoderbase_plus_0.6vdreamcoder_0.4vqwencoder_dllm_temp_0.1_len_512.eval_results.json",
+    "acc": 82.32,
+    "pool": "Hopper (H100/H200, Jun-Jul evalplus_official)"
+   }
+  ],
+  "addition": [
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/official_eval/coding_full/dcoder-10aD-02aA/humaneval_eval_results_20260908T214329.json",
+    "acc": 80.49,
+    "pool": "H100",
+    "doc_acc": 80.5
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/official_eval/coding_full/dcoder-10aD-03aA/humaneval_eval_results_20260909T100011.json",
+    "acc": 82.93,
+    "pool": "H100",
+    "doc_acc": 82.9
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/official_eval/coding_full/dcoder-10aD-04aA/humaneval_eval_results_20260908T223859.json",
+    "acc": 83.54,
+    "pool": "H100",
+    "doc_acc": 83.5
+   },
+   {
+    "beta": 0.5,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/official_eval/coding_full/dcoder-10aD-05aA/humaneval_eval_results_20260909T105253.json",
+    "acc": 82.93,
+    "pool": "H100",
+    "doc_acc": 82.9
+   },
+   {
+    "beta": 0.6,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/official_eval/coding_full/dcoder-10aD-06aA/humaneval_eval_results_20260908T233348.json",
+    "acc": 81.71,
+    "pool": "H100"
+   }
+  ]
+ },
+ "Dream-Coder \u00b7 MBPP": {
+  "loader": "evalplus",
+  "parent": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/official_eval/coding_community/mbpp/parent_full/mbpp/eval_results.json",
+  "parent_acc": 79.1,
+  "parent_pool": "Hopper (Jul 30)",
+  "ar": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding_ar/qwencoder-inst-tok2048/mbpp/samples-sanitized/eval_results.json",
+  "ar_loader": "evalplus",
+  "n": 378,
+  "merge": [
+   {
+    "beta": 0.05,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/official_eval/coding_community/mbpp/merge9505_full/mbpp/eval_results.json",
+    "acc": 80.69,
+    "pool": "Hopper (Aug 2)"
+   },
+   {
+    "beta": 0.1,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/official_eval/coding_community/mbpp/merge9010_full/mbpp/eval_results.json",
+    "acc": 81.22,
+    "pool": "Hopper (Aug 2)"
+   },
+   {
+    "beta": 0.15,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/official_eval/coding_community/mbpp/merge8515_full/mbpp/eval_results.json",
+    "acc": 81.22,
+    "pool": "Hopper (Aug 1)"
+   },
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/official_eval/coding_community/mbpp/merge8020_full/mbpp/eval_results.json",
+    "acc": 80.42,
+    "pool": "Hopper (Aug 2)",
+    "doc_acc": 80.4
+   },
+   {
+    "beta": 0.25,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/official_eval/coding_community/mbpp/merge_full/mbpp/eval_results.json",
+    "acc": 79.37,
+    "pool": "Hopper (Jul 30)"
+   }
+  ],
+  "addition": [
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/official_eval/coding_community/mbpp/custom-dcoder-10aD-04aA_full/mbpp/eval_results.json",
+    "acc": 81.75,
+    "pool": "H100 (Sep 14)",
+    "doc_acc": 81.7
+   }
+  ]
+ },
+ "DiffuCoder-SFT \u00b7 HumanEval": {
+  "loader": "evalplus",
+  "parent": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/inst-t02/humaneval_T0.2_eval_results.json",
+  "parent_acc": 72.56,
+  "parent_pool": "H100",
+  "ar": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding_ar/qwencoder-inst-tok2048/humaneval/samples-sanitized/eval_results.json",
+  "ar_loader": "evalplus",
+  "n": 164,
+  "merge": [
+   {
+    "beta": 0.05,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-b005-he-t02/humaneval_T0.2_eval_results.json",
+    "acc": 72.56,
+    "pool": "H100",
+    "doc_acc": 72.6
+   },
+   {
+    "beta": 0.1,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-b010-he-t02/humaneval_T0.2_eval_results.json",
+    "acc": 76.22,
+    "pool": "H100",
+    "doc_acc": 76.2
+   },
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-b020-he-t02/humaneval_T0.2_eval_results.json",
+    "acc": 79.27,
+    "pool": "H100",
+    "doc_acc": 79.3
+   },
+   {
+    "beta": 0.25,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-b025-he-t02/humaneval_T0.2_eval_results.json",
+    "acc": 73.17,
+    "pool": "H100",
+    "doc_acc": 73.2
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-b030-he-t02/humaneval_T0.2_eval_results.json",
+    "acc": 77.44,
+    "pool": "H100",
+    "doc_acc": 77.4
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-b040-he-t02/humaneval_T0.2_eval_results.json",
+    "acc": 78.66,
+    "pool": "H100",
+    "doc_acc": 78.7
+   }
+  ],
+  "addition": [
+   {
+    "beta": 0.15,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-addonly-b015/humaneval_T0.2_eval_results.json",
+    "acc": 73.78,
+    "pool": "H100"
+   },
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-addonly-a020/humaneval_T0.2_eval_results.json",
+    "acc": 71.95,
+    "pool": "H100",
+    "doc_acc": 72.0
+   },
+   {
+    "beta": 0.25,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-addonly-a025/humaneval_T0.2_eval_results.json",
+    "acc": 73.78,
+    "pool": "H100",
+    "doc_acc": 73.8
+   },
+   {
+    "beta": 0.35,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-addonly-a035/humaneval_T0.2_eval_results.json",
+    "acc": 73.17,
+    "pool": "H100",
+    "doc_acc": 73.2
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-addonly-a040/humaneval_T0.2_eval_results.json",
+    "acc": 72.56,
+    "pool": "H100",
+    "doc_acc": 72.6
+   },
+   {
+    "beta": 0.5,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-addonly-a050/humaneval_T0.2_eval_results.json",
+    "acc": 73.78,
+    "pool": "H100",
+    "doc_acc": 73.8
+   },
+   {
+    "beta": 0.6,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-addonly-a060/humaneval_T0.2_eval_results.json",
+    "acc": 73.78,
+    "pool": "H100",
+    "doc_acc": 73.8
+   },
+   {
+    "beta": 0.7,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/sft-dadd-b07-he-t02/humaneval_T0.2_eval_results.json",
+    "acc": 65.85,
+    "pool": "H100",
+    "doc_acc": 65.9
+   }
+  ]
+ },
+ "DiffuCoder-SFT \u00b7 MBPP": {
+  "loader": "evalplus",
+  "parent": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/inst-mbpp-t02/mbpp_T0.2_eval_results.json",
+  "parent_acc": 77.51,
+  "parent_pool": "H100",
+  "ar": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding_ar/qwencoder-inst-tok2048/mbpp/samples-sanitized/eval_results.json",
+  "ar_loader": "evalplus",
+  "n": 378,
+  "merge": [
+   {
+    "beta": 0.05,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-b005-mbpp-t02/mbpp_T0.2_eval_results.json",
+    "acc": 79.37,
+    "pool": "H100"
+   },
+   {
+    "beta": 0.1,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-b010-mbpp-t02/mbpp_T0.2_eval_results.json",
+    "acc": 78.04,
+    "pool": "H100"
+   },
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-b020-mbpp-t02/mbpp_T0.2_eval_results.json",
+    "acc": 78.57,
+    "pool": "H100",
+    "doc_acc": 78.6
+   },
+   {
+    "beta": 0.25,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-b025-mbpp-t02/mbpp_T0.2_eval_results.json",
+    "acc": 76.46,
+    "pool": "H100"
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-b030/mbpp_T0.2_eval_results.json",
+    "acc": 77.78,
+    "pool": "H100"
+   }
+  ],
+  "addition": [
+   {
+    "beta": 0.15,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-addonly-b015/mbpp_T0.2_eval_results.json",
+    "acc": 77.25,
+    "pool": "H100"
+   },
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-addonly-a020/mbpp_T0.2_eval_results.json",
+    "acc": 77.78,
+    "pool": "H100"
+   },
+   {
+    "beta": 0.25,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-addonly-a025/mbpp_T0.2_eval_results.json",
+    "acc": 76.98,
+    "pool": "H100"
+   },
+   {
+    "beta": 0.35,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-addonly-a035/mbpp_T0.2_eval_results.json",
+    "acc": 76.19,
+    "pool": "H100"
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-addonly-a040/mbpp_T0.2_eval_results.json",
+    "acc": 78.31,
+    "pool": "H100"
+   },
+   {
+    "beta": 0.6,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/cvx-addonly-a060/mbpp_T0.2_eval_results.json",
+    "acc": 75.66,
+    "pool": "H100"
+   }
+  ]
+ },
+ "DiffuCoder-RL \u00b7 MBPP+": {
+  "loader": "evalplus_plus",
+  "parent": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/grpo-mbpp-t02/mbpp_T0.2_eval_results.json",
+  "parent_acc": 66.93,
+  "parent_pool": "H100",
+  "ar": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding_ar/acecoder-rule-tok2048/mbpp/samples-sanitized/eval_results.json",
+  "ar_loader": "evalplus_plus",
+  "n": 378,
+  "merge": [
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/rlrl1-b020-mbpp-t02/mbpp_T0.2_eval_results.json",
+    "acc": 66.4,
+    "pool": "H100"
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/rlrl1-b030-mbpp-t02/mbpp_T0.2_eval_results.json",
+    "acc": 69.05,
+    "pool": "H100",
+    "doc_acc": 69.0
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/rlrl1-b040-mbpp-t02/mbpp_T0.2_eval_results.json",
+    "acc": 68.25,
+    "pool": "H100",
+    "doc_acc": 68.3
+   },
+   {
+    "beta": 0.5,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/rlrl1-b050-mbpp-t02/mbpp_T0.2_eval_results.json",
+    "acc": 69.05,
+    "pool": "H100",
+    "doc_acc": 69.0
+   },
+   {
+    "beta": 0.6,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/rlrl1-b060-mbpp-t02/mbpp_T0.2_eval_results.json",
+    "acc": 66.93,
+    "pool": "H100"
+   }
+  ],
+  "addition": [
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/rl-dadd-b04-mbpp-t02/mbpp_T0.2_eval_results.json",
+    "acc": 66.93,
+    "pool": "H100",
+    "doc_acc": 66.9
+   },
+   {
+    "beta": 0.5,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/rl-dadd-b05-mbpp-t02/mbpp_T0.2_eval_results.json",
+    "acc": 66.93,
+    "pool": "H100",
+    "doc_acc": 66.9
+   },
+   {
+    "beta": 0.6,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/rl-dadd-b06-mbpp-t02/mbpp_T0.2_eval_results.json",
+    "acc": 66.4,
+    "pool": "H100",
+    "doc_acc": 66.4
+   },
+   {
+    "beta": 0.8,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step8_rl_vector/outputs/coding/rl-dadd-b08-mbpp-t02/mbpp_T0.2_eval_results.json",
+    "acc": 66.93,
+    "pool": "H100",
+    "doc_acc": 66.9
+   }
+  ]
+ },
+ "DreamReasoner \u00b7 MATH-500 @8k": {
+  "loader": "reasoner",
+  "parent": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/parent-m500-8k/results.json",
+  "parent_acc": 93.6,
+  "parent_pool": "B300",
+  "ar": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/qwen3-m500-tok8192/results.json",
+  "ar_loader": "reasoner_ar_perq_frac>=0.5",
+  "n": 500,
+  "merge": [
+   {
+    "beta": 0.1,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-b010-m500-8k/results.json",
+    "acc": 93.2,
+    "pool": "B300"
+   },
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-b020-m500-8k/results.json",
+    "acc": 94.8,
+    "pool": "B300",
+    "doc_acc": 94.8
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-b030-m500-8k/results.json",
+    "acc": 94.0,
+    "pool": "B300"
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-b040-m500-8k/results.json",
+    "acc": 94.2,
+    "pool": "B300"
+   }
+  ],
+  "addition": [
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-dadd-b02-m500-8k-b300/results.json",
+    "acc": 93.6,
+    "pool": "B300"
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-dadd-b03-m500-8k-b300/results.json",
+    "acc": 93.6,
+    "pool": "B300"
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-dadd-b04-m500-8k-b300/results.json",
+    "acc": 93.8,
+    "pool": "B300"
+   },
+   {
+    "beta": 0.5,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-dadd-b05-m500-8k-b300/results.json",
+    "acc": 94.4,
+    "pool": "B300"
+   },
+   {
+    "beta": 0.6,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-dadd-b06-m500-8k-b300/results.json",
+    "acc": 93.6,
+    "pool": "B300"
+   },
+   {
+    "beta": 0.7,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-dadd-b07-m500-8k-b300/results.json",
+    "acc": 94.2,
+    "pool": "B300"
+   }
+  ]
+ },
+ "DreamReasoner \u00b7 MATH-500 @4k": {
+  "loader": "reasoner",
+  "parent": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/parent/results.json",
+  "parent_acc": 89.2,
+  "parent_pool": "H100",
+  "ar": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/qwen3-m500-tok8192/results.json",
+  "ar_loader": "reasoner_ar_perq_frac>=0.5",
+  "n": 500,
+  "merge": [
+   {
+    "beta": 0.1,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-b010/results.json",
+    "acc": 90.4,
+    "pool": "H100"
+   },
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-b020/results.json",
+    "acc": 91.6,
+    "pool": "H100",
+    "doc_acc": 91.6
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-b030/results.json",
+    "acc": 90.4,
+    "pool": "H100"
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-b040/results.json",
+    "acc": 90.2,
+    "pool": "H100"
+   }
+  ],
+  "addition": [
+   {
+    "beta": 0.1,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-dadd-b01/results.json",
+    "acc": 89.8,
+    "pool": "H100",
+    "doc_acc": 89.8
+   },
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-dadd-b02/results.json",
+    "acc": 90.4,
+    "pool": "H100",
+    "doc_acc": 90.4
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-dadd-b03/results.json",
+    "acc": 91.4,
+    "pool": "H100",
+    "doc_acc": 91.4
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step7_reasoning_merge/outputs/math500/rmg-dadd-b04/results.json",
+    "acc": 90.2,
+    "pool": "H100",
+    "doc_acc": 90.2
+   }
+  ]
+ },
+ "Nemotron-3B \u00b7 ifeval": {
+  "loader": "nemo_strict_eval.follow_all_instructions_key",
+  "parent": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_paper_reproduction/evaluations/famc-paper-repro-parent-dlm-ifeval",
+  "parent_acc": 61.74,
+  "parent_pool": "H200 (Amel; not logged per dir)",
+  "ar": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_ar_donor_ns_native_sampled_pixi_v1/3b/seed0/sm_103a/ifeval",
+  "ar_loader": "nemo_strict_eval.follow_all_instructions_key",
+  "n": 541,
+  "merge": [
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-merge-dlm-ifeval-coef020",
+    "acc": 64.7,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 64.7
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-merge-dlm-ifeval-coef030",
+    "acc": 66.91,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 66.91
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-merge-dlm-ifeval-coef040",
+    "acc": 65.25,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 65.25
+   },
+   {
+    "beta": 0.5,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-merge-dlm-ifeval-coef050",
+    "acc": 65.62,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 65.62
+   },
+   {
+    "beta": 0.6,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-merge-dlm-ifeval-coef060",
+    "acc": 62.29,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 62.29
+   },
+   {
+    "beta": 0.8,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-merge-dlm-ifeval-coef080",
+    "acc": 41.96,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 41.96
+   }
+  ],
+  "addition": [
+   {
+    "beta": 0.1,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-ar-addition-dlm-ifeval-coef010",
+    "acc": 61.92,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 61.92
+   },
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-ar-addition-dlm-ifeval-coef020",
+    "acc": 63.03,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 63.03
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-ar-addition-dlm-ifeval-coef030",
+    "acc": 63.96,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 63.96
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-ar-addition-dlm-ifeval-coef040",
+    "acc": 65.25,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 65.25
+   },
+   {
+    "beta": 0.5,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-ar-addition-dlm-ifeval-coef050",
+    "acc": 64.14,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 64.14
+   },
+   {
+    "beta": 0.6,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-ar-addition-dlm-ifeval-coef060",
+    "acc": 63.4,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 63.4
+   },
+   {
+    "beta": 0.7,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-ar-addition-dlm-ifeval-coef070",
+    "acc": 63.77,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 63.77
+   },
+   {
+    "beta": 0.8,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-ar-addition-dlm-ifeval-coef080",
+    "acc": 61.0,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 61.0
+   },
+   {
+    "beta": 0.9,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/evaluations/famc-tokenizer-protected-3b-ar-addition-dlm-ifeval-coef090",
+    "acc": 58.23,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 58.23
+   }
+  ]
+ },
+ "Nemotron-3B \u00b7 math-500": {
+  "loader": "nemo_symbolic_correct_unique_id",
+  "parent": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_paper_reproduction/evaluations/famc-paper-repro-parent-dlm-math-500",
+  "parent_acc": 76.8,
+  "parent_pool": "H200 (Amel; not logged per dir)",
+  "ar": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_ar_donor_ns_native_sampled_pixi_v1/3b/seed0/sm_103a/math-500",
+  "ar_loader": "nemo_symbolic_correct_unique_id",
+  "n": 500,
+  "merge": [
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/downstream_evaluations/famc-tokenizer-protected-3b-merge-coef030-dlm-math-500",
+    "acc": 79.6,
+    "pool": "H200 (Amel; not logged per dir)"
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/downstream_evaluations/famc-tokenizer-protected-3b-merge-coef040-dlm-math-500",
+    "acc": 80.4,
+    "pool": "H200 (Amel; not logged per dir)"
+   }
+  ],
+  "addition": [
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/downstream_evaluations/famc-tokenizer-protected-3b-ar-addition-coef040-dlm-math-500",
+    "acc": 76.4,
+    "pool": "H200 (Amel; not logged per dir)"
+   }
+  ]
+ },
+ "Nemotron-3B \u00b7 human-eval": {
+  "loader": "nemo_is_correct_task_id",
+  "parent": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_paper_reproduction/evaluations/famc-paper-repro-parent-dlm-human-eval",
+  "parent_acc": 73.17,
+  "parent_pool": "H200 (Amel; not logged per dir)",
+  "ar": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_ar_donor_ns_native_sampled_pixi_v1/3b/seed0/sm_103a/human-eval",
+  "ar_loader": "nemo_is_correct_task_id",
+  "n": 164,
+  "merge": [
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/downstream_evaluations/famc-tokenizer-protected-3b-merge-coef030-dlm-human-eval",
+    "acc": 75.0,
+    "pool": "H200 (Amel; not logged per dir)"
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/downstream_evaluations/famc-tokenizer-protected-3b-merge-coef040-dlm-human-eval",
+    "acc": 75.61,
+    "pool": "H200 (Amel; not logged per dir)"
+   }
+  ],
+  "addition": [
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/downstream_evaluations/famc-tokenizer-protected-3b-ar-addition-coef040-dlm-human-eval",
+    "acc": 67.68,
+    "pool": "H200 (Amel; not logged per dir)"
+   }
+  ]
+ },
+ "Nemotron-3B \u00b7 mbpp": {
+  "loader": "nemo_is_correct_task_id",
+  "parent": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_paper_extension/evaluations/famc-paper-ext-v1-parent-dlm-mbpp",
+  "parent_acc": 73.02,
+  "parent_pool": "H200 (Amel; not logged per dir)",
+  "ar": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_ar_donor_ns_native_sampled_pixi_v1/3b/seed0/sm_103a/mbpp",
+  "ar_loader": "nemo_is_correct_task_id",
+  "n": 378,
+  "merge": [
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/downstream_evaluations/famc-tokenizer-protected-3b-merge-coef030-dlm-mbpp",
+    "acc": 75.66,
+    "pool": "H200 (Amel; not logged per dir)"
+   }
+  ],
+  "addition": [
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/downstream_evaluations/famc-tokenizer-protected-3b-ar-addition-coef040-dlm-mbpp",
+    "acc": 73.02,
+    "pool": "H200 (Amel; not logged per dir)"
+   }
+  ]
+ },
+ "Nemotron-3B \u00b7 gsm8k": {
+  "loader": "nemo_symbolic_correct_problem",
+  "parent": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_paper_reproduction/evaluations/famc-paper-repro-parent-dlm-gsm8k",
+  "parent_acc": 89.23,
+  "parent_pool": "H200 (Amel; not logged per dir)",
+  "ar": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_ar_donor_ns_native_sampled_pixi_v1/3b/seed0/sm_103a/gsm8k",
+  "ar_loader": "nemo_symbolic_correct_problem",
+  "n": 1319,
+  "merge": [
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/downstream_evaluations/famc-tokenizer-protected-3b-merge-coef030-dlm-gsm8k",
+    "acc": 90.07,
+    "pool": "H200 (Amel; not logged per dir)"
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/3b/downstream_evaluations/famc-tokenizer-protected-3b-merge-coef040-dlm-gsm8k",
+    "acc": 90.52,
+    "pool": "H200 (Amel; not logged per dir)"
+   }
+  ],
+  "addition": []
+ },
+ "Nemotron-8B \u00b7 ifeval": {
+  "loader": "nemo_strict_eval.follow_all_instructions_key",
+  "parent": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_8b_paper_reproduction/evaluations/famc-8b-official-public-v1-dlm-ifeval",
+  "parent_acc": 63.4,
+  "parent_pool": "H200 (Amel; not logged per dir)",
+  "ar": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_ar_donor_ns_native_sampled_pixi_v1/8b/seed0/sm_103a/ifeval",
+  "ar_loader": "nemo_strict_eval.follow_all_instructions_key",
+  "n": 541,
+  "merge": [
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/evaluations/famc-tokenizer-protected-8b-merge-dlm-ifeval-coef020",
+    "acc": 66.73,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 66.73
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/evaluations/famc-tokenizer-protected-8b-merge-dlm-ifeval-coef030",
+    "acc": 66.91,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 66.91
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/evaluations/famc-tokenizer-protected-8b-merge-dlm-ifeval-coef040",
+    "acc": 73.01,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 73.01
+   },
+   {
+    "beta": 0.5,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/evaluations/famc-tokenizer-protected-8b-merge-dlm-ifeval-coef050",
+    "acc": 70.24,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 70.24
+   }
+  ],
+  "addition": [
+   {
+    "beta": 0.1,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/evaluations/famc-tokenizer-protected-8b-ar-addition-dlm-ifeval-coef010",
+    "acc": 61.92,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 61.92
+   },
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/evaluations/famc-tokenizer-protected-8b-ar-addition-dlm-ifeval-coef020",
+    "acc": 64.88,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 64.88
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/evaluations/famc-tokenizer-protected-8b-ar-addition-dlm-ifeval-coef030",
+    "acc": 66.91,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 66.91
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/evaluations/famc-tokenizer-protected-8b-ar-addition-dlm-ifeval-coef040",
+    "acc": 66.91,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 66.91
+   },
+   {
+    "beta": 0.5,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/evaluations/famc-tokenizer-protected-8b-ar-addition-dlm-ifeval-coef050",
+    "acc": 69.32,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 69.32
+   },
+   {
+    "beta": 0.6,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/evaluations/famc-tokenizer-protected-8b-ar-addition-dlm-ifeval-coef060",
+    "acc": 65.62,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 65.62
+   },
+   {
+    "beta": 0.7,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/evaluations/famc-tokenizer-protected-8b-ar-addition-dlm-ifeval-coef070",
+    "acc": 65.8,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 65.8
+   },
+   {
+    "beta": 0.8,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/evaluations/famc-tokenizer-protected-8b-ar-addition-dlm-ifeval-coef080",
+    "acc": 65.06,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 65.06
+   },
+   {
+    "beta": 0.9,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/evaluations/famc-tokenizer-protected-8b-ar-addition-dlm-ifeval-coef090",
+    "acc": 62.85,
+    "pool": "H200 (Amel; not logged per dir)",
+    "doc_acc": 62.85
+   }
+  ]
+ },
+ "Nemotron-8B \u00b7 math-500": {
+  "loader": "nemo_symbolic_correct_unique_id",
+  "parent": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_8b_paper_reproduction/evaluations/famc-8b-official-public-v1-dlm-math-500",
+  "parent_acc": 89.2,
+  "parent_pool": "H200 (Amel; not logged per dir)",
+  "ar": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_ar_donor_ns_native_sampled_pixi_v1/8b/seed0/sm_103a/math-500",
+  "ar_loader": "nemo_symbolic_correct_unique_id",
+  "n": 500,
+  "merge": [
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/downstream_evaluations/famc-tokenizer-protected-8b-merge-dlm-math-500-coef020",
+    "acc": 87.8,
+    "pool": "H200 (Amel; not logged per dir)"
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/downstream_evaluations/famc-tokenizer-protected-8b-merge-dlm-math-500-coef030",
+    "acc": 88.0,
+    "pool": "H200 (Amel; not logged per dir)"
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_8b_paper_reproduction/tokenizer_protected_evaluations/famc-8b-merge-beta040-frozen-head-tokenizer-protected-v1-official-public-v1-dlm-math-500",
+    "acc": 89.0,
+    "pool": "H200 (Amel; not logged per dir)"
+   }
+  ],
+  "addition": []
+ },
+ "Nemotron-8B \u00b7 human-eval": {
+  "loader": "nemo_is_correct_task_id",
+  "parent": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_8b_paper_reproduction/evaluations/famc-8b-official-public-v1-dlm-human-eval",
+  "parent_acc": 73.78,
+  "parent_pool": "H200 (Amel; not logged per dir)",
+  "ar": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_ar_donor_ns_native_sampled_pixi_v1/8b/seed0/sm_103a/human-eval",
+  "ar_loader": "nemo_is_correct_task_id",
+  "n": 164,
+  "merge": [
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/downstream_evaluations/famc-tokenizer-protected-8b-merge-dlm-human-eval-coef020",
+    "acc": 73.78,
+    "pool": "H200 (Amel; not logged per dir)"
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/downstream_evaluations/famc-tokenizer-protected-8b-merge-dlm-human-eval-coef030",
+    "acc": 76.83,
+    "pool": "H200 (Amel; not logged per dir)"
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_8b_paper_reproduction/tokenizer_protected_evaluations/famc-8b-merge-beta040-frozen-head-tokenizer-protected-v1-official-public-v1-dlm-human-eval",
+    "acc": 71.34,
+    "pool": "H200 (Amel; not logged per dir)"
+   }
+  ],
+  "addition": []
+ },
+ "Nemotron-8B \u00b7 mbpp": {
+  "loader": "nemo_is_correct_task_id",
+  "parent": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_8b_paper_reproduction/evaluations/famc-8b-official-public-v1-dlm-mbpp",
+  "parent_acc": 62.17,
+  "parent_pool": "H200 (Amel; not logged per dir)",
+  "ar": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_ar_donor_ns_native_sampled_pixi_v1/8b/seed0/sm_103a/mbpp",
+  "ar_loader": "nemo_is_correct_task_id",
+  "n": 378,
+  "merge": [
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/downstream_evaluations/famc-tokenizer-protected-8b-merge-dlm-mbpp-coef020",
+    "acc": 68.78,
+    "pool": "H200 (Amel; not logged per dir)"
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/downstream_evaluations/famc-tokenizer-protected-8b-merge-dlm-mbpp-coef030",
+    "acc": 60.32,
+    "pool": "H200 (Amel; not logged per dir)"
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_8b_paper_reproduction/tokenizer_protected_evaluations/famc-8b-merge-beta040-frozen-head-tokenizer-protected-v1-official-public-v1-dlm-mbpp",
+    "acc": 65.34,
+    "pool": "H200 (Amel; not logged per dir)"
+   }
+  ],
+  "addition": []
+ },
+ "Nemotron-8B \u00b7 gsm8k": {
+  "loader": "nemo_symbolic_correct_problem",
+  "parent": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_8b_paper_reproduction/evaluations/famc-8b-official-public-v1-dlm-gsm8k",
+  "parent_acc": 93.71,
+  "parent_pool": "H200 (Amel; not logged per dir)",
+  "ar": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_ar_donor_ns_native_sampled_pixi_v1/8b/seed0/sm_103a/gsm8k",
+  "ar_loader": "nemo_symbolic_correct_problem",
+  "n": 1319,
+  "merge": [
+   {
+    "beta": 0.2,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/downstream_evaluations/famc-tokenizer-protected-8b-merge-dlm-gsm8k-coef020",
+    "acc": 93.33,
+    "pool": "H200 (Amel; not logged per dir)"
+   },
+   {
+    "beta": 0.3,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_tokenizer_protected_sweeps/8b/downstream_evaluations/famc-tokenizer-protected-8b-merge-dlm-gsm8k-coef030",
+    "acc": 94.01,
+    "pool": "H200 (Amel; not logged per dir)"
+   },
+   {
+    "beta": 0.4,
+    "path": "/mnt/lts4/scratch/home/abdelrah/ARiFF/TaskVectorDLLM/step5_cross_arch/outputs/famC_8b_paper_reproduction/tokenizer_protected_evaluations/famc-8b-merge-beta040-frozen-head-tokenizer-protected-v1-official-public-v1-dlm-gsm8k",
+    "acc": 94.54,
+    "pool": "H200 (Amel; not logged per dir)"
+   }
+  ],
+  "addition": []
+ }
+}

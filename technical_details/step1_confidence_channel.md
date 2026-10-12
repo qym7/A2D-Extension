@@ -3,7 +3,7 @@
 零 GPU。全部来自 A2D 自己的 E3 lockstep 产物
 `dream_study/step2_instruct/outputs/official_eval/stepdiv/{ent-dream-mrg,ent-dream-aq,ent-dream-ad}/step_divergence.json`
 （GSM8K 100 题，256 token，T=0，教师强制；**这是分析仪器，不是官方评测协议**）。
-分析脚本：`details/draft_scripts/`（见本文件末尾的复现命令）。
+分析脚本：`scripts/`（见本文件末尾的复现命令）。
 
 ## 0. 先说三个读表前要知道的事
 
@@ -163,7 +163,7 @@ idea 1 的 30 多个 gate arm（`SUMMARY.md` 结果 1、结果 2）**全部**是
 
 ## 7. 预注册的实验（MATH-500 @512，0.5 H200，6 个 arm）
 
-仪器已有：`details/draft_scripts/lockstep_gated.py`。需要加一个 mode（gate 在 **donor 自己的**
+仪器已有：`scripts/step1_lockstep_gated.py`。需要加一个 mode（gate 在 **donor 自己的**
 `praw` 上，不是 driver 的；`model_step_ext` 已经能返回所需量）。
 
 | arm | host | donor | gate | 作用 |

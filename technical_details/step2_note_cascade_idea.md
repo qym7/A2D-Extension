@@ -1,7 +1,7 @@
 # Precision-first cascade — a zero-GPU check (2026-10-09)
 
 Motivation: "decouple (τ_D, τ_A)" is too naive to be the contribution. This note looks for a simple method that
-follows from the mechanism already measured in `technical_details/mainline.md` (A5, A10): `official = finish rate × acc|finish`,
+follows from the mechanism already measured in `technical_details/step1_mainline_512.md` (A5, A10): `official = finish rate × acc|finish`,
 and merges trade these two factors against each other.
 
 All numbers: MATH-500, n=500, official lm-eval, 512 tokens, plain prompt unless "concise", existing samples in

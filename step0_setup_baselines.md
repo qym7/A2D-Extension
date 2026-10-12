@@ -1,6 +1,6 @@
 # STEP0 — Setup, baselines, and how to read the numbers
 
-## Models (Dream-v0-7B ↔ Qwen2.5-7B; notation in `technical_details/naming.md`)
+## Models (Dream-v0-7B ↔ Qwen2.5-7B; notation in `technical_details/step0_naming.md`)
 τ_D = Dream-Instruct − Dream-Base (diffusion post-training vector), τ_A = Qwen-Instruct − Qwen-Base (AR post-training vector), D_b = Dream-Base.
 
 | name | weights | role |
@@ -15,7 +15,7 @@
 ## Protocol
 - MATH-500, lockstep decoder: 1024 tokens, 1024 steps (one token per step), top_p 0.9, confidence temperature 0.1, argmax token (deterministic: seeds change nothing).
 - Subsets: **first 200** (ids 0–199, easier, used for screening), **last 300** (ids 200–499, harder, the default for every new arm since 2026-10-12), **all 500**.
-  A random 100-problem subset only preserves orderings with ≥ 6 pp gaps (`technical_details/subset_checks/check_500.md`); 200-vs-500 ordering is kept 65% / 82% / 98% of the time for gaps < 3 / 3–6 / ≥ 6 pp.
+  A random 100-problem subset only preserves orderings with ≥ 6 pp gaps (`technical_details/step0_subset_checks/check_500.md`); 200-vs-500 ordering is kept 65% / 82% / 98% of the time for gaps < 3 / 3–6 / ≥ 6 pp.
 - Hardware: 9/30 runs on B300 (marked †), everything from 10/09 on H200 at a 0.51 fraction. Labelled in every table.
 - Scoring: minerva `is_equiv` on the last `\boxed{}`; "finish" = the output contains `\boxed`. For our systems an unfinished output is a true truncation at 1024 tokens and is always wrong.
 - Pairs: McNemar win/loss with exact two-sided p.
@@ -36,8 +36,8 @@
 | **AR Qwen2.5-7B-Instruct, lenient** (final answer extracted from the last sentence) | | 70.7 | 71.0 | | | H200 |
 
 ## Two facts that condition every later reading
-1. **On Dream, addition > merge is a finish-rate effect, not a precision effect.** A(2.0) finishes 94% vs 81% for M(.4,.6), but on problems both finish, M(.4,.6) is more accurate (first 200: 68.7 vs 66.0 on the 150 problems all three finish; `technical_details/addition_vs_merge_finish.md`). This is consistent with A2D's convex-is-best result once truncation is accounted for.
+1. **On Dream, addition > merge is a finish-rate effect, not a precision effect.** A(2.0) finishes 94% vs 81% for M(.4,.6), but on problems both finish, M(.4,.6) is more accurate (first 200: 68.7 vs 66.0 on the 150 problems all three finish; `technical_details/step0_addition_vs_merge_finish.md`). This is consistent with A2D's convex-is-best result once truncation is accounted for.
 2. **The AR reference is under-scored by the strict scorer.** 22% of its answers are complete but have no `\boxed`; with lenient extraction it is 71, not 56. The same lenient scorer moves our best system by +1 (its misses are real truncations). The true gap to AR on MATH-500 is ≈ 19 points, not 4.
 
 ## Why we tried this at all (headroom)
-On saved outputs, "student right OR teacher right" exceeds the better single model by 6–8 points on several A2D settings (`technical_details/retry_selective.md`), e.g. M(.4,.6) ∪ A(2.0) on the last 300 = 58 vs 46.7. Part of that is decoding noise (same-protocol reruns flip items), so only a router that beats a matched random control counts.
+On saved outputs, "student right OR teacher right" exceeds the better single model by 6–8 points on several A2D settings (`technical_details/step0_headroom_retry_selective.md`), e.g. M(.4,.6) ∪ A(2.0) on the last 300 = 58 vs 46.7. Part of that is decoding noise (same-protocol reruns flip items), so only a router that beats a matched random control counts.

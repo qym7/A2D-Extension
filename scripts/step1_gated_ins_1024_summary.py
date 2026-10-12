@@ -19,4 +19,4 @@ for k, p in ARMS.items():
     cells = []
     for r in ["Ins", "merge", "add1.1"]:
         w, l, pv = mc(a, REF[r]); cells.append(f"{w}/{l}, p={pv:.2f}")
-    print(f"| {k} | {acc}/200 | " + " | ".join(cells) + f" | {st.mean(ss):.1f} of {st.mean(ns):.0f} ({100*sum(x>0 for x in ss)/len(ss):.0f}%) | {st.mean(r['n_substituted'] for r in gs):.1f} | {sum(r["n_substituted"] for r in gs)/sum(r["n_committed"] for r in gs):.4f} | {sum(r["n_differ"] for r in gs)/sum(r["n_committed"] for r in gs):.4f} | n_logged={len(gs)}")
+    print(f"| {k} | {acc}/200 | " + " | ".join(cells) + f" | {st.mean(ss):.1f} of {st.mean(ns):.0f} ({100*sum(x>0 for x in ss)/len(ss):.0f}%) | {st.mean(r['n_substituted'] for r in gs):.1f} | {sum(r['n_substituted'] for r in gs)/sum(r['n_committed'] for r in gs):.4f} | {sum(r['n_differ'] for r in gs)/sum(r['n_committed'] for r in gs):.4f} | n_logged={len(gs)}")

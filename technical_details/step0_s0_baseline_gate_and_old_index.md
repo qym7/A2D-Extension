@@ -1,7 +1,7 @@
 # Idea 1 — results
 
 > **目录（2026-10-12 起按 3 步组织）**：`STEP0_setup_baselines.md`（待写）→ `step1_methods.md`（方法 + 四对全表，已写）→ **`step2_verdict.md`（完整结果表 + 判定，已写）**。
-> 生成表 `technical_details/main_table.md`，机制分解 `technical_details/dose_curve_mechanism.md`，写法 `technical_details/naming.md`。下面是旧的按实验代号的记录。
+> 生成表 `technical_details/step1_main_table.md`，机制分解 `technical_details/step1_dose_curve_mechanism.md`，写法 `technical_details/step0_naming.md`。下面是旧的按实验代号的记录。
 
 ## S0 baseline gate — **PASSED, from existing artifacts** (2026-09-28)
 
@@ -28,7 +28,7 @@ wrong baseline through. The two redundant n=200 port runs were stopped.
 
 ## A bug the same document caught, before it wasted a sweep
 
-`details/draft_scripts/lockstep_gated.py` originally gated on the driver's **protocol-sharpened**
+`scripts/step1_lockstep_gated.py` originally gated on the driver's **protocol-sharpened**
 confidence `pd`. That same README records that the sharpened confidence "saturates at 1.0 everywhere"
 and "cannot rank tokens by confidence" — which is exactly why the instrument's author added a raw
 value on 2026-09-21. A gate on the sharpened number would have been degenerate: identical to free mode

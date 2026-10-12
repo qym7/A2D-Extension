@@ -13,7 +13,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-FIGS = Path(__file__).resolve().parents[2] / "results" / "figs"
+FIGS = Path(__file__).resolve().parents[1] / "technical_details" / "figs"
 S = json.loads((FIGS / "ar_help_vs_acc_peak.json").read_text())["series"]
 on_grid = lambda b: abs(round(b * 10) - b * 10) < 1e-6
 UNRELIABLE = {"Nemotron-8B · mbpp"}  # first-code-block regrade moves the parent 62 -> 86

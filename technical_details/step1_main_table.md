@@ -116,10 +116,10 @@
 
 AR 参考线 Qwen2.5-7B-Instruct（lm-eval 贪心 1024）：前 200 = 57.0，后 300 = 55.3，全 500 = 56.0。
 † 9/30 B300 旧 run；其余门控 H200·0.51。Ins / M(.4,.6) / M(0,1) 单独 B300，A(·) 单独 H200·0.51。
-分片合并：details/draft_scripts/merge_shards.py（*-merged 目录）。
+分片合并：scripts/step1_merge_shards.py（*-merged 目录）。
 
 注：替换率1 = 交给 teacher 的位置占比（student p<θ）；替换率2 = teacher token ≠ student token 的占比；均按已提交 token。
 † 9/30 旧 run 只有全 500 题的汇总（gate_stats.json），替换率1 当时未记录。
 平均长度 = 后处理后答案文本的 token 数（截在 EOS）；写完率 = 文本含 \boxed。
 硬件：9/30 的 run 是 B300 整卡，10/09 之后是 H200·0.51；同表比较时注意。
-生成脚本：details/draft_scripts/main_table.py
+生成脚本：scripts/step1_main_table.py

@@ -1,0 +1,496 @@
+{
+ "IFEval": [
+  {
+   "tau_D": 0.0,
+   "tau_A": 0.2,
+   "run": "ifeval_transfer_b02",
+   "acc": 47.5,
+   "help": 30,
+   "harm": 23,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.0,
+   "tau_A": 0.4,
+   "run": "ifeval_transfer_b04",
+   "acc": 50.8,
+   "help": 46,
+   "harm": 24,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.0,
+   "tau_A": 0.5,
+   "run": "ifeval_ins-00aD-05aA",
+   "acc": 51.6,
+   "help": 48,
+   "harm": 16,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.0,
+   "tau_A": 0.6,
+   "run": "ifeval_ins-00aD-06aA",
+   "acc": 51.6,
+   "help": 49,
+   "harm": 20,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.0,
+   "tau_A": 0.7,
+   "run": "ifeval_ins-00aD-07aA",
+   "acc": 52.1,
+   "help": 48,
+   "harm": 17,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.0,
+   "tau_A": 0.8,
+   "run": "ifeval_ins-00aD-08aA",
+   "acc": 51.4,
+   "help": 55,
+   "harm": 22,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.0,
+   "tau_A": 0.9,
+   "run": "ifeval_ins-00aD-09aA",
+   "acc": 52.5,
+   "help": 52,
+   "harm": 23,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.0,
+   "tau_A": 1.0,
+   "run": "merge_0.0_1.0",
+   "acc": 49.0,
+   "help": 52,
+   "harm": 27,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.2,
+   "tau_A": 0.8,
+   "run": "merge_0.2_0.8",
+   "acc": 65.1,
+   "help": 71,
+   "harm": 16,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.3,
+   "tau_A": 0.7,
+   "run": "ifeval_ins-03aD-07aA",
+   "acc": 66.0,
+   "help": 71,
+   "harm": 15,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.4,
+   "tau_A": 0.0,
+   "run": "ifeval_if0400ar0",
+   "acc": 52.7,
+   "help": 44,
+   "harm": 18,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.4,
+   "tau_A": 0.6,
+   "run": "merge_0.4_0.6",
+   "acc": 66.5,
+   "help": 68,
+   "harm": 12,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.5,
+   "tau_A": 0.5,
+   "run": "ifeval_ins-05aD-05aA",
+   "acc": 63.8,
+   "help": 61,
+   "harm": 11,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.6,
+   "tau_A": 0.0,
+   "run": "ifeval_dream_ar0_a060",
+   "acc": 54.9,
+   "help": 40,
+   "harm": 16,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.6,
+   "tau_A": 0.4,
+   "run": "merge_0.6_0.4",
+   "acc": 63.0,
+   "help": 60,
+   "harm": 15,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.65,
+   "tau_A": 1.6,
+   "run": "ifeval_ins-dream-ins-065aD-16aA",
+   "acc": 57.3,
+   "help": 68,
+   "harm": 20,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.68,
+   "tau_A": 1.5,
+   "run": "ifeval_ins-dream-ins-068aD-15aA",
+   "acc": 65.6,
+   "help": 79,
+   "harm": 17,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.71,
+   "tau_A": 1.4,
+   "run": "ifeval_ins-dream-ins-071aD-14aA",
+   "acc": 68.0,
+   "help": 77,
+   "harm": 14,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.74,
+   "tau_A": 1.3,
+   "run": "ifeval_ins-dream-ins-074aD-13aA",
+   "acc": 68.9,
+   "help": 73,
+   "harm": 13,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.77,
+   "tau_A": 1.2,
+   "run": "ifeval_ins-dream-ins-077aD-12aA",
+   "acc": 69.5,
+   "help": 76,
+   "harm": 10,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.79,
+   "tau_A": 1.1,
+   "run": "ifeval_ins-dream-ins-079aD-11aA",
+   "acc": 69.3,
+   "help": 82,
+   "harm": 16,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.8,
+   "tau_A": 0.0,
+   "run": "ifeval_dream_ar0_a080",
+   "acc": 53.4,
+   "help": 32,
+   "harm": 19,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.8,
+   "tau_A": 0.2,
+   "run": "idea2_merge",
+   "acc": 60.6,
+   "help": 55,
+   "harm": 11,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.81,
+   "tau_A": 1.0,
+   "run": "ifeval_ins-dream-ins-081aD-10aA",
+   "acc": 68.4,
+   "help": 79,
+   "harm": 15,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.83,
+   "tau_A": 0.9,
+   "run": "ifeval_ins-dream-ins-083aD-09aA",
+   "acc": 69.5,
+   "help": 78,
+   "harm": 13,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.84,
+   "tau_A": 0.8,
+   "run": "ifeval_ins-dream-ins-084aD-08aA",
+   "acc": 68.6,
+   "help": 69,
+   "harm": 10,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.9,
+   "tau_A": 0.0,
+   "run": "ifeval_dream_ar0_a090",
+   "acc": 56.7,
+   "help": 28,
+   "harm": 15,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.9,
+   "tau_A": 0.1,
+   "run": "merge_0.9_0.1",
+   "acc": 59.1,
+   "help": 39,
+   "harm": 13,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.9,
+   "tau_A": 1.1,
+   "run": "ifeval_ins-dream-ins-09aD-11aA",
+   "acc": 70.8,
+   "help": 77,
+   "harm": 13,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.95,
+   "tau_A": 0.55,
+   "run": "ifeval_ins-dream-ins-095aD-055aA",
+   "acc": 65.8,
+   "help": 65,
+   "harm": 15,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 1.0,
+   "tau_A": 0.0,
+   "run": "dream_instruct_full541",
+   "acc": 56.6,
+   "help": 0,
+   "harm": 0,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 1.0,
+   "tau_A": 0.2,
+   "run": "ifeval_if1002",
+   "acc": 61.6,
+   "help": 48,
+   "harm": 16,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 1.0,
+   "tau_A": 0.4,
+   "run": "ifeval_if1004",
+   "acc": 64.9,
+   "help": 59,
+   "harm": 17,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 1.0,
+   "tau_A": 0.6,
+   "run": "ifeval_if1006",
+   "acc": 64.9,
+   "help": 62,
+   "harm": 14,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 1.0,
+   "tau_A": 0.7,
+   "run": "ifeval_ins-10aD-07aA",
+   "acc": 67.8,
+   "help": 64,
+   "harm": 13,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 1.0,
+   "tau_A": 0.8,
+   "run": "ifeval_ins-10aD-08aA",
+   "acc": 67.8,
+   "help": 71,
+   "harm": 13,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 1.0,
+   "tau_A": 0.9,
+   "run": "ifeval_ins-10aD-09aA",
+   "acc": 69.3,
+   "help": 73,
+   "harm": 15,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 1.0,
+   "tau_A": 1.0,
+   "run": "ifeval_ins-10aD-10aA",
+   "acc": 68.8,
+   "help": 75,
+   "harm": 17,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 1.0,
+   "tau_A": 1.1,
+   "run": "ifeval_ins-10aD-11aA",
+   "acc": 72.1,
+   "help": 85,
+   "harm": 11,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 1.0,
+   "tau_A": 1.2,
+   "run": "ifeval_ins-10aD-12aA",
+   "acc": 69.9,
+   "help": 81,
+   "harm": 15,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 1.0,
+   "tau_A": 1.4,
+   "run": "ifeval_ins-10aD-14aA",
+   "acc": 67.8,
+   "help": 76,
+   "harm": 16,
+   "help_pool": 127,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 1.0,
+   "tau_A": 1.6,
+   "run": "ifeval_ins-10aD-16aA",
+   "acc": 66.2,
+   "help": 81,
+   "harm": 20,
+   "help_pool": 127,
+   "harm_pool": 52
+  }
+ ],
+ "MATH-500": [
+  {
+   "tau_D": 0.0,
+   "tau_A": 0.9,
+   "run": "mathins_transfer_b09",
+   "acc": 40.2,
+   "help": 47,
+   "harm": 25,
+   "help_pool": 140,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.4,
+   "tau_A": 0.6,
+   "run": "mathins_m500-merge-plain",
+   "acc": 45.0,
+   "help": 55,
+   "harm": 14,
+   "help_pool": 140,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.9,
+   "tau_A": 0.0,
+   "run": "mathins_m500-dream-ins-09aD-00aA-plain",
+   "acc": 39.6,
+   "help": 29,
+   "harm": 15,
+   "help_pool": 140,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.9,
+   "tau_A": 1.1,
+   "run": "mathins_m500-dream-ins-09aD-11aA-plain",
+   "acc": 51.0,
+   "help": 71,
+   "harm": 14,
+   "help_pool": 140,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 0.95,
+   "tau_A": 0.55,
+   "run": "mathins_m500-dream-ins-095aD-055aA-plain",
+   "acc": 48.6,
+   "help": 63,
+   "harm": 13,
+   "help_pool": 140,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 1.0,
+   "tau_A": 0.0,
+   "run": "mathins_dreamins_m500",
+   "acc": 38.4,
+   "help": 0,
+   "harm": 0,
+   "help_pool": 140,
+   "harm_pool": 52
+  },
+  {
+   "tau_D": 1.0,
+   "tau_A": 1.1,
+   "run": "mathins_m500-dream-ins-10aD-11aA-plain",
+   "acc": 50.0,
+   "help": 64,
+   "harm": 10,
+   "help_pool": 140,
+   "harm_pool": 52
+  }
+ ]
+}

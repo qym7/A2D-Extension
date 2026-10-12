@@ -1,7 +1,7 @@
 # STEP2 — 完整结果与判定（2026-10-12）
 
 所有数字：MATH-500，lockstep 解码 @1024 token / 1024 步，top_p 0.9，conf_temp 0.1。前 200 = id 0–199，后 300 = id 200–499，全 500 = 两者合并。
-硬件：9/30 的 run 是 B300 整卡（标 †），其余 H200·0.51。空格 = 没跑。写法见 `technical_details/naming.md`；生成脚本 `details/draft_scripts/main_table.py`，分片合并 `merge_shards.py`。
+硬件：9/30 的 run 是 B300 整卡（标 †），其余 H200·0.51。空格 = 没跑。写法见 `technical_details/step0_naming.md`；生成脚本 `scripts/step1_main_table.py`，分片合并 `merge_shards.py`。
 配对比较 = 赢/输（McNemar 精确 p）。
 
 ## 1. 单模型基线（1×）
