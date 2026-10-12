@@ -77,14 +77,19 @@ the denoising order.* Three ablations isolate it, all at θ = 0.8, same steps tr
 | pair | arm | last 300 acc | finish rate | acc on finished | vs content gate (win/loss, p) |
 |---|---|---:|---:|---:|---|
 | Ins ⇐ A(2.0) | content gate @0.8 | 49.0 | 93% | 52.9 | — |
-| | position + content @0.8 | | | | |
+| | position + content @0.8 | <u>51.3</u> | 94% | 54.8 | 32/25, 0.43 (vs teacher 35/21, 0.08) |
 | | position only @0.8 | | | | |
-| | unconditional random 13.5% (= rate 1 of @0.8) | | | | |
-| | unconditional random 5.3% (= rate 1 of @0.6; vs @0.6 = 49.3) | | | | |
+| | unconditional random 13.5% (= rate 1 of @0.8) | 38.0 | 82% | 46.3 | 25/58, 0.00 (vs student 33/29, 0.70) |
+| | unconditional random 5.3% (= rate 1 of @0.6; vs @0.6 = 49.3) | 38.3 | 81% | 47.5 | 28/60, 0.00 (vs student 23/18, 0.53) |
 | M(.4,.6) ⇐ M(0,1) | content gate @0.8 (H200 rerun; θ sweep 0.6/0.8/0.9 = 45.3/47.7/47.3, all at finish 77%, precision 59–62) | 47.7 | 77% | 61.9 | — |
-| | position + content @0.8 | | | | |
+| | position + content @0.8 | 44.0 | 72% | 61.4 | 30/41, 0.24 (vs teacher 15/15, 1.00 — identical to M(0,1) alone) |
 | | position only @0.8 | | | | |
 | | unconditional random 23.9% (= rate 1 of @0.8) | | | | |
+
+First readings (2026-10-12): on both pairs, letting the teacher also pick the position does not beat the content gate (Ins ⇐ A(2.0): 51.3 vs 49.0,
+p=0.43; M(.4,.6) ⇐ M(0,1): 44.0 vs 47.7, and 44.0 is exactly the teacher alone, 15/15 ties — handing over the order hands over the
+finish rate too, 77% → 72%). The unconditional random control at the gate's own dose sits at the student (38.0 / 38.3 vs Ins 36.7)
+and loses to the gate 25/58 and 28/60 (p < 0.001): the confidence signal knows *where* to ask; the dose alone is worthless.
 
 Reading rules, fixed in advance: position+content ≈ content → order adds nothing; position-only ≈ student → order alone is nothing;
 content gate ≫ unconditional random → confidence knows where to ask (the earlier "random among disagreements" control did not test
