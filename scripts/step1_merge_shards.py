@@ -25,6 +25,7 @@ ARMS = {  # merged dir : glob of source dirs
  "gated1024/math500/e1b-mrg10-both08-merged": "gated1024/math500/e1b-mrg10-both08-last300-s*",
  "gated_ins_add-a10-b20_1024/math500/sched08-merged": "gated_ins_add-a10-b20_1024/math500/sched08-last300-s*",
  "gated1024/math500/e1b-mrg10-sched08-merged": "gated1024/math500/e1b-mrg10-sched08-last300-s*",
+ "gated1024/math500/e1b-mrg10-randu0239-merged": "gated1024/math500/e1b-mrg10-randu0239-last300-s*",
  "gated_mrg0406_add-a10-b20_1024/math500/t10-merged": "gated_mrg0406_add-a10-b20_1024/math500/t10-last300*",
  "gated_mrg0406_add-a10-b20_1024/math500/t04-merged": "gated_mrg0406_add-a10-b20_1024/math500/t04-last300*",
  "gated_mrg0406_add-a10-b20_1024/math500/t06-merged": "gated_mrg0406_add-a10-b20_1024/math500/t06*",

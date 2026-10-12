@@ -44,10 +44,10 @@ online and the AR reference under lenient scoring is 71 (`technical_details/step
 | **M(.4,.6) ⇐ M(0,1)** | | | | | | | | | | |
 | @0.0 = student alone | B300 | 53.5 | 42.0 | 46.6 |  |  | 81% | 51.9 |  |  |
 | @0.3 † | B300 | <u>54.0</u> | 43.3 | <u>47.6</u> | — | 0.92%§ | 78% | 55.3 | 21/17, 0.63 / 29/31, 0.90 | 33/28, 0.61 / 58/48, 0.38 |
-| @0.6 | H200 | 52.0 |  |  | 14.6%‡ | 2.28%‡ |  |  |  |  |
+| @0.6 | H200 | 52.0 | <u>45.3</u> | <u>48.0</u> | 14.8% | 2.26% | 77% | 58.9 | 36/26, 0.25 / 33/29, 0.70 | 53/46, 0.55 / 54/42, 0.26 |
 | @0.7 † | B300 | <u>54.0</u> | <u>48.0</u> | <u>50.4</u> | — | 2.57%§ | 77% | 62.1 | 46/28, 0.05 / 37/25, 0.16 | 66/47, 0.09 / 63/39, 0.02 |
-| @0.8 | H200 | 53.5 |  |  | 23.6%‡ | 2.65%‡ |  |  |  |  |
-| @0.6 / @0.8 / @0.9, last 300 (running) | | | | | | | | | | |
+| @0.8 | H200 | 53.5 | <u>47.7</u> | <u>50.0</u> | 23.9% | 2.73% | 77% | 61.9 | 46/29, 0.06 / 36/25, 0.20 | 68/51, 0.14 / 61/39, 0.04 |
+| @0.9 | H200 |  | <u>47.3</u> |  | 29.0% | 2.78% | 77% | 61.7 | 45/29, 0.08 / 33/23, 0.23 |  |
 | @1.0 ≈ teacher alone (reference) | B300 | 48.0 | 44.0 | 45.6 |  |  | 74% | 59.2 |  |  |
 | **Ins ⇐ M(.4,.6)** | | | | | | | | | | |
 | @0.0 = student alone | B300 | 44.5 | 36.7 | 39.8 |  |  | 76% | 48.5 |  |  |
@@ -81,10 +81,10 @@ the denoising order.* Three ablations isolate it, all at θ = 0.8, same steps tr
 | | position only @0.8 | | | | |
 | | unconditional random 13.5% (= rate 1 of @0.8) | | | | |
 | | unconditional random 5.3% (= rate 1 of @0.6; vs @0.6 = 49.3) | | | | |
-| M(.4,.6) ⇐ M(0,1) | content gate @0.8 (H200 rerun) | | | | |
+| M(.4,.6) ⇐ M(0,1) | content gate @0.8 (H200 rerun; θ sweep 0.6/0.8/0.9 = 45.3/47.7/47.3, all at finish 77%, precision 59–62) | 47.7 | 77% | 61.9 | — |
 | | position + content @0.8 | | | | |
 | | position only @0.8 | | | | |
-| | unconditional random (dose from the @0.8 rerun) | not yet submitted | | | |
+| | unconditional random 23.9% (= rate 1 of @0.8) | | | | |
 
 Reading rules, fixed in advance: position+content ≈ content → order adds nothing; position-only ≈ student → order alone is nothing;
 content gate ≫ unconditional random → confidence knows where to ask (the earlier "random among disagreements" control did not test
