@@ -70,7 +70,7 @@ and under-counted truncated answers).
   end of the canvas on most problems (mean 1021), has full = response.
 - **Position + content vs content only**: response Global@1 0.948 vs 0.958 (Ins pair) and 0.941 vs 0.950 (merge pair) — within 0.01. The §2
   accuracy differences (51.3 vs 49.0; 44.0 vs 47.7) are not order effects. The "merge becomes more AR with position + content" reading of the
-  full-canvas column (0.883 → 0.924) was padding: that arm's answers are shorter (593 vs 577 tokens — no, the padding is committed differently),
-  and on the response the two are equal.
+  full-canvas column (0.883 → 0.924) was the padding region being committed in a different order, not the answer: on the response the two
+  are equal (0.950 vs 0.941).
 - Consequence for A2D's earlier numbers (`arness_posthoc_summary.json`, native decode, 20 prompts): those are also full-canvas and so carry the
   same length confound; the Spearman/adjacency there are consistent with the response-only picture here (everything ≈ AR in chat mode).
