@@ -81,3 +81,10 @@ time if all 15 schedule at once. Teachers are called every step (no lazy call ye
 | kill | gate matters | pipeline stays "one teacher, hard gate"; teacher-axis expansion only across lines (cascade) |
 | kill | gate does not matter | method = probability ensemble with a confidence-based compute saver; rewrite §1 accordingly |
 | success | any | teacher mean becomes the pipeline's expansion rule; widen/narrow the grid (1.0–2.5 vs 1.75–2.25) to test what the mean needs |
+
+## Smoke result for B (2026-10-13, ids 200–201, zero new knowledge needed to read it)
+`smix @0.8` and `smix @1.0` produce **identical texts**. At θ = 1.0 every one of the 2048 committed positions is mixed, and the mean's argmax
+is the student's own token at 2026 of them; the 22 changed tokens are exactly the 22 that @0.8 changes (its 159 low-confidence steps keep the
+student's token 137 times). So for the student+teacher mean the gate is a pure compute saver and B3 is redundant; B reduces to B1 @0.8.
+It also says what B1 will be: an effective token-change rate of ≈ 1 % (hard gate @0.8: ≈ 5 %), i.e. a much lower dose. Expectation: B1 lands
+between the student and the hard gate, and "soft beats hard" fails. Not yet run on the last 300 (user hold on submissions).
