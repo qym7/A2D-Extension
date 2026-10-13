@@ -15,6 +15,7 @@ p_m = softmax(z_m(j_t)) be that model's raw next-token distribution at j_t (T = 
 | teacher alone | y_T | A(2.0) = 46.7 |
 
 ## Experiment A — teacher mean along β (user, 2026-10-13: mean rather than a ladder)
+Gated exactly like the content gate (user, 2026-10-13): the mean is consulted **only at steps where c_S < θ = 0.8**; elsewhere the student writes its own token.
 Teachers T_1 = A(1.5), T_2 = A(2.0), T_3 = A(2.5) — a regular grid centred on the known-good over-addition teacher (user, 2026-10-13: 0.5/1.0/2.0 was an odd set; A(3.0) is collapsed so 2.5 is the last usable point above). At a low-confidence step the token is the argmax of the **mean of the teachers'
 probability distributions**; the student's token otherwise.
 
@@ -65,7 +66,7 @@ Reading rules, fixed now:
 - `scripts/step1_lockstep_gated_v2.py` = copy of `step1_lockstep_gated.py` + one new mode `content_mean` (`--other` takes a comma-separated list of 1–3 teachers; at a low-confidence step the token is the argmax of the mean of the listed models' distributions, with `--with-student` adding the student to the mean). A3 = three teachers without the student; B1/B3 = one teacher with the student. Content gate / both / random code paths untouched (byte-identical outputs on the existing modes is
   checked by re-running one existing problem in the smoke).
 - `modules/run_gated_shard5.sh` = shard4 pointing at v2, with mode tokens `mean:θ` (teachers only) and `smix:θ` (student + teacher).
-- Checkpoints: A(0.5) and A(1.0) built once at `outputs/checkpoints/add-a10-b15`, `add-a10-b25` (build-at-host, flock-serialised, as before).
+- Checkpoints: A(1.5) and A(2.5) built once at `outputs/checkpoints/add-a10-b15`, `add-a10-b25` (build-at-host, flock-serialised, as before).
 - Gates before submission: `py_compile`, CPU dry run of the token rule on saved logits, one 2-problem smoke per new mode on the GPU, then the 6 arms × 3 shards.
 - Output dirs: `details/logs/gated_ins_add-a10-b15_1024/math500/t08-last300-s*`, `…b25…/t08-…`, `details/logs/mean_ins_1024/math500/b15-b20-b25-t08-last300-s*`,
   `details/logs/softmix_ins_add-a10-b20_1024/math500/{t08,t10}-last300-s*`.
@@ -79,4 +80,4 @@ time if all 15 schedule at once. Teachers are called every step (no lazy call ye
 |---|---|---|
 | kill | gate matters | pipeline stays "one teacher, hard gate"; teacher-axis expansion only across lines (cascade) |
 | kill | gate does not matter | method = probability ensemble with a confidence-based compute saver; rewrite §1 accordingly |
-| success | any | teacher mean becomes the pipeline's expansion rule; add A(1.5) / drop A(0.5) to test what the mean needs |
+| success | any | teacher mean becomes the pipeline's expansion rule; widen/narrow the grid (1.0–2.5 vs 1.75–2.25) to test what the mean needs |
