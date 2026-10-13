@@ -33,3 +33,16 @@ the fallback cost is a full second 2× decode on 22 % of problems; a lazy teache
 The two lines are complementary in the specific sense that each repairs the other's *detectable* failure. For STEP3 the same
 complementarity appears for free: rejection-sampled targets come from whichever system solved the training prompt, so the distilled
 1× student sees both behaviours (finish within budget; precise tokens) without any decode-time cascade.
+
+## 4. Within one line (Ins ⇐ A(β), different θ or β): not complementary in the usable sense (2026-10-13)
+Last 300, Ins ⇐ A(2.0) @0.6 vs @0.8: only-@0.6 right 34, only-@0.8 right 33 — symmetric, and in those cases the other arm is
+*finished-but-wrong* (unfinished on only 5/34 and 5/33), so nothing at decode time says which one to trust; cascade by finish = 51.0 / 50.7
+(≈ +1.5, noise level). Same picture for A(1.1) vs A(2.0) and θ 0.6 vs 0.8 on the first 200 (cascades 55–60 around the 57.5–59 singles).
+The oracle union is large (66.0 on the last 300) but it is decoding noise: two near-copies of one system flip different items.
+Agreement is a confidence signal (same `\boxed` on 128/300 → 84 % acc; otherwise 23 %) but not a selector; routing "@0.6/@0.8 agree → take it,
+else M(.4,.6) ⇐ M(0,1) with finish fallback" gives 56.0 at ≈ 4.9× — no better than the plain two-line cascade (55.0 at 2.5×).
+
+Conclusion: complementarity comes from the **teacher's axis** (addition line → finish rate; merge line → precision), i.e. from a different
+*detectable* failure mode, not from more θ or β points on one line. A chain Ins ⇐ A(β1) ⇐ A(β2) cannot add information either: a gate never
+exceeds its teacher, A(β) peaks at 2.0 and A(3.0) is collapsed (M(.4,.6) ⇐ A(3.0) @0.8 = 42.3 = student). The system is expandable by adding
+*teachers with a new detectable failure mode*, not by adding thresholds.
