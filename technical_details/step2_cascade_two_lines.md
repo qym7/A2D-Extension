@@ -46,3 +46,14 @@ Conclusion: complementarity comes from the **teacher's axis** (addition line →
 *detectable* failure mode, not from more θ or β points on one line. A chain Ins ⇐ A(β1) ⇐ A(β2) cannot add information either: a gate never
 exceeds its teacher, A(β) peaks at 2.0 and A(3.0) is collapsed (M(.4,.6) ⇐ A(3.0) @0.8 = 42.3 = student). The system is expandable by adding
 *teachers with a new detectable failure mode*, not by adding thresholds.
+
+## 5. Overlap of the β arms on the Ins line (2026-10-13, last 300, Ins ⇐ A(β) @0.8)
+| pair | both right / either right (Jaccard) | only first / only second |
+|---|---|---|
+| β1.5 vs β2.0 | 117 / 175 (0.67) | 28 / 30 |
+| β1.5 vs β2.5 | 111 / 175 (0.63) | 34 / 30 |
+| β2.0 vs β2.5 | 111 / 177 (0.63) | 36 / 30 |
+| reference: β2.0 @0.6 vs @0.8 | 114 / 181 (0.63) | | 
+
+All three right: 97; any right (oracle): 191 = 63.7 %; exactly one right: 46; exactly two: 48. **Majority vote of the three = 145 = 48.3 %**, i.e. no better than any single arm (48.3 / 49.0 / 47.0).
+Reading: the sets are far from identical (a third of the union is arm-specific), but the only-right counts are symmetric and the overlap is the same as between two θ values of one arm — the differences look like decoding noise (a token flip early in a chain changes the whole answer), not like complementary knowledge. A vote cannot exploit it, and there is no detector for which arm is right on a given problem (same conclusion as §4 for θ). The 63.7 % oracle is the ceiling that only a per-problem detector could reach.
