@@ -40,8 +40,23 @@ position to the teacher mostly re-picks the same next position. That is consiste
 position + content ≈ content. The gate is best described as *near-AR diffusion decoding where the teacher supplies the token at the
 student's uncertain steps*, not as a change of order.
 
-## 3. What a direct measurement would need
-Add a per-problem commit-order dump to `scripts/step1_lockstep_gated.py` (one list of 1024 positions per item, written next to
-`texts.jsonl`), then rerun student alone, teacher alone, content gate, position + content on ~50 problems each (AR-ness is a stable
-per-run statistic: A2D used 20 prompts). Cost ≈ 4 arms × 50 problems × 2× ≈ 6 GPU-h on H200·0.51. Metrics: DiffuCoder Global/Local
-AR-ness@{1,2,4,8} via `arness_metrics.py`, plus Spearman and adjacency for continuity with A2D. Not submitted — awaiting a decision.
+## 3. Direct measurement (2026-10-13, ids 200–249, `scripts/step1_arness_from_records.py`, H200·0.51, `--record` runs)
+Order = sequence of committed canvas positions. "full" = whole 1024-token canvas incl. post-EOS padding (DiffuCoder App. A.2); "response" = positions
+before the first EOS only. Texts of every recorded run equal the earlier non-record run of the same arm on all 50 ids (argmax decode is deterministic).
+
+| arm | n | acc | Global@1 (full) | Local@1 (full) | Local@8 (full) | Global@1 (response) | Local@1 (response) | Spearman | adjacency | response len | texts = earlier run |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Ins alone | 50 | 36 | 0.988 | 0.970 | 0.910 | 0.956 | 0.887 | 1.000 | 0.977 | 305 | 50/50 |
+| A(2.0) alone | 50 | 42 | 0.941 | 0.897 | 0.711 | 0.934 | 0.881 | 1.000 | 0.922 | 295 | 50/50 |
+| Ins ⇐ A(2.0) content @0.8 | 50 | 46 | 0.967 | 0.934 | 0.809 | 0.961 | 0.903 | 1.000 | 0.949 | 509 | 50/50 |
+| Ins ⇐ A(2.0) position+content @0.8 | 50 | 48 | 0.957 | 0.932 | 0.806 | 0.947 | 0.911 | 1.000 | 0.948 | 535 | 50/50 |
+| M(.4,.6) alone | 50 | 40 | 0.871 | 0.855 | 0.620 | 0.913 | 0.816 | 0.999 | 0.889 | 260 | 50/50 |
+| M(0,1) alone | 50 | 44 | 0.934 | 0.892 | 0.699 | 0.930 | 0.866 | 1.000 | 0.918 | 300 | 50/50 |
+| M(.4,.6) ⇐ M(0,1) content @0.8 | 50 | 40 | 0.883 | 0.880 | 0.672 | 0.899 | 0.850 | 0.998 | 0.908 | 338 | 50/50 |
+| M(.4,.6) ⇐ M(0,1) position+content @0.8 | 50 | 46 | 0.924 | 0.886 | 0.686 | 0.935 | 0.866 | 1.000 | 0.913 | 257 | 50/50 |
+
+Readings.
+- **Everything is near-AR** (Global@1 0.87–0.99, Spearman ≈ 1.00): the lockstep decoder at confidence temperature 0.1 commits almost strictly left to right for every model. Ins is the most AR (0.988), the merges the least (M(.4,.6) 0.871).
+- **Position + content vs content only: a small shift toward the teacher's order, nothing more.** Ins ⇐ A(2.0): 0.957 vs 0.967 (teacher 0.941); M(.4,.6) ⇐ M(0,1): 0.924 vs 0.883 (teacher 0.934). On the response only the Local@1 numbers are within 0.02. The accuracy differences in `step1_methods.md` §2 (51.3 vs 49.0; 44.0 vs 47.7) are not accompanied by a change in *how* left-to-right the decode is — consistent with "the teacher's order carries nothing".
+- **The content gate keeps the student's order**: Ins ⇐ A(2.0) sits between Ins and A(2.0) (0.967) only because the teacher's tokens make the answers longer (response 305 → 509 tokens) and long answers have more non-adjacent commits; M(.4,.6) ⇐ M(0,1) is at the student (0.883 vs 0.871).
+- More AR is not better: the least AR model (M(.4,.6)) has the highest precision on finished problems; the most AR (Ins) the lowest accuracy. AR-ness is a property of the decoder temperature here, not a lever.

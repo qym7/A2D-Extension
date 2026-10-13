@@ -101,6 +101,8 @@ Reading rules, fixed in advance: position+content ≈ content → order adds not
 content gate ≫ unconditional random → confidence knows where to ask (the earlier "random among disagreements" control did not test
 this: it was handed the disagreement positions for free and matched the token-changed count instead, see `tmp.md` 2026-10-12).
 
+AR-ness of the decode order (`technical_details/step1_arness.md` §3, 50 problems with recorded commit order): every arm is near left-to-right (Global@1 0.87–0.99), and position + content shifts the order statistics by ≤ 0.04 toward the teacher — the §2 accuracy differences are not order effects.
+
 Supporting decomposition (student M(.4,.6), teacher A(2.0), `technical_details/step1_dose_curve_mechanism.md`): the teacher's tokens raise the finish rate
 (81% → 89–95%), the student's remaining tokens keep the precision on finished problems (51.9 → 57.3; 100% teacher content collapses
 to the teacher's 49.5); the weight midpoint (0.7,1.3) gets the finish rate but not the precision; A(3.0) is past the dose optimum.
