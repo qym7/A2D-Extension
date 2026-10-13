@@ -23,11 +23,14 @@ B = [0.0, 0.6, 1.0]
 NAMES = ["Instruct\n$M(1,0)$", "best merge\n$M(.4,.6)$", "over merge\n$M(0,1)$"]
 ACC = [39.8, 46.6, 45.6]; FIN = [75, 80, 74]; PREC = [53.4, 58.4, 61.3]
 GATE = dict(acc=50.0, fin=78, prec=63.9)
+# theta sweep of M(.4,.6) <= M(0,1), all 500 (0.3 / 0.7 from the 9/30 B300 run, the rest H200); handed-over share from the last-300 gate counts
+TH = [0.0, 0.3, 0.6, 0.7, 0.8]; TH_ACC = [46.6, 47.6, 48.0, 50.4, 50.0]; TH_RATE = {0.6: "15%", 0.8: "24%"}
+TEACHER_ACC = 45.6
 
 C_LINE = "#3B5B92"; C_GATE = "#B23A3A"; C_TEA_LIGHT = "#D98C8C"; C_STU_LIGHT = "#DCE4F0"
 
-fig = plt.figure(figsize=(11.5, 7.0))
-gs = fig.add_gridspec(2, 3, height_ratios=[1.0, 0.72], hspace=0.75, wspace=0.40, top=0.80, bottom=0.05, left=0.07, right=0.98)
+fig = plt.figure(figsize=(11.5, 7.6))
+gs = fig.add_gridspec(2, 3, height_ratios=[1.0, 0.85], hspace=0.7, wspace=0.40, top=0.82, bottom=0.06, left=0.07, right=0.98)
 
 def panel(ax, y, gy, title, ylabel, ylim, unit="", gate_note="", side=1):
     ax.plot(B, y, "-o", color=C_LINE, lw=1.8, ms=6.5, zorder=3)
@@ -54,8 +57,21 @@ fig.legend(handles=[plt.Line2D([], [], color=C_LINE, marker="o", lw=1.8, label="
                     plt.Line2D([], [], color=C_GATE, marker="*", ms=13, ls="none", label=r"gate $M(.4,.6) \Leftarrow M(0,1)$ @ $\theta$=0.8: best merge decodes, over merge supplies its unsure tokens (2× decode)")],
            loc="lower center", bbox_to_anchor=(0.5, 0.875), fontsize=9.5, frameon=False, ncol=1)
 
-# --- (d) token strip ---
-axs = fig.add_subplot(gs[1, :]); axs.set_axis_off()
+# --- (d) theta sweep ---
+ax4 = fig.add_subplot(gs[1, 0])
+ax4.plot(TH, TH_ACC, "-o", color=C_GATE, lw=1.8, ms=6, zorder=3)
+ax4.plot([0.8], [50.0], marker="*", ms=17, color=C_GATE, zorder=4, ls="none")
+for t, v in zip(TH, TH_ACC):
+    ax4.annotate(f"{v:g}", (t, v), textcoords="offset points", xytext=(0, 8), ha="center", fontsize=9, color=C_GATE)
+ax4.axhline(ACC[1], color=C_LINE, ls=":", lw=1.2); ax4.text(0.98, ACC[1] + 0.25, "best merge alone 46.6", fontsize=8, color=C_LINE, va="bottom", ha="right")
+ax4.axhline(TEACHER_ACC, color=C_LINE, ls="--", lw=1.2); ax4.text(0.98, TEACHER_ACC - 0.3, "over merge alone 45.6", fontsize=8, color=C_LINE, va="top", ha="right")
+ax4.set_xlim(-0.05, 1.0); ax4.set_ylim(43.5, 52.8); ax4.set_xticks([0, 0.3, 0.6, 0.7, 0.8])
+ax4.set_xlabel(r"threshold $\theta$ (hand over where $p<\theta$)", fontsize=9, color="#444444"); ax4.set_ylabel("MATH-500 accuracy (%)", fontsize=9.5)
+ax4.set_title(r"(d) Threshold sweep: above both ends from $\theta$ = 0.3," + "\n      flat between 0.7 and 0.8", loc="left", fontsize=10.5)
+ax4.grid(axis="y", color="#e6e6e6", lw=0.8); ax4.spines[["top", "right"]].set_visible(False)
+
+# --- (e) token strip ---
+axs = fig.add_subplot(gs[1, 1:]); axs.set_axis_off()
 conf = [0.99, 0.97, 0.95, 0.40, 0.98, 0.99, 0.60, 0.97, 0.99, 0.30, 0.98, 0.96, 0.99, 0.70, 0.98, 0.99, 0.50, 0.97]
 theta = 0.8; n = len(conf); w = 1.0
 for i, c in enumerate(conf):
@@ -68,11 +84,11 @@ axs.text(n * w + 0.2, 0.75 + theta * 0.9, r"$\theta = 0.8$", va="center", fontsi
 axs.text(-0.3, 0.75 + 0.45, "best merge's\nconfidence $p$", ha="right", va="center", fontsize=9.5, color="#444444")
 axs.text(-0.3, 0.27, "token written", ha="right", va="center", fontsize=9.5, color="#444444")
 axs.text(n * w + 0.2, 0.27, "S = best merge's token\nT = over merge's token", va="center", fontsize=9, color="#444444")
-axs.set_xlim(-6.5, n * w + 7.5); axs.set_ylim(-0.1, 1.9)
-axs.set_title("(d) The gate. The best merge decodes left to right and keeps its own token where it is confident ($p \\geq \\theta$); "
-              "where it is unsure ($p < \\theta$) the over merge's token is written instead.\n"
-              "At $\\theta$ = 0.8 about 24% of the tokens are handed over and about 3% actually change — enough to inherit the precision without losing the finish rate.",
-              fontsize=9.8, loc="center")
+axs.set_xlim(-5.5, n * w + 6.5); axs.set_ylim(-0.1, 2.0)
+axs.set_title("(e) The gate. The best merge decodes left to right and keeps its own token where it is confident ($p \\geq \\theta$);\n"
+              "where it is unsure ($p < \\theta$) the over merge's token is written instead. At $\\theta$ = 0.8 about 24% of the tokens\n"
+              "are handed over and about 3% actually change — enough to inherit the precision without losing the finish rate.",
+              fontsize=9.6, loc="left")
 
 fig.suptitle("Over distillation: the over-merged model knows more per token but cannot finish — borrow its tokens only where the best merge is unsure",
              fontsize=12.5, y=0.975)
