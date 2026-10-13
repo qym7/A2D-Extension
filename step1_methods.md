@@ -102,22 +102,25 @@ content gate ≫ unconditional random → confidence knows where to ask (the ear
 this: it was handed the disagreement positions for free and matched the token-changed count instead, see `tmp.md` 2026-10-12).
 
 **AR-ness of the decode order** (`technical_details/step1_arness.md` §3; ids 200–249 with the commit order recorded, texts identical to the main runs).
-Global@1 / Local@1 = DiffuCoder AR-ness over the full 1024-token canvas (share of commits that take the leftmost remaining mask / the position right after the previous one).
+Global@1 / Local@1 = DiffuCoder AR-ness (share of commits that take the leftmost remaining mask / the position right after the previous one).
+"response" = positions before the first `<|im_end|>` (the answer); "full" = the whole 1024-token canvas incl. post-EOS padding (the paper's protocol,
+which also counts how much padding there is, since Dream commits the padding out of order).
 
-| arm | Global@1 | Local@1 | Spearman | response len (tokens) |
-|---|---:|---:|---:|---:|
-| Ins alone | 0.988 | 0.970 | 1.000 | 305 |
-| A(2.0) alone | 0.941 | 0.897 | 1.000 | 295 |
-| Ins ⇐ A(2.0) content @0.8 | 0.967 | 0.934 | 1.000 | 509 |
-| Ins ⇐ A(2.0) position + content @0.8 | 0.957 | 0.932 | 1.000 | 535 |
-| M(.4,.6) alone | 0.871 | 0.855 | 0.999 | 260 |
-| M(0,1) alone | 0.934 | 0.892 | 1.000 | 300 |
-| M(.4,.6) ⇐ M(0,1) content @0.8 | 0.883 | 0.880 | 0.998 | 338 |
-| M(.4,.6) ⇐ M(0,1) position + content @0.8 | 0.924 | 0.886 | 1.000 | 257 |
+| arm | Global@1 response | Local@1 response | Global@1 full | Local@1 full | mean answer length (tokens) |
+|---|---:|---:|---:|---:|---:|
+| Ins alone | 0.960 | 0.899 | 0.988 | 0.970 | 421 |
+| A(2.0) alone | 0.941 | 0.897 | 0.941 | 0.897 | 1021 |
+| Ins ⇐ A(2.0) content @0.8 | 0.958 | 0.912 | 0.967 | 0.934 | 812 |
+| Ins ⇐ A(2.0) position + content @0.8 | 0.948 | 0.914 | 0.957 | 0.932 | 847 |
+| M(.4,.6) alone | 0.957 | 0.907 | 0.871 | 0.855 | 460 |
+| M(0,1) alone | 0.953 | 0.911 | 0.934 | 0.892 | 602 |
+| M(.4,.6) ⇐ M(0,1) content @0.8 | 0.950 | 0.909 | 0.883 | 0.880 | 577 |
+| M(.4,.6) ⇐ M(0,1) position + content @0.8 | 0.941 | 0.908 | 0.924 | 0.886 | 593 |
 
-Every arm is near left-to-right. The merges are the *least* AR (M(.4,.6) 0.871, the model with the highest precision), Ins the most (0.988).
-The content gate keeps the student's order (M(.4,.6) ⇐ M(0,1) 0.883 ≈ 0.871); position + content moves it toward the teacher by ≤ 0.04
-(0.924 on the merge pair, where it also collapses to the teacher's accuracy). The §2 accuracy differences are therefore not order effects.
+On the answer itself every arm is equally and almost fully left-to-right (Global@1 0.94–0.96, Local@1 0.90–0.91): student, teacher and gate
+do not differ, and position + content is within 0.01 of content only. The spread in the full-canvas column (0.87–0.99) is the amount of
+post-EOS padding, not a model property (A(2.0) writes to the end of the canvas, so full = response). The §2 accuracy differences are
+therefore not order effects. (An earlier version of this table read "merges are the least AR" off the full column — that was the padding.)
 
 Supporting decomposition (student M(.4,.6), teacher A(2.0), `technical_details/step1_dose_curve_mechanism.md`): the teacher's tokens raise the finish rate
 (81% → 89–95%), the student's remaining tokens keep the precision on finished problems (51.9 → 57.3; 100% teacher content collapses

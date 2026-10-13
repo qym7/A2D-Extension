@@ -30,8 +30,9 @@ for name, (rd, prev) in ARMS.items():
         r = json.load(open(f)); P = r["prompt_len"]
         order = [p - P for s in r["steps"] for p in s["pos"]]
         assert sorted(order) == list(range(len(order))), f
-        eos = Counter(r["final_ids"][-8:]).most_common(1)[0][0]
-        Lr = r["final_ids"].index(eos) if eos in r["final_ids"] else len(order)
+        # response end = first <|im_end|> (151645, end of the assistant turn); else first <|endoftext|> (151643); else the whole canvas (truncated)
+        ids_ = r["final_ids"]
+        Lr = ids_.index(151645) if 151645 in ids_ else (ids_.index(151643) if 151643 in ids_ else len(order))
         m["len"].append(Lr)
         m["g1"].append(global_arness_at_k(order, 1)); m["l1"].append(local_arness_at_k(order, 1)); m["l8"].append(local_arness_at_k(order, 8))
         resp = [p for p in order if p < Lr]; rank = {p: i for i, p in enumerate(sorted(resp))}; resp = [rank[p] for p in resp]

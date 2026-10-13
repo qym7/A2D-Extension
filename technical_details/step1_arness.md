@@ -41,22 +41,36 @@ position + content ≈ content. The gate is best described as *near-AR diffusion
 student's uncertain steps*, not as a change of order.
 
 ## 3. Direct measurement (2026-10-13, ids 200–249, `scripts/step1_arness_from_records.py`, H200·0.51, `--record` runs)
-Order = sequence of committed canvas positions. "full" = whole 1024-token canvas incl. post-EOS padding (DiffuCoder App. A.2); "response" = positions
-before the first EOS only. Texts of every recorded run equal the earlier non-record run of the same arm on all 50 ids (argmax decode is deterministic).
+Definitions checked against DiffuCoder §4.1 / App. A.2 (arXiv:2506.20639v2): **Global AR-ness@k** = share of decoding steps whose unmasked
+position is among the k earliest remaining masks; **Local AR-ness@k** = share of steps where the new token and the k previously predicted
+tokens form a strictly consecutive span. The paper averages over every step of the fixed-length canvas (512 there, 1024 here), i.e. including
+the positions after the end of the answer ("full"). Because Dream fills the post-EOS region with high-confidence EOS tokens in a
+non-left-to-right order, the full-canvas number also measures *how much padding there is*; we therefore add the same metrics restricted to
+the positions before the first `<|im_end|>` ("response"; truncated answers = whole canvas). Order = sequence of committed canvas positions
+(one per step; the last step's 3 leftovers flattened in increasing position order, a 0.3 % tie rate). Texts of every recorded run equal the
+earlier non-record run of the same arm on all 50 ids (argmax decode is deterministic).
 
 | arm | n | acc | Global@1 (full) | Local@1 (full) | Local@8 (full) | Global@1 (response) | Local@1 (response) | Spearman | adjacency | response len | texts = earlier run |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Ins alone | 50 | 36 | 0.988 | 0.970 | 0.910 | 0.956 | 0.887 | 1.000 | 0.977 | 305 | 50/50 |
-| A(2.0) alone | 50 | 42 | 0.941 | 0.897 | 0.711 | 0.934 | 0.881 | 1.000 | 0.922 | 295 | 50/50 |
-| Ins ⇐ A(2.0) content @0.8 | 50 | 46 | 0.967 | 0.934 | 0.809 | 0.961 | 0.903 | 1.000 | 0.949 | 509 | 50/50 |
-| Ins ⇐ A(2.0) position+content @0.8 | 50 | 48 | 0.957 | 0.932 | 0.806 | 0.947 | 0.911 | 1.000 | 0.948 | 535 | 50/50 |
-| M(.4,.6) alone | 50 | 40 | 0.871 | 0.855 | 0.620 | 0.913 | 0.816 | 0.999 | 0.889 | 260 | 50/50 |
-| M(0,1) alone | 50 | 44 | 0.934 | 0.892 | 0.699 | 0.930 | 0.866 | 1.000 | 0.918 | 300 | 50/50 |
-| M(.4,.6) ⇐ M(0,1) content @0.8 | 50 | 40 | 0.883 | 0.880 | 0.672 | 0.899 | 0.850 | 0.998 | 0.908 | 338 | 50/50 |
-| M(.4,.6) ⇐ M(0,1) position+content @0.8 | 50 | 46 | 0.924 | 0.886 | 0.686 | 0.935 | 0.866 | 1.000 | 0.913 | 257 | 50/50 |
+| Ins alone | 50 | 36 | 0.988 | 0.970 | 0.910 | 0.960 | 0.899 | 1.000 | 0.977 | 421 | 50/50 |
+| A(2.0) alone | 50 | 42 | 0.941 | 0.897 | 0.711 | 0.941 | 0.897 | 1.000 | 0.922 | 1021 | 50/50 |
+| Ins ⇐ A(2.0) content @0.8 | 50 | 46 | 0.967 | 0.934 | 0.809 | 0.958 | 0.912 | 1.000 | 0.949 | 812 | 50/50 |
+| Ins ⇐ A(2.0) position+content @0.8 | 50 | 48 | 0.957 | 0.932 | 0.806 | 0.948 | 0.914 | 1.000 | 0.948 | 847 | 50/50 |
+| M(.4,.6) alone | 50 | 40 | 0.871 | 0.855 | 0.620 | 0.957 | 0.907 | 0.999 | 0.889 | 460 | 50/50 |
+| M(0,1) alone | 50 | 44 | 0.934 | 0.892 | 0.699 | 0.953 | 0.911 | 1.000 | 0.918 | 602 | 50/50 |
+| M(.4,.6) ⇐ M(0,1) content @0.8 | 50 | 40 | 0.883 | 0.880 | 0.672 | 0.950 | 0.909 | 0.998 | 0.908 | 577 | 50/50 |
+| M(.4,.6) ⇐ M(0,1) position+content @0.8 | 50 | 46 | 0.924 | 0.886 | 0.686 | 0.941 | 0.908 | 1.000 | 0.913 | 593 | 50/50 |
 
-Readings.
-- **Everything is near-AR** (Global@1 0.87–0.99, Spearman ≈ 1.00): the lockstep decoder at confidence temperature 0.1 commits almost strictly left to right for every model. Ins is the most AR (0.988), the merges the least (M(.4,.6) 0.871).
-- **Position + content vs content only: a small shift toward the teacher's order, nothing more.** Ins ⇐ A(2.0): 0.957 vs 0.967 (teacher 0.941); M(.4,.6) ⇐ M(0,1): 0.924 vs 0.883 (teacher 0.934). On the response only the Local@1 numbers are within 0.02. The accuracy differences in `step1_methods.md` §2 (51.3 vs 49.0; 44.0 vs 47.7) are not accompanied by a change in *how* left-to-right the decode is — consistent with "the teacher's order carries nothing".
-- **The content gate keeps the student's order**: Ins ⇐ A(2.0) sits between Ins and A(2.0) (0.967) only because the teacher's tokens make the answers longer (response 305 → 509 tokens) and long answers have more non-adjacent commits; M(.4,.6) ⇐ M(0,1) is at the student (0.883 vs 0.871).
-- More AR is not better: the least AR model (M(.4,.6)) has the highest precision on finished problems; the most AR (Ins) the lowest accuracy. AR-ness is a property of the decoder temperature here, not a lever.
+Readings (corrected 2026-10-13 after fixing the response-end detection — an earlier version read the end of the answer off the last tokens
+and under-counted truncated answers).
+- **On the answer itself every arm is equally and almost fully AR**: Global@1 0.94–0.96, Local@1 0.90–0.91, Spearman ≈ 1.00. The lockstep
+  decoder at confidence temperature 0.1 commits left to right for every model; nothing here distinguishes student, teacher or gate.
+- **The full-canvas spread (0.87–0.99) is a response-length effect, not a model property**: Ins (mean answer 421 tokens, 600 tokens of
+  padding) scores 0.988 and M(.4,.6) (460 tokens) 0.871 only because the padding region is committed out of order; A(2.0), which runs to the
+  end of the canvas on most problems (mean 1021), has full = response.
+- **Position + content vs content only**: response Global@1 0.948 vs 0.958 (Ins pair) and 0.941 vs 0.950 (merge pair) — within 0.01. The §2
+  accuracy differences (51.3 vs 49.0; 44.0 vs 47.7) are not order effects. The "merge becomes more AR with position + content" reading of the
+  full-canvas column (0.883 → 0.924) was padding: that arm's answers are shorter (593 vs 577 tokens — no, the padding is committed differently),
+  and on the response the two are equal.
+- Consequence for A2D's earlier numbers (`arness_posthoc_summary.json`, native decode, 20 prompts): those are also full-canvas and so carry the
+  same length confound; the Spearman/adjacency there are consistent with the response-only picture here (everything ≈ AR in chat mode).
