@@ -15,7 +15,7 @@ p_m = softmax(z_m(j_t)) be that model's raw next-token distribution at j_t (T = 
 | teacher alone | y_T | A(2.0) = 46.7 |
 
 ## Experiment A — teacher mean along β (user, 2026-10-13: mean rather than a ladder)
-Teachers T_1 = A(0.5), T_2 = A(1.0), T_3 = A(2.0). At a low-confidence step the token is the argmax of the **mean of the teachers'
+Teachers T_1 = A(1.5), T_2 = A(2.0), T_3 = A(2.5) — a regular grid centred on the known-good over-addition teacher (user, 2026-10-13: 0.5/1.0/2.0 was an odd set; A(3.0) is collapsed so 2.5 is the last usable point above). At a low-confidence step the token is the argmax of the **mean of the teachers'
 probability distributions**; the student's token otherwise.
 
     y = y_S                                     if c_S ≥ θ
@@ -30,15 +30,15 @@ would have chosen a different token than the mean (`n_vote_differs`), so the vot
 Arms (all @0.8):
 | arm | compute | purpose |
 |---|---:|---|
-| A1 Ins ⇐ A(0.5) @0.8 | 2× | single-teacher reference for T_1 (new) |
-| A2 Ins ⇐ A(1.0) @0.8 | 2× | single-teacher reference for T_2 (new; A(1.1) @0.8 exists on the first 200 only = 57.5) |
-| A3 Ins ⇐ mean{A(0.5), A(1.0), A(2.0)} @0.8 | 4× | the method |
-| — Ins ⇐ A(2.0) @0.8 | 2× | exists: 49.0 (= T_3 alone) |
+| A1 Ins ⇐ A(1.5) @0.8 | 2× | single-teacher reference for T_1 (new) |
+| A2 Ins ⇐ A(2.5) @0.8 | 2× | single-teacher reference for T_3 (new; past the peak, before the A(3.0) collapse) |
+| A3 Ins ⇐ mean{A(1.5), A(2.0), A(2.5)} @0.8 | 4× | the method |
+| — Ins ⇐ A(2.0) @0.8 | 2× | exists: 49.0 (= T_2 alone) |
 
 Reading rules, fixed now:
 - **Success**: A3 > max(A1, A2, 49.0) by ≥ 3 points on the last 300 with McNemar p < 0.1 → averaging teachers along β adds information a single teacher lacks.
 - **Kill**: A3 within 2 points of the best single-teacher arm → "more teachers on one line" is dead (consistent with `step2_cascade_two_lines.md` §4).
-- Diagnostic: rate 2 of A3 vs the singles, and `n_vote_differs`. If the mean's token equals A(2.0)'s on > 97 % of substituted tokens, A3 is A(2.0) in disguise regardless of accuracy.
+- Diagnostic: rate 2 of A3 vs the singles, and `n_vote_differs`. If the mean's token equals A(2.0)'s (T_2) on > 97 % of substituted tokens, A3 is A(2.0) in disguise regardless of accuracy.
 - Prior: kill; expected A3 ∈ [48, 51].
 
 ## Experiment B — soft mixing (mean of student and teacher) at the low-confidence steps (user: plain mean, no λ to tune)
@@ -65,9 +65,9 @@ Reading rules, fixed now:
 - `scripts/step1_lockstep_gated_v2.py` = copy of `step1_lockstep_gated.py` + one new mode `content_mean` (`--other` takes a comma-separated list of 1–3 teachers; at a low-confidence step the token is the argmax of the mean of the listed models' distributions, with `--with-student` adding the student to the mean). A3 = three teachers without the student; B1/B3 = one teacher with the student. Content gate / both / random code paths untouched (byte-identical outputs on the existing modes is
   checked by re-running one existing problem in the smoke).
 - `modules/run_gated_shard5.sh` = shard4 pointing at v2, with mode tokens `mean:θ` (teachers only) and `smix:θ` (student + teacher).
-- Checkpoints: A(0.5) and A(1.0) built once at `outputs/checkpoints/add-a10-b05`, `add-a10-b10` (build-at-host, flock-serialised, as before).
+- Checkpoints: A(0.5) and A(1.0) built once at `outputs/checkpoints/add-a10-b15`, `add-a10-b25` (build-at-host, flock-serialised, as before).
 - Gates before submission: `py_compile`, CPU dry run of the token rule on saved logits, one 2-problem smoke per new mode on the GPU, then the 6 arms × 3 shards.
-- Output dirs: `details/logs/gated_ins_add-a10-b05_1024/math500/t08-last300-s*`, `…b10…/t08-…`, `details/logs/mean_ins_1024/math500/b05-b10-b20-t08-last300-s*`,
+- Output dirs: `details/logs/gated_ins_add-a10-b15_1024/math500/t08-last300-s*`, `…b25…/t08-…`, `details/logs/mean_ins_1024/math500/b15-b20-b25-t08-last300-s*`,
   `details/logs/softmix_ins_add-a10-b20_1024/math500/{t08,t10}-last300-s*`.
 
 ## Cost
