@@ -29,6 +29,8 @@ ARMS = {  # merged dir : glob of source dirs
  "gated_mrg0406_add-a10-b20_1024/math500/t10-merged": "gated_mrg0406_add-a10-b20_1024/math500/t10-last300*",
  "gated_mrg0406_add-a10-b20_1024/math500/t04-merged": "gated_mrg0406_add-a10-b20_1024/math500/t04-last300*",
  "gated_mrg0406_add-a10-b20_1024/math500/t06-merged": "gated_mrg0406_add-a10-b20_1024/math500/t06*",
+ "gated_ins_add-a10-b15_1024/math500/t08-merged": "gated_ins_add-a10-b15_1024/math500/t08-last300-s*",
+ "gated_ins_add-a10-b25_1024/math500/t08-merged": "gated_ins_add-a10-b25_1024/math500/t08-last300-s*",
 }
 for dst, pat in ARMS.items():
     srcs = [Path(p) for p in sorted(glob.glob(str(L / pat))) if not p.endswith("-merged")]
