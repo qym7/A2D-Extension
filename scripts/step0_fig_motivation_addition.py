@@ -87,8 +87,8 @@ for t, v in zip(TH, TH_ACC):
     ax5.annotate(f"{v:g}", (t, v), textcoords="offset points", xytext=(0, 8), ha="center", fontsize=9, color=C_GATE)
 ax5.axhline(TH_ACC[0], color=C_LINE, ls=":", lw=1.2); ax5.text(0.98, TH_ACC[0] - 0.4, "Instruct alone 36.7", fontsize=8, color=C_LINE, va="top", ha="right")
 ax5.axhline(TEACHER300, color=C_LINE, ls="--", lw=1.2); ax5.text(0.02, TEACHER300 + 0.3, "$A(2.0)$ alone 46.7", fontsize=8, color=C_LINE, va="bottom", ha="left")
-ax5.set_xlim(-0.05, 1.0); ax5.set_ylim(33, 53); ax5.set_xticks(TH); ax5.set_xticklabels(["0\n(student)", "0.6\n(5% handed over)", "0.8\n(14% handed over)"], fontsize=8.5)
-ax5.set_xlabel(r"threshold $\theta$ (hand over where $p<\theta$)", fontsize=9, color="#444444"); ax5.set_ylabel("MATH-500 accuracy, last 300 (%)", fontsize=9.5)
+ax5.set_xlim(-0.05, 1.0); ax5.set_ylim(33, 53); ax5.set_xticks(TH); ax5.set_xticklabels(["0\n(student)", "0.6\n(5%)", "0.8\n(14%)"], fontsize=9)
+ax5.set_xlabel(r"threshold $\theta$ (hand over where $p<\theta$); in brackets: share of tokens handed over", fontsize=8.5, color="#444444"); ax5.set_ylabel("MATH-500 accuracy, last 300 (%)", fontsize=9.5)
 ax5.set_title("(e) Threshold: the teacher's level is reached by\n      $\\theta$ = 0.6–0.8 with 5–14% of the tokens; the same\n      dose at random positions stays at the student", loc="left", fontsize=10.5)
 ax5.grid(axis="y", color="#e6e6e6", lw=0.8); ax5.spines[["top", "right"]].set_visible(False)
 
