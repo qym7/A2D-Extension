@@ -57,3 +57,24 @@ exceeds its teacher, A(β) peaks at 2.0 and A(3.0) is collapsed (M(.4,.6) ⇐ A(
 
 All three right: 97; any right (oracle): 191 = 63.7 %; exactly one right: 46; exactly two: 48. **Majority vote of the three = 145 = 48.3 %**, i.e. no better than any single arm (48.3 / 49.0 / 47.0).
 Reading: the sets are far from identical (a third of the union is arm-specific), but the only-right counts are symmetric and the overlap is the same as between two θ values of one arm — the differences look like decoding noise (a token flip early in a chain changes the whole answer), not like complementary knowledge. A vote cannot exploit it, and there is no detector for which arm is right on a given problem (same conclusion as §4 for θ). The 63.7 % oracle is the ceiling that only a per-problem detector could reach.
+
+## 6. Cheaper cascades with Ins as the only student (2026-10-13, last 300; user: starting from the best merge is too expensive)
+Ins ⇐ M(0,1) has not been run. What exists: Ins ⇐ M(.4,.6) (@0.6 = 44.7, @0.8 = 41.7) and M(0,1) alone (44.0, 77/300 unboxed).
+
+| pair (vs Ins ⇐ A(2.0) @0.8 = 49.0) | both right / either (J) | only A-gate / only other |
+|---|---|---|
+| Ins ⇐ M(.4,.6) @0.6 | 106 / 175 (0.61) | 41 / 28 |
+| Ins ⇐ M(.4,.6) @0.8 | 104 / 168 (0.62) | 43 / 21 |
+| M(0,1) alone | 103 / 176 (0.59) | 44 / 29 |
+| M(.4,.6) ⇐ M(0,1) @0.8 (reference, §1) | 106 / 184 (0.58) | 41 / 37 |
+
+Cascades (first system's answer if it has `\boxed`, else the second's):
+| first → fallback | acc | fallbacks | decode cost |
+|---|---:|---:|---:|
+| M(.4,.6) ⇐ M(0,1) @0.8 → Ins ⇐ A(2.0) @0.8 (§1) | 55.0 | 69 | 2 + 2·0.23 ≈ 2.5× |
+| **M(0,1) alone → Ins ⇐ A(2.0) @0.8** | **53.0** | 77 | 1 + 2·0.26 ≈ **1.5×** |
+| Ins ⇐ M(.4,.6) @0.6 → Ins ⇐ A(2.0) @0.8 | 51.3 | 60 | 2 + 2·0.20 ≈ 2.4× |
+| Ins ⇐ A(2.0) @0.8 → M(0,1) | 51.0 | 22 | 2 + 0.07 ≈ 2.1× |
+| Ins ⇐ A(2.0) @0.8 → Ins ⇐ M(.4,.6) @0.6 | 50.3 | 22 | ≈ 2.1× |
+
+Reading: the order matters — the merge-line system must go first, because its failure mode (no `\boxed`, truncation) is the detectable one, and the addition-line gate finishes 93 % of the time, so it is the right fallback. The over merge *alone* as the first stage already gives +4 over the single gate at 1.5× total cost; its 77 truncations are exactly the problems handed to the gate. Whether Ins ⇐ M(0,1) @θ as the first stage does better than M(0,1) alone is untested (prior: no — Ins ⇐ M(.4,.6) is below M(.4,.6) ⇐ M(0,1) at every θ, the merge line is a weak teacher for Ins).
