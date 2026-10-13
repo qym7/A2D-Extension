@@ -4,7 +4,7 @@ Top row: more AR vector raises accuracy up to A(2.0) and collapses at A(3.0) (a)
 the per-answer precision does not move (c). Bottom row: why the student's unsure positions are the right place to ask
 (d: A2D's teacher-forced measurement — the AR vector changes the model's tokens almost only where the model is unsure);
 the threshold sweep (e); the gate as a token strip (f).
-Numbers: MATH-500 last 300 for a–c (A(3.0) exists only there); θ sweep on the first 200 (the only subset with 5 θ points);
+Numbers: MATH-500 last 300 for a–c (A(3.0) exists only there); θ sweep on the last 300 with the matched-dose random control;
 (d) from technical_details/step1_confidence_channel.md §1 (A2D E3, GSM8K 100 problems, teacher-forced, raw softmax confidence).
 Font: STIXGeneral (Times-compatible). Zero GPU. Writes technical_details/step0_figs/motivation_addition_line.{svg,pdf,png}."""
 from pathlib import Path
@@ -26,9 +26,10 @@ GATE = dict(acc=49.0, fin=93, prec=52.9)          # Ins <= A(2.0) @0.8, last 300
 BINS = ["0–.1", ".1–.2", ".2–.3", ".3–.4", ".4–.5", ".5–.6", ".6–.7", ".7–.8", ".8–.9", ".9–1"]
 CHANGE = [23.4, 17.9, 17.1, 17.2, 16.5, 11.5, 5.0, 1.8, 0.4, 0.01]
 SHARE = [1.1, 2.5, 3.1, 3.9, 4.7, 5.1, 4.7, 5.7, 7.7, 61.4]
-# --- e: theta sweep of Ins <= A(2.0), first 200 ---
-TH = [0.0, 0.2, 0.4, 0.6, 0.8]; TH_ACC = [44.5, 44.5, 53.0, 56.5, 59.0]; TEACHER200 = 58.5
-TH_RATE = {0.4: "1%", 0.6: "5%", 0.8: "14%"}
+# --- e: theta sweep of Ins <= A(2.0), last 300 (same subset as a-c); unconditional random control at the matched dose
+TH = [0.0, 0.6, 0.8]; TH_ACC = [36.7, 49.3, 49.0]; TEACHER300 = 46.7
+TH_RATE = {0.6: "5%", 0.8: "14%"}
+RND = {0.6: 38.3, 0.8: 38.0}
 
 C_LINE = "#3B5B92"; C_GATE = "#B23A3A"; C_TEA_LIGHT = "#D98C8C"; C_STU_LIGHT = "#DCE4F0"; C_GREY = "#777777"
 
@@ -77,18 +78,19 @@ ax4.text(9.3, 22, "96% of the changes fall\nat $p<0.7$; at $p\\geq0.9$\n(61% of 
 # --- (e) theta sweep ---
 ax5 = fig.add_subplot(gs[1, 1])
 ax5.plot(TH, TH_ACC, "-o", color=C_GATE, lw=1.8, ms=6, zorder=3)
-ax5.plot([0.8], [59.0], marker="*", ms=17, color=C_GATE, zorder=4, ls="none")
+ax5.plot([0.8], [49.0], marker="*", ms=17, color=C_GATE, zorder=4, ls="none")
+ax5.plot(list(RND), list(RND.values()), marker="o", mfc="white", mec=C_GREY, color=C_GREY, ms=6, lw=1.2, ls="--", zorder=3)
+for t, v in RND.items():
+    ax5.annotate(f"{v:g}", (t, v), textcoords="offset points", xytext=(0, -13), ha="center", fontsize=8.5, color=C_GREY)
+ax5.text(0.7, 40.6, "same dose, random positions", ha="center", fontsize=8, color=C_GREY)
 for t, v in zip(TH, TH_ACC):
     ax5.annotate(f"{v:g}", (t, v), textcoords="offset points", xytext=(0, 8), ha="center", fontsize=9, color=C_GATE)
-    if t in TH_RATE:
-        ax5.annotate(TH_RATE[t] + " of tokens\nhanded over", (t, v), textcoords="offset points", xytext=(0, -24), ha="center", fontsize=7.5, color=C_GREY)
-ax5.axhline(TH_ACC[0], color=C_LINE, ls=":", lw=1.2); ax5.text(0.98, TH_ACC[0] + 0.3, "Instruct alone 44.5", fontsize=8, color=C_LINE, va="bottom", ha="right")
-ax5.axhline(TEACHER200, color=C_LINE, ls="--", lw=1.2); ax5.text(0.02, TEACHER200 + 0.3, "$A(2.0)$ alone 58.5", fontsize=8, color=C_LINE, va="bottom", ha="left")
-ax5.set_xlim(-0.05, 1.0); ax5.set_ylim(40, 63); ax5.set_xticks(TH)
-ax5.set_xlabel(r"threshold $\theta$ (hand over where $p<\theta$)", fontsize=9, color="#444444"); ax5.set_ylabel("MATH-500 accuracy, first 200 (%)", fontsize=9.5)
-ax5.set_title("(e) Threshold sweep (first 200): nothing happens\n      below $\\theta$ = 0.4, the teacher's level is reached\n      by 0.6–0.8 with 5–14% of the tokens", loc="left", fontsize=10.5)
+ax5.axhline(TH_ACC[0], color=C_LINE, ls=":", lw=1.2); ax5.text(0.98, TH_ACC[0] - 0.4, "Instruct alone 36.7", fontsize=8, color=C_LINE, va="top", ha="right")
+ax5.axhline(TEACHER300, color=C_LINE, ls="--", lw=1.2); ax5.text(0.02, TEACHER300 + 0.3, "$A(2.0)$ alone 46.7", fontsize=8, color=C_LINE, va="bottom", ha="left")
+ax5.set_xlim(-0.05, 1.0); ax5.set_ylim(33, 53); ax5.set_xticks(TH); ax5.set_xticklabels(["0\n(student)", "0.6\n(5% handed over)", "0.8\n(14% handed over)"], fontsize=8.5)
+ax5.set_xlabel(r"threshold $\theta$ (hand over where $p<\theta$)", fontsize=9, color="#444444"); ax5.set_ylabel("MATH-500 accuracy, last 300 (%)", fontsize=9.5)
+ax5.set_title("(e) Threshold: the teacher's level is reached by\n      $\\theta$ = 0.6–0.8 with 5–14% of the tokens; the same\n      dose at random positions stays at the student", loc="left", fontsize=10.5)
 ax5.grid(axis="y", color="#e6e6e6", lw=0.8); ax5.spines[["top", "right"]].set_visible(False)
-ax5.text(0.98, 41, "same dose at random positions\n= Instruct alone (last 300: 38.0 vs 49.0)", fontsize=8, color=C_GREY, ha="right", va="bottom")
 
 # --- (f) token strip ---
 axs = fig.add_subplot(gs[1, 2]); axs.set_axis_off()
