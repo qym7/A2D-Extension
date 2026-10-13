@@ -74,14 +74,18 @@ the denoising order.* Three ablations isolate it, all at θ = 0.8, same steps tr
 | **position only** (`schedule_gated`) | teacher picks the position, student writes the token | is the order alone worth anything? |
 | **unconditional random** (`content_random_uncond`, dose = gate's rate 1) | a random step takes the teacher's token, no confidence, no disagreement check | does confidence know *where* to ask? |
 
-| pair | arm | last 300 acc | finish rate | acc on finished | vs content gate (win/loss, p) |
+| pair | arm (all gated arms: 2× decode, H200·0.51, last 300) | last 300 acc | finish rate | acc on finished | vs content gate @0.8 (win/loss, p) |
 |---|---|---:|---:|---:|---|
-| Ins ⇐ A(2.0) | content gate @0.8 | 49.0 | 93% | 52.9 | — |
+| Ins ⇐ A(2.0) | **student alone**: Ins (1×, B300) | 36.7 | 76% | 48.5 | 25/62, 0.00 |
+| | **teacher alone**: A(2.0) over addition (1×, H200) | 46.7 | 94% | 49.5 | 33/40, 0.48 |
+| | content gate @0.8 (reference; student's order, teacher's token where student p < 0.8) | 49.0 | 93% | 52.9 | — |
 | | position + content @0.8 | <u>51.3</u> | 94% | 54.8 | 32/25, 0.43 (vs teacher 35/21, 0.08) |
 | | position only @0.8 | 38.7 | 76% | 51.1 | 24/55, 0.00 (vs student 36/30, 0.54) |
 | | unconditional random 13.5% (= rate 1 of @0.8) | 38.0 | 82% | 46.3 | 25/58, 0.00 (vs student 33/29, 0.70) |
 | | unconditional random 5.3% (= rate 1 of @0.6; vs @0.6 = 49.3) | 38.3 | 81% | 47.5 | 28/60, 0.00 (vs student 23/18, 0.53) |
-| M(.4,.6) ⇐ M(0,1) | content gate @0.8 (H200 rerun; θ sweep 0.6/0.8/0.9 = 45.3/47.7/47.3, all at finish 77%, precision 59–62) | 47.7 | 77% | 61.9 | — |
+| M(.4,.6) ⇐ M(0,1) | **student alone**: M(.4,.6) best merge (1×, B300) | 42.0 | 81% | 51.9 | 29/46, 0.06 |
+| | **teacher alone**: M(0,1) over merge (1×, B300) | 44.0 | 74% | 59.2 | 25/36, 0.20 |
+| | content gate @0.8 (reference; H200 rerun — θ sweep 0.6/0.8/0.9 = 45.3/47.7/47.3, all at finish 77%, precision 59–62) | 47.7 | 77% | 61.9 | — |
 | | position + content @0.8 | 44.0 | 72% | 61.4 | 30/41, 0.24 (vs teacher 15/15, 1.00 — identical to M(0,1) alone) |
 | | position only @0.8 | 43.0 | 77% | 56.1 | 31/45, 0.14 (vs student 31/28, 0.79) |
 | | unconditional random 23.9% (= rate 1 of @0.8) | 41.3 | 80% | 51.9 | 25/44, 0.03 (vs student 25/27, 0.89) |
