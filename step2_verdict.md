@@ -6,6 +6,9 @@
 > 3. Two 1× controls still unrun: noise injection (student samples ~5% of its own tokens at temperature) and student @2048 tokens — "does the +4 need a second model?"
 > 4. Lazy teacher call (teacher forward only on low-confidence steps) → identical outputs at ≈1.15× compute; implement before any cost claim.
 > 5. Pipeline with fixed rules for every hyperparameter (student, teacher line, teacher dose β, θ or f), then generalise to a second family (Dream-Coder/HumanEval or DreamReasoner/AIME) without re-tuning.
+>    **Main line (user, 2026-10-13): one of the two clean pairs, not M(.4,.6) ⇐ A(2.0)** (that one changes both lines at once and is kept only as the best number).
+>    Proposed: **Ins ⇐ A(β)** as the main line — the student is the official Instruct model (IFEval anchor, no A2D merge needed first), the pipeline has a single knob β past the addition peak, and it is the higher of the two (49.0 vs 47.7 on the last 300; 53.0 vs 50.0 on 500). Its gain must be reported split: ≈ +8 is the `\boxed` format the teacher brings, ≈ +4 is solving (`step0_setup_baselines.md` fact 2); the finish-rate mechanism is also the one self-RFT is most likely to reproduce, so the STEP3 control matters most here.
+>    **M(.4,.6) ⇐ M(0,1)** stays as the second line: the precision mechanism (52 → 62 on finished problems, finish rate unchanged) is token-level knowledge the student cannot get from its own samples, which is what the distillation control is designed to detect. Both are carried through STEP3; the distilled 1× model is read on finish rate and acc-on-finished separately to tell which behaviour it learned.
 > 6. STEP3 (distillation): distil the mixture's outputs into the student (sequence-level first, selective token weighting second); success = 1× ≥ 2× mixture on MATH and no IFEval loss.
 > 7. If the goal stays "beat AR": find a benchmark/family where diffusion is within reach of AR under *lenient* scoring; on MATH-500 with Dream-7B it is not (71 vs ≤ 55).
 
