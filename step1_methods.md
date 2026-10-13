@@ -101,7 +101,23 @@ Reading rules, fixed in advance: position+content ≈ content → order adds not
 content gate ≫ unconditional random → confidence knows where to ask (the earlier "random among disagreements" control did not test
 this: it was handed the disagreement positions for free and matched the token-changed count instead, see `tmp.md` 2026-10-12).
 
-AR-ness of the decode order (`technical_details/step1_arness.md` §3, 50 problems with recorded commit order): every arm is near left-to-right (Global@1 0.87–0.99), and position + content shifts the order statistics by ≤ 0.04 toward the teacher — the §2 accuracy differences are not order effects.
+**AR-ness of the decode order** (`technical_details/step1_arness.md` §3; ids 200–249 with the commit order recorded, texts identical to the main runs).
+Global@1 / Local@1 = DiffuCoder AR-ness over the full 1024-token canvas (share of commits that take the leftmost remaining mask / the position right after the previous one).
+
+| arm | Global@1 | Local@1 | Spearman | response len (tokens) |
+|---|---:|---:|---:|---:|
+| Ins alone | 0.988 | 0.970 | 1.000 | 305 |
+| A(2.0) alone | 0.941 | 0.897 | 1.000 | 295 |
+| Ins ⇐ A(2.0) content @0.8 | 0.967 | 0.934 | 1.000 | 509 |
+| Ins ⇐ A(2.0) position + content @0.8 | 0.957 | 0.932 | 1.000 | 535 |
+| M(.4,.6) alone | 0.871 | 0.855 | 0.999 | 260 |
+| M(0,1) alone | 0.934 | 0.892 | 1.000 | 300 |
+| M(.4,.6) ⇐ M(0,1) content @0.8 | 0.883 | 0.880 | 0.998 | 338 |
+| M(.4,.6) ⇐ M(0,1) position + content @0.8 | 0.924 | 0.886 | 1.000 | 257 |
+
+Every arm is near left-to-right. The merges are the *least* AR (M(.4,.6) 0.871, the model with the highest precision), Ins the most (0.988).
+The content gate keeps the student's order (M(.4,.6) ⇐ M(0,1) 0.883 ≈ 0.871); position + content moves it toward the teacher by ≤ 0.04
+(0.924 on the merge pair, where it also collapses to the teacher's accuracy). The §2 accuracy differences are therefore not order effects.
 
 Supporting decomposition (student M(.4,.6), teacher A(2.0), `technical_details/step1_dose_curve_mechanism.md`): the teacher's tokens raise the finish rate
 (81% → 89–95%), the student's remaining tokens keep the precision on finished problems (51.9 → 57.3; 100% teacher content collapses
