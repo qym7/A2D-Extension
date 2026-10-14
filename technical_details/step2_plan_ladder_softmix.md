@@ -88,3 +88,17 @@ is the student's own token at 2026 of them; the 22 changed tokens are exactly th
 student's token 137 times). So for the student+teacher mean the gate is a pure compute saver and B3 is redundant; B reduces to B1 @0.8.
 It also says what B1 will be: an effective token-change rate of ≈ 1 % (hard gate @0.8: ≈ 5 %), i.e. a much lower dose. Expectation: B1 lands
 between the student and the hard gate, and "soft beats hard" fails. Not yet run on the last 300 (user hold on submissions).
+
+## Results (2026-10-14, last 300, H200·0.51)
+| arm | acc | finish | acc on finished | rate 1 / rate 2 | vs Ins | vs A(2.0) | vs hard gate 49.0 |
+|---|---:|---:|---:|---|---|---|---|
+| B1 soft mix Ins+A(2.0) @0.8 | **46.3** | 87 % | 53.1 | 8.2 % / 1.32 % | 54/25, 0.00 | 39/40, 1.00 | 32/40, 0.41 |
+| A1 Ins ⇐ A(1.5) @0.8 | 48.3 | 95 % | 51.1 | 11.4 % / 3.24 % | 55/20, 0.00 | 40/35, 0.64 | 28/30, 0.90 |
+| A2 Ins ⇐ A(2.5) @0.8 | 47.0 | 92 % | 51.1 | 15.6 % / 6.60 % | 54/23, 0.00 | 33/32, 1.00 | 30/36, 0.54 |
+| extra: Ins ⇐ A(1.0) @0.8 (teacher not over) | 44.3 | 91 % | 48.9 | 9.7 % / 1.75 % | 48/25, 0.01 | — | 27/41, 0.11 |
+| A3 Ins ⇐ mean{A(1.5), A(2.0), A(2.5)} @0.8 | not run | | | | | | |
+
+Reading by the pre-registered rules:
+- **B — "soft beats hard" fails.** B1 = 46.3 vs hard gate 49.0 (32/40, p = 0.41): as the smoke predicted, averaging with the student lowers the dose (rate 2 1.3 % vs 5.0 %) and lands between the student and the hard gate, ≈ the teacher alone. Hard replacement stays. "Gate matters" was already answered by the smoke (B3 ≡ B1, the gate is a compute saver for the soft rule).
+- **A — not run; kill by prior.** The three single-teacher arms are a plateau (48.3 / 49.0 / 47.0, every pair p > 0.5), their correct sets overlap no more than two θ values of one arm, and the 3-way majority vote (48.3) equals a single arm (`step2_cascade_two_lines.md` §5). A mean of their distributions has nothing to add; the 4× run is not worth its cost.
+- **β rule for the pipeline**: on the Ins line the gain needs an *over* teacher — β = 1.0 (≈ best addition) gives 44.3, β ∈ [1.5, 2.5] gives 47–49, A(3.0) collapsed. Rate 2 grows monotonically with β (1.75 → 3.24 → 4.96 → 6.60 %) while accuracy is flat past 1.5, so the rule "smallest β past the accuracy peak of the line" (here 1.5) costs nothing and changes the fewest tokens.

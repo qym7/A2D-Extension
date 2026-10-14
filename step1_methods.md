@@ -33,7 +33,7 @@ online and the AR reference under lenient scoring is 71 (`technical_details/step
 | @0.8 | H200 | <u>59.0</u> | <u>49.0</u> | <u>53.0</u> | 13.5% | 4.96% | 93% | 52.9 | 62/25, 0.00 / 40/33, 0.48 | 106/40, 0.00 / 60/52, 0.51 |
 | @1.0 ≈ teacher alone (reference) | H200 | 58.5 | 46.7 | 51.4 |  |  | 94% | 49.5 |  |  |
 | **Ins ⇐ A(β) @0.8, β sweep (teacher dose; A(3.0) collapsed)** | | | | | | | | | | |
-| β = 1.0 | H200 | | (running) | | | | | | | |
+| β = 1.0 (teacher ≈ best addition, not over) | H200 | | 44.3 | | 9.7% | 1.75% | 91% | 48.9 | 48/25, 0.01 / vs Ins ⇐ A(2.0) @0.8: 27/41, 0.11 | |
 | β = 1.5 | H200 | | 48.3 | | 11.4% | 3.24% | 95% | 51.1 | 55/20, 0.00 / vs A(2.0): 40/35, 0.64 | |
 | β = 2.0 (= row @0.8 above) | H200 | | 49.0 | | 13.5% | 4.96% | 93% | 52.9 | 62/25, 0.00 / 40/33, 0.48 | |
 | β = 2.5 | H200 | | 47.0 | | 15.6% | 6.60% | 92% | 51.1 | 54/23, 0.00 / vs A(2.0): 33/32, 1.00 | |
@@ -60,6 +60,8 @@ online and the AR reference under lenient scoring is 71 (`technical_details/step
 | @0.4 | H200 | 46.5 |  |  | 0.8%‡ | 0.29%‡ |  |  |  |  |
 | @0.6 | H200 | 53.5 | <u>44.7</u> | <u>48.2</u> | 3.2% | 0.80% | 80% | 55.8 | 47/23, 0.01 / 35/27, 0.37 | 78/36, 0.00 / 55/47, 0.49 |
 | @0.8 | H200 | 52.0 | 41.7 | 45.8 | 6.3% | 0.98% | 79% | 52.7 | 39/24, 0.08 / 29/30, 1.00 | 73/43, 0.01 / 48/52, 0.76 |
+| **Ins ⇐ M(0,1)** (over merge as teacher for Ins; 2026-10-14) | | | | | | | | | | |
+| @0.8 | H200 | | 45.7 | | 8.5% | 2.37% | 76% | 59.8 | 55/28, 0.00 / 31/26, 0.60 | |
 | @1.0 ≈ teacher alone (reference) | B300 | 53.5 | 42.0 | 46.6 |  |  | 81% | 51.9 |  |  |
 
 Rate 1 = share of committed tokens at which the student's raw p < θ (handed to the teacher); Rate 2 = share of committed tokens where the teacher's token was written and differs from the student's. Computed on the last 300 unless marked ‡ (first 200 only) or § (9/30 run: all-500 summary, rate 1 not recorded). Random controls have rate 1 = 0 by construction.
@@ -78,6 +80,7 @@ the denoising order.* Three ablations isolate it, all at θ = 0.8, same steps tr
 | **position + content** (`both_gated`) | teacher picks the position **and** the token | does the teacher's order add anything on top of its content? |
 | **position only** (`schedule_gated`) | teacher picks the position, student writes the token | is the order alone worth anything? |
 | **unconditional random** (`content_random_uncond`, dose = gate's rate 1) | a random step takes the teacher's token, no confidence, no disagreement check | does confidence know *where* to ask? |
+| **soft mix** (`content_mean --with-student`) | at a low-confidence step the token is the argmax of the mean of student's and teacher's raw softmax (hard replacement → probability averaging) | is the method a 2-model probability ensemble? |
 
 | pair | arm (all gated arms: 2× decode, H200·0.51, last 300) | last 300 acc | finish rate | acc on finished | vs content gate @0.8 (win/loss, p) |
 |---|---|---:|---:|---:|---|
@@ -88,6 +91,7 @@ the denoising order.* Three ablations isolate it, all at θ = 0.8, same steps tr
 | | position only @0.8 | 38.7 | 76% | 51.1 | 24/55, 0.00 (vs student 36/30, 0.54) |
 | | unconditional random 13.5% (= rate 1 of @0.8) | 38.0 | 82% | 46.3 | 25/58, 0.00 (vs student 33/29, 0.70) |
 | | unconditional random 5.3% (= rate 1 of @0.6; vs @0.6 = 49.3) | 38.3 | 81% | 47.5 | 28/60, 0.00 (vs student 23/18, 0.53) |
+| | **soft mix @0.8** (`content_mean --with-student`: at a low-confidence step write argmax of (p_S + p_T)/2; rate 2 = 1.32%) | 46.3 | 87% | 53.1 | 32/40, 0.41 (vs student 54/25, 0.00; vs teacher 39/40, 1.00) |
 | M(.4,.6) ⇐ M(0,1) | **student alone**: M(.4,.6) best merge (1×, B300) | 42.0 | 81% | 51.9 | 29/46, 0.06 |
 | | **teacher alone**: M(0,1) over merge (1×, B300) | 44.0 | 74% | 59.2 | 25/36, 0.20 |
 | | content gate @0.8 (reference; H200 rerun — θ sweep 0.6/0.8/0.9 = 45.3/47.7/47.3, all at finish 77%, precision 59–62) | 47.7 | 77% | 61.9 | — |
