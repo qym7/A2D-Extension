@@ -119,7 +119,8 @@ STATS: dict = {"n_committed": 0, "n_differ": 0, "n_substituted": 0,
                "n_lowconf_differ": 0,          # driver raw p < theta AND differs
                "n_lowconf_differ_donor_more": 0,
                "n_steps_with_sub": 0,
-               "n_mean_lowconf": 0, "n_vote_differs": 0, "n_mean_eq_last_teacher": 0, "n_mean_eq_student": 0}   # content_mean diagnostics          # steps where >= 1 committed token came from the donor
+               "n_mean_lowconf": 0, "n_vote_differs": 0, "n_mean_eq_last_teacher": 0, "n_mean_eq_student": 0,   # content_mean diagnostics
+               "n_maxconf_lowconf": 0, "maxconf_wins": [], "n_maxconf_teachers_agree": 0, "n_teacher_calls": 0}   # content_maxconf (2026-10-14): wins[i] = steps teacher i was the most confident; teacher forwards are LAZY (only at low-confidence steps)          # steps where >= 1 committed token came from the donor
 START: int = 0                         # --start S: skip math500 ids < S (2026-10-12, user: run only the last 300); decode is argmax-deterministic, so ids >= S are identical to a full run
 OUTDIR: Path | None = None             # per-problem gate counts go to OUTDIR/gate_per_item.jsonl (2026-10-09)
 
@@ -154,11 +155,16 @@ def run_gated(driver, other, x, mask_id, *, mode, steps, eps, top_p, conf_temp, 
         if mask_index.sum() == 0:
             break
         global EXTRA_MODELS
-        if GATED_MODE == "content_mean" and EXTRA_OTHERS and EXTRA_MODELS is None:
+        if GATED_MODE in ("content_mean", "content_maxconf") and EXTRA_OTHERS and EXTRA_MODELS is None:
             from transformers import AutoModel
             EXTRA_MODELS = [AutoModel.from_pretrained(p, trust_remote_code=True, torch_dtype=torch.bfloat16).cuda().eval() for p in EXTRA_OTHERS]
         rawd = rawo = None; raws_extra = []; x0_extra = []
-        if GATED_MODE == "content_mean":
+        if GATED_MODE == "content_maxconf":
+            # lazy: the student decides the position AND whether a teacher is consulted; teachers are called below only if some
+            # committed position has raw p < theta. Cost = 1 + (rate 1) x (number of teachers) forwards per step.
+            x0d, ned, pd, dt, prd = LP.model_step(driver, x, mask_index, top_p, conf_temp)
+            x0o = x0d; pro = prd; po = pd; po_at_host = None
+        elif GATED_MODE == "content_mean":
             x0d, ned, pd, dt, prd, rawd = model_step_raw(driver, x, mask_index, top_p, conf_temp)
             x0o, neo, po, _, pro, rawo = model_step_raw(other, x, mask_index, top_p, conf_temp)
             for m_ in (EXTRA_MODELS or []):
@@ -167,7 +173,7 @@ def run_gated(driver, other, x, mask_id, *, mode, steps, eps, top_p, conf_temp, 
             po_at_host = None
         else:
             x0d, ned, pd, dt, prd = LP.model_step(driver, x, mask_index, top_p, conf_temp)
-        if GATED_MODE == "content_mean":
+        if GATED_MODE in ("content_mean", "content_maxconf"):
             pass
         elif GATED_MODE == "content_objection":
             x0o, neo, po, _, pro, po_at_host = model_step_ext(other, x, mask_index, top_p,
@@ -202,7 +208,7 @@ def run_gated(driver, other, x, mask_id, *, mode, steps, eps, top_p, conf_temp, 
         # --- which tokens
         xa = torch.zeros_like(x) + mask_id
         xa[mask_index] = x0d
-        if GATED_MODE in ("content_gated", "content_relgated", "content_objection", "content_random", "content_random_uncond", "both_gated", "content_mean"):
+        if GATED_MODE in ("content_gated", "content_relgated", "content_objection", "content_random", "content_random_uncond", "both_gated", "content_mean", "content_maxconf"):
             xo = torch.zeros_like(x) + mask_id
             xo[mask_index] = x0o
             for j in commit[0].tolist():
@@ -266,6 +272,27 @@ def run_gated(driver, other, x, mask_id, *, mode, steps, eps, top_p, conf_temp, 
                             STATS["n_mean_eq_last_teacher"] += 1
                         if tok == int(x0d[r]):
                             STATS["n_mean_eq_student"] += 1
+                        xo[0, j] = tok
+                        differ = tok != int(x0d[r])
+                elif GATED_MODE == "content_maxconf":
+                    # 2026-10-14 (user): several teachers (--other a,b,...); at a low-confidence step every teacher is run ONCE and the
+                    # token of the MOST CONFIDENT teacher (raw p of its own argmax at this position) is written. Selection, not averaging.
+                    do_sub = cd < theta
+                    if do_sub:
+                        teachers = [other] + list(EXTRA_MODELS or [])
+                        cands = []
+                        for m_ in teachers:
+                            x0e, _, _, _, pre_, _ = model_step_raw(m_, x, mask_index, top_p, conf_temp)
+                            cands.append((float(pre_[r]), int(x0e[r])))
+                            STATS["n_teacher_calls"] += 1
+                        w = max(range(len(cands)), key=lambda q: cands[q][0])
+                        if not STATS["maxconf_wins"]:
+                            STATS["maxconf_wins"] = [0] * len(teachers)
+                        STATS["maxconf_wins"][w] += 1
+                        STATS["n_maxconf_lowconf"] += 1
+                        if len({c[1] for c in cands}) == 1:
+                            STATS["n_maxconf_teachers_agree"] += 1
+                        tok = cands[w][1]
                         xo[0, j] = tok
                         differ = tok != int(x0d[r])
                 elif GATED_MODE == "content_random_uncond":
@@ -345,12 +372,12 @@ def main(argv=None):
     if "--mode" in argv:
         i = argv.index("--mode")
         if argv[i + 1] in ("content_gated", "content_relgated", "content_objection",
-                           "content_random", "content_random_uncond", "schedule_gated", "both_gated", "content_mean"):
+                           "content_random", "content_random_uncond", "schedule_gated", "both_gated", "content_mean", "content_maxconf"):
             GATED_MODE = argv[i + 1]
             # the original parser only knows content/schedule; both require --other, which is
             # exactly the validation we want, so map onto the corresponding base mode.
             argv[i + 1] = "schedule" if GATED_MODE == "schedule_gated" else "content"
-    if GATED_MODE in ("content_gated", "content_relgated", "schedule_gated", "both_gated", "content_mean") and THETA is None:
+    if GATED_MODE in ("content_gated", "content_relgated", "schedule_gated", "both_gated", "content_mean", "content_maxconf") and THETA is None:
         raise SystemExit("--theta is required with --mode content_gated/content_relgated/schedule_gated")
     if GATED_MODE == "content_objection" and TAU is None:
         raise SystemExit("--tau is required with --mode content_objection")
