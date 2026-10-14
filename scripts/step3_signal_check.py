@@ -111,7 +111,7 @@ def main():
     # ---- metrics
     agg = {}
     def bucket(cname, par):
-        key = f"{cname}:{par if cname == 'random' else 'all'}"
+        key = f"{cname}:{par}"
         return agg.setdefault(key, dict(n_masked=0, n_low=0, n_dec_low_masked=0, n_dec_low_hit=0, n_dec_sub_masked=0, n_dec_sub_hit=0,
                                         n_low_agree_A=0, n_low_agree_A20M01=0, n_low_agree_all=0, n_low_agree_A_eq_final=0,
                                         n_low_agree_A_eq_student=0, n_low_student_eq_final=0, n_low_A20_eq_final=0,
@@ -122,35 +122,40 @@ def main():
         dec_sub = {s["pos"][0] for s in rec["steps"] if s["p_driver_raw"][0] < a.theta and s["tok_driver"][0] != s["tok_other"][0]}
         p_at_step = {k: s["p_driver_raw"][0] for k, s in enumerate(rec["steps"])}
         for k, (cname, par, x, masked) in enumerate(corr[rec["id"]]):
-            b = bucket(cname, par)
             st, sc = preds[("student", rec["id"], k)]
-            tt = {n: preds[(n, rec["id"], k)][0] for n in tnames}
-            pos2row = {q: r for r, q in enumerate(masked)}
-            b["n_masked"] += len(masked)
-            b["conf"].extend(round(float(c), 3) for c in sc[:: max(1, len(masked) // 64)])
-            if cname == "suffix":
-                left = masked[0]; b["n_leftmost"] += 1
-                b["n_leftmost_match"] += abs(float(sc[pos2row[left]]) - p_at_step[par]) < 0.02 if order[par] == left else 0
-            for q in masked:
-                r = pos2row[q]; low = float(sc[r]) < a.theta
-                if q in dec_low:
-                    b["n_dec_low_masked"] += 1; b["n_dec_low_hit"] += low
-                if q in dec_sub:
-                    b["n_dec_sub_masked"] += 1; b["n_dec_sub_hit"] += low
-                if not low: continue
-                b["n_low"] += 1
-                final = (list(rec["prompt_ids"]) + list(rec["final_ids"]))[q]; s_tok = int(st[r])
-                A = [int(tt[n][r]) for n in tnames if n.startswith("A")]
-                a20 = int(tt["A2.0"][r]) if "A2.0" in tt else None
-                m01 = int(tt["M01"][r]) if "M01" in tt else None
-                agA = len(set(A)) == 1 if A else False
-                b["n_low_agree_A"] += agA
-                b["n_low_agree_A20M01"] += (a20 is not None and m01 is not None and a20 == m01)
-                b["n_low_agree_all"] += (agA and m01 is not None and A[0] == m01)
-                b["n_low_agree_A_eq_final"] += (agA and A[0] == final)
-                b["n_low_agree_A_eq_student"] += (agA and A[0] == s_tok)
-                b["n_low_student_eq_final"] += (s_tok == final)
-                b["n_low_A20_eq_final"] += (a20 == final)
+            # suffix states are scored in frontier buckets: the first 1 / 4 / 16 masked positions and all of them (2026-10-14 rerun:
+            # pooled over all masks the far-right positions dominate, which the gate never looks at)
+            buckets = [bucket(cname, par)] if cname == "random" else [bucket("suffix", f"first{K}") for K in (1, 4, 16, 10**6)]
+            for b, K in zip(buckets, ([None] if cname == "random" else [1, 4, 16, 10**6])):
+              masked_b = masked if K is None else masked[:K]
+              if cname == "suffix" and K == 10**6: masked_b = masked
+              tt = {n: preds[(n, rec["id"], k)][0] for n in tnames}
+              pos2row = {q: r for r, q in enumerate(masked)}
+              b["n_masked"] += len(masked_b)
+              b["conf"].extend(round(float(sc[pos2row[q]]), 3) for q in masked_b[:: max(1, len(masked_b) // 64)])
+              if cname == "suffix" and order[par] == masked[0]:   # determinism: only where the decoder committed the leftmost mask
+                  left = masked[0]; b["n_leftmost"] += 1
+                  b["n_leftmost_match"] += abs(float(sc[pos2row[left]]) - p_at_step[par]) < 0.02
+              for q in masked_b:
+                  r = pos2row[q]; low = float(sc[r]) < a.theta
+                  if q in dec_low:
+                      b["n_dec_low_masked"] += 1; b["n_dec_low_hit"] += low
+                  if q in dec_sub:
+                      b["n_dec_sub_masked"] += 1; b["n_dec_sub_hit"] += low
+                  if not low: continue
+                  b["n_low"] += 1
+                  final = (list(rec["prompt_ids"]) + list(rec["final_ids"]))[q]; s_tok = int(st[r])
+                  A = [int(tt[n][r]) for n in tnames if n.startswith("A")]
+                  a20 = int(tt["A2.0"][r]) if "A2.0" in tt else None
+                  m01 = int(tt["M01"][r]) if "M01" in tt else None
+                  agA = len(set(A)) == 1 if A else False
+                  b["n_low_agree_A"] += agA
+                  b["n_low_agree_A20M01"] += (a20 is not None and m01 is not None and a20 == m01)
+                  b["n_low_agree_all"] += (agA and m01 is not None and A[0] == m01)
+                  b["n_low_agree_A_eq_final"] += (agA and A[0] == final)
+                  b["n_low_agree_A_eq_student"] += (agA and A[0] == s_tok)
+                  b["n_low_student_eq_final"] += (s_tok == final)
+                  b["n_low_A20_eq_final"] += (a20 == final)
     # ---- summary
     rows = []
     for key, b in agg.items():
