@@ -78,3 +78,24 @@ Cascades (first system's answer if it has `\boxed`, else the second's):
 | Ins ⇐ A(2.0) @0.8 → Ins ⇐ M(.4,.6) @0.6 | 50.3 | 22 | ≈ 2.1× |
 
 Reading: the order matters — the merge-line system must go first, because its failure mode (no `\boxed`, truncation) is the detectable one, and the addition-line gate finishes 93 % of the time, so it is the right fallback. The over merge *alone* as the first stage already gives +4 over the single gate at 1.5× total cost; its 77 truncations are exactly the problems handed to the gate. **Measured 2026-10-14: Ins ⇐ M(0,1) @0.8 = 45.7** (finish 76 %, precision 59.8, rate 1 8.5 %, rate 2 2.37 %; vs Ins 55/28 p=0.00; vs M(0,1) alone 31/26 p=0.60; vs Ins ⇐ A(2.0) @0.8 35/45 p=0.31). As first stage → Ins ⇐ A(2.0) @0.8: **52.7** (71 fallbacks, ≈ 2.5×) — no better than M(0,1) alone as first stage (53.0 at 1.5×). So the merge-line gate gives Ins nothing beyond the over merge itself (it inherits the over merge's precision 59.8 ≈ 59.2 and its finish rate 76 % ≈ 74 %), and the cheap cascade stays **M(0,1) alone → Ins ⇐ A(2.0) @0.8**.
+
+## 7. Token-level use of the two lines: most-confident-teacher selection (2026-10-14, last 300)
+User's proposal: student Ins, teachers A(2.0) and M(0,1); at a low-confidence step (c_S < 0.8) both teachers are run once and the
+token of the more confident one is written (`content_maxconf`; teacher forwards only at those steps, so the cost is 1 + rate 1 × 2 ≈ 1.18×).
+
+| | acc | finish | acc on finished | rate 1 / rate 2 |
+|---|---:|---:|---:|---|
+| Ins ⇐ {A(2.0), M(0,1)} most-confident @0.8 | **48.7** | 88 % | 55.5 | 9.3 % / 2.70 % |
+| Ins ⇐ A(2.0) @0.8 (one teacher) | 49.0 | 93 % | 52.9 | 13.5 % / 4.96 % |
+| cascade M(0,1) alone → Ins ⇐ A(2.0) @0.8 (§6) | 53.0 | | | 1.5× |
+
+Paired: vs Ins 61/25 (p = 0.00); vs A(2.0) 38/32 (0.55); vs M(0,1) 40/26 (0.11); **vs the single-teacher gate 33/34 (p = 1.00)**.
+Winner shares: M(0,1) 61 %, A(2.0) 39 % of the 28k low-confidence steps; the two teachers agree on 67 % of them. As the fallback of the
+M(0,1) cascade it gives 52.7 (vs 53.0 with the single-teacher gate).
+
+Reading (pre-registered rule: kill if 47–50 or one teacher wins > 90 %): **kill on accuracy, 48.7 ≡ the single teacher**, although
+the selection itself is real (neither teacher dominates, a third of the consulted steps are genuine choices). The finish rate (88 %)
+and precision (55.5) land between the two teachers' (93/52.9 and 76/59.8): the rule mixes the two lines' failure modes instead of
+combining their strengths. Together with §5 (same-line vote), §6 (merge-line gate for Ins) and the soft mix, every token-level way of
+using a second teacher has now matched a single teacher. The two lines' complementarity is at the answer level (who finishes),
+and only the cascade cashes it.

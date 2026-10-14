@@ -81,6 +81,7 @@ the denoising order.* Three ablations isolate it, all at θ = 0.8, same steps tr
 | **position only** (`schedule_gated`) | teacher picks the position, student writes the token | is the order alone worth anything? |
 | **unconditional random** (`content_random_uncond`, dose = gate's rate 1) | a random step takes the teacher's token, no confidence, no disagreement check | does confidence know *where* to ask? |
 | **soft mix** (`content_mean --with-student`) | at a low-confidence step the token is the argmax of the mean of student's and teacher's raw softmax (hard replacement → probability averaging) | is the method a 2-model probability ensemble? |
+| **two teachers, most confident wins** (`content_maxconf`, teachers A(2.0) + M(0,1), lazy teacher calls) | at a low-confidence step both teachers are run once and the token of the more confident one is written | is there token-level complementary information across the two lines? |
 
 | pair | arm (all gated arms: 2× decode, H200·0.51, last 300) | last 300 acc | finish rate | acc on finished | vs content gate @0.8 (win/loss, p) |
 |---|---|---:|---:|---:|---|
@@ -92,6 +93,7 @@ the denoising order.* Three ablations isolate it, all at θ = 0.8, same steps tr
 | | unconditional random 13.5% (= rate 1 of @0.8) | 38.0 | 82% | 46.3 | 25/58, 0.00 (vs student 33/29, 0.70) |
 | | unconditional random 5.3% (= rate 1 of @0.6; vs @0.6 = 49.3) | 38.3 | 81% | 47.5 | 28/60, 0.00 (vs student 23/18, 0.53) |
 | | **soft mix @0.8** (`content_mean --with-student`: at a low-confidence step write argmax of (p_S + p_T)/2; rate 2 = 1.32%) | 46.3 | 87% | 53.1 | 32/40, 0.41 (vs student 54/25, 0.00; vs teacher 39/40, 1.00) |
+| | **Ins ⇐ {A(2.0), M(0,1)} most-confident @0.8** (2026-10-14; rate 1 9.3%, rate 2 2.70%; winner A(2.0) 39% / M(0,1) 61%, teachers agree 67%; cost 1.18× with lazy teacher calls) | 48.7 | 88% | 55.5 | 33/34, 1.00 (vs student 61/25, 0.00; vs A(2.0) 38/32, 0.55; vs M(0,1) 40/26, 0.11) |
 | M(.4,.6) ⇐ M(0,1) | **student alone**: M(.4,.6) best merge (1×, B300) | 42.0 | 81% | 51.9 | 29/46, 0.06 |
 | | **teacher alone**: M(0,1) over merge (1×, B300) | 44.0 | 74% | 59.2 | 25/36, 0.20 |
 | | content gate @0.8 (reference; H200 rerun — θ sweep 0.6/0.8/0.9 = 45.3/47.7/47.3, all at finish 77%, precision 59–62) | 47.7 | 77% | 61.9 | — |
