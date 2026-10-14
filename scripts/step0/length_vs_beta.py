@@ -13,7 +13,7 @@ class st:
     mean = staticmethod(lambda v: None if v is None else _st.mean(v))
 
 
-FIGS = Path(__file__).resolve().parents[1] / "technical_details" / "figs"
+FIGS = Path(__file__).resolve().parents[2] / "technical_details" / "figs"
 S = json.loads((FIGS / "sweeps_file_map.json").read_text())
 OE = "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/official_eval/"
 

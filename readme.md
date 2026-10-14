@@ -17,7 +17,7 @@ Everything else is in `technical_details/`, prefixed by the step it supports (`s
 | `step0_*` | baseline runner (`step0_run_lockstep_m500.sh`, `step0_submit_s0.sh`), headroom / AR-help figures, DreamReasoner analyses, subset-reliability checks |
 | `step1_*` | the gated decoder `step1_lockstep_gated.py` (modes: content_gated, schedule_gated, both_gated, content_random, content_random_uncond), `step1_merge_shards.py` (sharded runs → `*-merged`), `step1_main_table.py` (→ `technical_details/step1_main_table.md`), votes, dose/finish decompositions |
 
-Job submitters shared across ideas live one level up in `../modules/` (`run_gated_shard*.sh`, `submit.sh`); they call `details/draft_scripts/lockstep_gated.py`, which is a symlink to `scripts/step1_lockstep_gated.py`.
+Job submitters shared across ideas live one level up in `../modules/` (`run_gated_shard*.sh`, `submit.sh`); they call `details/draft_scripts/lockstep_gated.py`, which is a symlink to `scripts/step1/lockstep_gated.py`.
 `spec.md` / `task.md` / `analysis.md` are the working documents.
 Raw outputs (`outputs/`, `details/logs/`, `results/`), checkpoints and `trash/` are not tracked.
 

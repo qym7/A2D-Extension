@@ -15,7 +15,7 @@ from matplotlib.patches import Rectangle, FancyArrowPatch
 
 plt.rcParams.update({"font.family": "serif", "font.serif": ["Times New Roman", "STIXGeneral", "DejaVu Serif"],
                      "mathtext.fontset": "stix", "font.size": 10, "axes.titlesize": 10.5, "svg.fonttype": "none"})
-OUT = Path(__file__).resolve().parents[1] / "technical_details" / "step0_figs"
+OUT = Path(__file__).resolve().parents[2] / "technical_details" / "step0_figs"
 OUT.mkdir(parents=True, exist_ok=True)
 
 # --- data (MATH-500, all 500) ---

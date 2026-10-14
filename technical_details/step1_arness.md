@@ -40,7 +40,7 @@ position to the teacher mostly re-picks the same next position. That is consiste
 position + content ≈ content. The gate is best described as *near-AR diffusion decoding where the teacher supplies the token at the
 student's uncertain steps*, not as a change of order.
 
-## 3. Direct measurement (2026-10-13, ids 200–249, `scripts/step1_arness_from_records.py`, H200·0.51, `--record` runs)
+## 3. Direct measurement (2026-10-13, ids 200–249, `scripts/step1/arness_from_records.py`, H200·0.51, `--record` runs)
 Definitions checked against DiffuCoder §4.1 / App. A.2 (arXiv:2506.20639v2): **Global AR-ness@k** = share of decoding steps whose unmasked
 position is among the k earliest remaining masks; **Local AR-ness@k** = share of steps where the new token and the k previously predicted
 tokens form a strictly consecutive span. The paper averages over every step of the fixed-length canvas (512 there, 1024 here), i.e. including

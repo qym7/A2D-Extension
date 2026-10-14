@@ -15,7 +15,7 @@ from matplotlib.patches import Rectangle
 
 plt.rcParams.update({"font.family": "serif", "font.serif": ["Times New Roman", "STIXGeneral", "DejaVu Serif"],
                      "mathtext.fontset": "stix", "font.size": 10, "svg.fonttype": "none"})
-OUT = Path(__file__).resolve().parents[1] / "technical_details" / "step0_figs"
+OUT = Path(__file__).resolve().parents[2] / "technical_details" / "step0_figs"
 
 # --- a–c: addition line, MATH-500 last 300 ---
 BETA = [0.0, 2.0, 3.0]

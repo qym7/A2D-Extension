@@ -3,7 +3,7 @@ Originals are untouched. Shards were produced by run_gated_shard*.sh (2026-10-12
 an id's result does not depend on which shard produced it."""
 import glob, json, sys
 from pathlib import Path
-L = Path(__file__).resolve().parents[1] / "details" / "logs"
+L = Path(__file__).resolve().parents[2] / "details" / "logs"
 ARMS = {  # merged dir : glob of source dirs
  "lockstep1024/math500/add30-free-merged": "lockstep1024/math500/add30-free-last300*",
  "lockstep1024/math500/add30-free-merged": "lockstep1024/math500/add30-free-[ls]*",

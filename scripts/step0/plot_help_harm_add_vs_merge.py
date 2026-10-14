@@ -10,7 +10,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-FIGS = Path(__file__).resolve().parents[1] / "technical_details" / "figs"
+FIGS = Path(__file__).resolve().parents[2] / "technical_details" / "figs"
 data = json.loads((FIGS / "help_harm_add_vs_merge.json").read_text())
 
 INK, INK2, MUTED, GRID, BASE = "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7"

@@ -84,12 +84,12 @@ Reading rules, fixed now:
   framing is dropped (user already accepts "reasoning toward AR, no regression elsewhere" as the realistic goal).
 
 ## 5. Implementation
-- Trainer: Dream's official `fsdp_sft_trainer.py` (Ke Wang's checkout `external/Dream`, read-only; copy into `scripts/step3_train/`).
+- Trainer: Dream's official `fsdp_sft_trainer.py` (Ke Wang's checkout `external/Dream`, read-only; copy into `scripts/step3/train/`).
   It already has `q_sample`, LoRA via peft (`model.lora_rank`), grad-ckpt, FSDP. Changes: (i) replace `q_sample` by the suffix cut
   (+ random-mask path for C4), (ii) a frozen teacher model loaded next to the student (bf16, no grad; 2 × 15 GB + LoRA activations fit a
   0.51 H200 at micro-batch 2), (iii) the loss in §2 with the frontier/θ mask, (iv) log |S| per state, mean KL, share of states with S = ∅.
 - Rollout generation: one script on the standard sampler, records per prompt the canvas and the per-step confidence (for the "interesting
-  cut" sampling) — `scripts/step3_rollout.py`; output `outputs/step3/rollouts/<split>.jsonl`.
+  cut" sampling) — `scripts/step3/rollout.py`; output `outputs/step3/rollouts/<split>.jsonl`.
 - Smokes before any arm: (a) 200-state CPU/GPU check that S recovers the prelim's rates (mean |S| ≈ 2 of 4, ≈ 55 % of states with S ≠ ∅);
   (b) 20-step training smoke, loss decreasing, LoRA merge → 20-problem MATH decode not degenerate.
 - Checkpoints: `outputs/checkpoints/step3-<arm>` (LoRA merged into bf16 weights, so every eval harness loads them like any Dream checkpoint).

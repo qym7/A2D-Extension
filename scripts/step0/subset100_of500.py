@@ -3,7 +3,7 @@ subset reproduce the full-500 ranking? Reports (a) one fixed subset (seed 0) sid
 P(pairwise order preserved) binned by the full-500 gap. Writes details/subset50/subset100_of500_ids.json + check_500.md."""
 import json, random, itertools
 from pathlib import Path
-L = Path(__file__).resolve().parents[1] / "details" / "logs"; OUT = Path(__file__).resolve().parents[1] / "technical_details/subset_checks"
+L = Path(__file__).resolve().parents[2] / "details" / "logs"; OUT = Path(__file__).resolve().parents[2] / "technical_details/subset_checks"
 def T(p): return {r["id"]: r["ok"] for r in map(json.loads, open(L / p / "texts.jsonl"))}
 S = {"Ins": T("lockstep1024/math500/parent-free"), "M(.4,.6)": T("lockstep1024/math500/merge-free"), "M(0,1)": T("lockstep1024/math500/l10-free"),
      "A(2.0)": T("lockstep1024/math500/add20-free"),

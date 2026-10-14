@@ -163,7 +163,7 @@ idea 1 的 30 多个 gate arm（`SUMMARY.md` 结果 1、结果 2）**全部**是
 
 ## 7. 预注册的实验（MATH-500 @512，0.5 H200，6 个 arm）
 
-仪器已有：`scripts/step1_lockstep_gated.py`。需要加一个 mode（gate 在 **donor 自己的**
+仪器已有：`scripts/step1/lockstep_gated.py`。需要加一个 mode（gate 在 **donor 自己的**
 `praw` 上，不是 driver 的；`model_step_ext` 已经能返回所需量）。
 
 | arm | host | donor | gate | 作用 |

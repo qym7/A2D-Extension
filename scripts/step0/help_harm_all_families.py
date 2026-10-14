@@ -11,7 +11,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-FIGS = Path(__file__).resolve().parents[1] / "technical_details" / "figs"
+FIGS = Path(__file__).resolve().parents[2] / "technical_details" / "figs"
 DS = "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/"
 OE = DS + "step2_instruct/outputs/official_eval/"
 EP = DS + "dream_coder_official_eval/instruct/code_eval/evalplus/evalplus_official/humaneval/"

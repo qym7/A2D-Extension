@@ -7,7 +7,7 @@ import json, sys, statistics as st
 from collections import Counter
 from pathlib import Path
 import numpy as np
-I1 = Path(__file__).resolve().parents[1]; L = I1 / "details/logs"
+I1 = Path(__file__).resolve().parents[2]; L = I1 / "details/logs"
 sys.path.insert(0, "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/scripts")
 from arness_metrics import global_arness_at_k, local_arness_at_k
 ARMS = {  # arm: (record dir, earlier run dir for the determinism check)

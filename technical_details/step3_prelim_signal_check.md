@@ -41,7 +41,7 @@ Models: student Ins; teachers A(1.5), A(2.0), A(2.5), M(0,1) — loaded one at a
   (A(1.5) or A(2.0)) is the target.
 - **student_eq_final** is a measure of how much of the low-confidence set the gate actually changes (should be ≈ 1 − rate 2 / rate 1 ≈ 0.63 at the suffix states).
 
-Script: `scripts/step3_signal_check.py`; runner `modules/run_step3_signal.sh`; output `details/logs/step3_signal_check/signal_check.json`.
+Script: `scripts/step3/signal_check.py`; runner `modules/run_step3_signal.sh`; output `details/logs/step3_signal_check/signal_check.json`.
 Cost: 50 × 13 corrupted inputs × 5 models = 3 250 forwards ≈ 15 min on H200·0.51 plus 5 model loads.
 
 ## Results (2026-10-14, 50 problems ids 200–249, θ = 0.8; `details/logs/step3_signal_check_v2/signal_check.json`)
