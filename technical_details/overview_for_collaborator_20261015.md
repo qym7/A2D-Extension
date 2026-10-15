@@ -21,7 +21,7 @@ step (lockstep @1024, argmax); where its raw token probability is below θ, teac
 - Code: `scripts/step1/lockstep_gated.py`, `lockstep_gated_v2.py` (the decoder: modes content_gated / both / schedule / random controls /
   content_mean / content_maxconf), `merge_shards.py`, `main_table.py`, arness/EOS/vote analyses. Runners in `../modules/run_gated_shard*.sh`.
 
-## STEP2 — what multi-model use survives (`step2_verdict.md`, `technical_details/step2_*.md`)
+## STEP2 — multi-model / logit-space exploration → the distillation design (`step2_verdict.md`, `technical_details/step2_*.md`)
 - β sweep on Ins ⇐ A(β) @0.8: 1.0 → 44.3, 1.5 → 48.3, 2.0 → 49.0, 2.5 → 47.0: the teacher must be *over* the peak; plateau from 1.5; rule = smallest β past the peak.
 - **Every token-level way of using a second teacher equals a single teacher**: soft mixing (46.3), teacher mean (killed by prior), most-confident of
   {A(2.0), M(0,1)} (48.7), majority vote of three β arms (48.3 = single). Their correct sets overlap like two θ values of one arm (Jaccard 0.63–0.67).
@@ -29,7 +29,7 @@ step (lockstep @1024, argmax); where its raw token probability is below θ, teac
 - AR vs diffusion: AR holds the ceiling (lenient 70.7); AR-wrong & diffusion-right is 23 real problems; an AR-first cascade (66.7–68.3) < AR alone.
   Conclusion: no inference-time combination in this family beats AR on MATH; the value of the line is to fold the gate's +12 (Ins → 48–49) into a 1× model.
 
-## STEP3 — training (in progress; `technical_details/step3_plan_frontier_kd.md`, `step3_prelim_signal_check.md`, `pipeline/`)
+## STEP3 — distillation training (in progress; `technical_details/step3_plan_frontier_kd.md`, `step3_prelim_signal_check.md`, `pipeline/`)
 - Prelim (50 problems): under *random masking* (standard dLLM SFT corruption) only 11–19 % of the gate's positions are low-confidence again
   (right context leaks). Under a *prefix-visible / suffix-masked* state, the leftmost mask reproduces 96–98 % of the gate's decisions with 0.87
   precision; three A(β) teachers agree there 77 % of the time and the agreed token is the gate's token 90 %.
