@@ -4,9 +4,8 @@ n_prompts: 17000          # outputs/step3/prompts.jsonl (Tulu-3 8k incl. its mat
 rollout_shards: 4
 rollout_batch: 4
 
-# student init (user 2026-10-15): the official Ins with teacher A(2.0) is the main line (gate 36.7 -> 49.0; A(2.0) = A(1.5) within noise, one teacher ckpt for all arms);
-# m46 = best merge M(.4,.6) (gate 42.0 -> 51.0) is the second-init arm. Arms inherit `student` unless they set their own.
-student: ins
+# student init (plan §2): ins = Dream-org/Dream-v0-Instruct-7B (teacher A(1.5)); m46 = best merge M(.4,.6) (teacher A(2.0)). Arms inherit `student` unless they set their own.
+student: m46
 students:
   ins: Dream-org/Dream-v0-Instruct-7B
   m46: /mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/checkpoints/dream-ins-04a_D-06a_A
@@ -16,9 +15,9 @@ train_args: "--corruption replay --anchor self --lambda-anchor 0.3 --low-frames 
 
 # arms: teacher = beta on the addition line A(beta) = D_b + tau_D + beta*tau_A (null = no teacher). extra = arm-specific train args; student overrides the global init.
 arms:
-  M:  {teacher: 2.0}                        # Ins <= A(2.0): unsure -> teacher, sure -> anchor to untouched student   (the method)
+  M:  {teacher: 2.0}                        # gate distillation: unsure -> teacher, sure -> anchor to untouched student   (the method)
   M06: {teacher: 2.0, extra: "--theta 0.6"} # less teacher: theta 0.6 (gate @0.6 ~= @0.8 in accuracy with half the hand-overs)
-  Mm: {teacher: 2.0, student: m46}          # same as M, from the best merge M(.4,.6) (higher start, 51.0 gate ceiling; needs its own rollouts)
+  Mi: {teacher: 1.5, student: ins}          # same as M, from the official Instruct model
   Msch: {teacher: 2.0, extra: "--theta-end 0.5"}   # threshold decays 0.8 -> 0.5 over training: distil less and less (user idea)
   C2: {teacher: null}                       # self-SFT on the rollout token         (is the teacher needed)
   C1: {teacher: 2.0, extra: "--anchor none"}   # every NEXT position -> teacher, no split      (is selection needed)
