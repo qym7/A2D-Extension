@@ -12,8 +12,8 @@ def save_merged(model, tok, base, out):
     from transformers.utils.hub import cached_file
     src_dir = Path(cached_file(base, "config.json")).parent
     gc = model.generation_config
-    if gc is not None:
-        gc.validate = lambda *a, **k: None          # DreamGenerationConfig.validate(is_init) vs transformers' validate(strict=True)
+    if gc is not None:                              # DreamGenerationConfig.validate(is_init) vs transformers' validate(strict=True):
+        type(gc).validate = lambda self, *a, **k: None   # patch the CLASS (an instance attribute would be serialised into the json and crash)
     model.save_pretrained(out, safe_serialization=True)
     tok.save_pretrained(out)
     for f in list(src_dir.glob("*.py")) + [src_dir / "generation_config.json"]:
