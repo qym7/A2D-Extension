@@ -14,8 +14,9 @@ Arms (plan §3): M = the above; C1 = no theta split (every NEXT position -> teac
 teacher); C3 = non-over teacher; C4 = random-mask corruption; C5 = forward KL; `--anchor none|self|ce` selects what the sure positions get.
 Dream logit convention: the token at position p is predicted from hidden p-1 (shift as in code/step3/signal_check.py).
 Writes <out>/lora (adapter), <out>/merged (bf16 full checkpoint loadable by every eval harness), <out>/train_log.jsonl."""
-import argparse, json, random, time, shutil, math
+import argparse, json, random, time, math, sys
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent))
 import torch, torch.nn.functional as F
 from transformers import AutoModel, AutoTokenizer
 
@@ -231,7 +232,7 @@ def main():
                 logp_s = F.log_softmax(ls, -1)
                 gold = torch.tensor(recs[i]["prompt_ids"] + recs[i]["resp_ids"], device="cuda")[pos]
                 ce = F.nll_loss(logp_s, gold)
-                acc["n_pos"] += len(pos); acc["ce"] += float(ce)
+                acc["n_pos"] += len(pos); acc["ce"] += float(ce.detach())
                 if arm["target"] == "ce":
                     loss = loss + ce; continue
                 conf_s = logp_s.detach().exp().max(-1).values           # raw T=1 confidence = the gate's signal
@@ -269,14 +270,8 @@ def main():
         if done:
             break
     student.save_pretrained(out / "lora")
-    merged = student.merge_and_unload()
-    merged.save_pretrained(out / "merged", safe_serialization=True)
-    tok.save_pretrained(out / "merged")
-    # Dream's remote code: copy the modeling/config python files next to the weights so trust_remote_code loads from the merged dir
-    from transformers.utils.hub import cached_file
-    src_dir = Path(cached_file(a.student, "config.json")).parent
-    for f in src_dir.glob("*.py"):
-        shutil.copy(f, out / "merged" / f.name)
+    from merge_lora import save_merged
+    save_merged(student.merge_and_unload(), tok, a.student, out / "merged")
     json.dump(vars(a), open(out / "args.json", "w"), indent=1)
     print(f"[done] {step} steps in {(time.time() - t0) / 3600:.2f} h -> {out / 'merged'}", flush=True)
 
