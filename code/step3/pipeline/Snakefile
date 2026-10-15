@@ -28,11 +28,14 @@ def teacher_ckpt(arm):
     b = ARMS[arm]["teacher"]
     return "none" if b is None else f"{CK}/add-a10-b{int(round(b * 10)):02d}"
 
+def student_name(arm):
+    return ARMS[arm].get("student", config["student"])
+
 def student_ckpt(arm):
-    return config["students"][ARMS[arm].get("student", config["student"])]
+    return config["students"][student_name(arm)]
 
 wildcard_constraints:
-    arm="|".join(ARMS), i="[0-9]+", s="[0-9]"
+    arm="|".join(ARMS), i="[0-9]+", s="[0-9]", st="|".join(config["students"])
 
 rule all:
     input: f"{I1}/technical_details/step3_results_table.md"
@@ -46,16 +49,18 @@ rule prompts:
     shell: "export PYTHONPATH=; systemd-run --user --scope -p MemoryMax=4G -p MemorySwapMax=0 -q "
            "bash -c 'source {MOD}/jobenv.sh mdlm-math-b300 && python {I1}/code/step3/build_prompts.py --out {output}'"
 
+# on-policy: every student init decodes the prompts itself (rollouts/<student>/); an arm trains on its own student's rollouts only
 rule rollout_shard:
     input: f"{OUT}/prompts.jsonl"
-    output: f"{OUT}/rollouts/s{{i}}/rollouts.jsonl"
-    params: start=lambda w: int(w.i) * SHARD, end=lambda w: min(N_PROMPTS, (int(w.i) + 1) * SHARD), batch=config["rollout_batch"]
-    shell: "{SW} yqin-i1-s3roll-{wildcards.i}-{TAG}-h200f051 {output} "
-           "bash {MOD}/run_step3_rollout.sh {OUT}/rollouts/s{wildcards.i} {params.start} {params.end} {params.batch}"
+    output: f"{OUT}/rollouts/{{st}}/s{{i}}/rollouts.jsonl"
+    params: start=lambda w: int(w.i) * SHARD, end=lambda w: min(N_PROMPTS, (int(w.i) + 1) * SHARD), batch=config["rollout_batch"],
+            model=lambda w: config["students"][w.st]
+    shell: "{SW} yqin-i1-s3roll-{wildcards.st}-{wildcards.i}-{TAG}-h200f051 {output} "
+           "bash {MOD}/run_step3_rollout.sh {OUT}/rollouts/{wildcards.st}/s{wildcards.i} {params.start} {params.end} {params.batch} {params.model}"
 
 rule rollouts_merged:
-    input: expand(f"{OUT}/rollouts/s{{i}}/rollouts.jsonl", i=range(N_SHARDS))
-    output: f"{OUT}/rollouts/all.jsonl"
+    input: expand(f"{OUT}/rollouts/{{{{st}}}}/s{{i}}/rollouts.jsonl", i=range(N_SHARDS))
+    output: f"{OUT}/rollouts/{{st}}/all.jsonl"
     shell: "cat {input} > {output} && wc -l {output}"
 
 # ---------- teachers (addition line A(beta) = D_b + tau_D + beta*tau_A; built once, flock-serialised inside the runner) ----------
@@ -68,12 +73,12 @@ rule teacher:
 # ---------- training ----------
 rule train:   # C4 = ARMS[arm].extra carries --corruption random; C1 drops the anchor; the runner only maps arm -> trainer flags listed in config
     input:
-        roll=f"{OUT}/rollouts/all.jsonl",
+        roll=lambda w: f"{OUT}/rollouts/{student_name(w.arm)}/all.jsonl",
         teacher=lambda w: [] if ARMS[w.arm]["teacher"] is None else f"{teacher_ckpt(w.arm)}/merge_manifest.json"
     output: f"{CK}/step3-{{arm}}/merged/config.json"
     params: teacher=lambda w: teacher_ckpt(w.arm), student=lambda w: student_ckpt(w.arm), extra=lambda w: ARMS[w.arm].get("extra", ""), common=config["train_args"]
     shell: "{SW} yqin-i1-s3train-{wildcards.arm}-{TAG}-h200f051 {output} "
-           "bash {MOD}/run_step3_train.sh {wildcards.arm} {CK}/step3-{wildcards.arm} {params.teacher} {params.student} {params.common} {params.extra}"
+           "bash {MOD}/run_step3_train.sh {wildcards.arm} {CK}/step3-{wildcards.arm} {params.teacher} {params.student} {input.roll} {params.common} {params.extra}"
 
 # ---------- MATH-500 last 300, lockstep @1024, student alone (1x), 3 shards ----------
 rule eval_math_shard:

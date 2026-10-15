@@ -1,6 +1,6 @@
 # Idea 1 — TASK (current gate and next actions; updated 2026-10-15)
 
-**Current gate:** STEP3 smoke jobs — not yet submitted (user approval needed for every job).
+**Current gate:** STEP3 rollout smoke running (2026-10-15); training smoke next. Formulation: `technical_details/step3_training_formulation.md`.
 
 ## Where things stand
 - STEP0–2 closed: gate established and explained (`step1_methods.md`); decode-time multi-model work closed (`step2_verdict.md`).
@@ -8,7 +8,7 @@
 - Prompt set built: `outputs/step3/prompts.jsonl` (17 k).
 
 ## Next actions, in order
-1. Rollout smoke: 50 prompts, batch 4, H200·0.51 (`modules/run_step3_rollout.sh`) — checks batched left-padded decoding, gives s/prompt.
+1. Rollout smoke: SUBMITTED 2026-10-15 (`yqin-i1-s3roll-smoke-m46-h200f051`, student M(.4,.6), prompts 0–49, batch 4) — checks batched left-padded decoding, gives s/prompt.
 2. Training smoke: arm M, `--max-steps 20 --n-canvases 200` — loss decreasing, `sel_rate` ≈ 0.5, merged checkpoint decodes 20 MATH problems.
 3. `snakemake first_wave` (M + C2, MATH last 300 only; ≈ 75 GPU·h).
 4. Read by the rules in `technical_details/step3_plan_frontier_kd.md` §4; enable guards (`guard_arms`) for arms that clear the MATH bar; then C1/C3/C4.

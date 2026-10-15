@@ -19,8 +19,9 @@ from pathlib import Path
 import torch, torch.nn.functional as F
 from transformers import AutoModel, AutoTokenizer
 
-ARMS = {"M": dict(target="kd", select=True), "C1": dict(target="kd", select=False), "C2": dict(target="ce", select=False),
-        "C3": dict(target="kd", select=True), "C4": dict(target="kd", select=True), "C5": dict(target="kd", select=True)}
+_KD = dict(target="kd", select=True)
+ARMS = {"M": _KD, "M06": _KD, "Mi": _KD, "Msch": _KD, "C3": _KD, "C4": _KD, "C5": _KD,     # gate-shaped loss; they differ only by flags
+        "C1": dict(target="kd", select=False), "C2": dict(target="ce", select=False)}
 
 
 def shifted_logits(model, x):
