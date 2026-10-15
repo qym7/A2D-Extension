@@ -11,7 +11,7 @@ of the response, control C4). The loss lives on the FRONTIER = the first K maske
   C4 : = M with --corruption random                                          (suffix control)
 Dream logit convention: the token at position p is predicted from hidden p−1 (shift as in scripts/step3/signal_check.py).
 Writes <out>/lora (adapter), <out>/merged (bf16 full checkpoint loadable by every eval harness), <out>/train_log.jsonl."""
-import argparse, json, random, time, shutil, os
+import argparse, json, random, time, shutil, os, math
 from pathlib import Path
 import torch, torch.nn.functional as F
 from transformers import AutoModel, AutoTokenizer
@@ -23,6 +23,25 @@ ARMS = {"M": dict(target="kd", select=True), "C1": dict(target="kd", select=Fals
 def shifted_logits(model, x):
     logits = model(x, "full", None).logits
     return torch.cat([logits[:, :1], logits[:, :-1]], dim=1)
+
+
+def divergence(ls, lt, kind, top_k, temp):
+    """Mean over positions of a divergence between student logits ls [n, V] (grad) and teacher logits lt [n, V] (no grad).
+    top_k > 0 restricts both distributions to the teacher's top-k support (renormalised) — the long tail is noise (BiLD / TOPD use k = 8–10)."""
+    ls = ls / temp; lt = lt / temp
+    if top_k:
+        idx = lt.topk(top_k, dim=-1).indices
+        ls = ls.gather(-1, idx); lt = lt.gather(-1, idx)
+    logp_s = F.log_softmax(ls, -1); logp_t = F.log_softmax(lt, -1)
+    p_s, p_t = logp_s.exp(), logp_t.exp()
+    if kind == "forward":      # KL(p_T || p_S): mode covering
+        d = (p_t * (logp_t - logp_s)).sum(-1)
+    elif kind == "reverse":    # KL(p_S || p_T): mode seeking (student concentrates on teacher-preferred modes at this state)
+        d = (p_s * (logp_s - logp_t)).sum(-1)
+    else:                      # JSD
+        logm = torch.logsumexp(torch.stack([logp_s, logp_t]), 0) - math.log(2)
+        d = 0.5 * (p_s * (logp_s - logm)).sum(-1) + 0.5 * (p_t * (logp_t - logm)).sum(-1)
+    return d.mean()
 
 
 def make_state(rec, mask_id, corruption, rng, max_len):
@@ -51,6 +70,10 @@ def main():
     ap.add_argument("--prompts", required=True, help="prompts.jsonl (prompt text -> prompt_ids via the chat template)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--corruption", choices=["suffix", "random"], default="suffix")
+    ap.add_argument("--kl", choices=["reverse", "forward", "jsd"], default="reverse",
+                    help="reverse = KL(p_S||p_T) (TOPD's ablation: reverse > JSD > forward for dLLM distillation); forward = KL(p_T||p_S)")
+    ap.add_argument("--top-k", type=int, default=0, help="truncate the teacher distribution to its top-k and renormalise (0 = full vocabulary)")
+    ap.add_argument("--kd-temp", type=float, default=1.0, help="temperature applied to both logits before the divergence")
     ap.add_argument("--theta", type=float, default=0.8)
     ap.add_argument("--K", type=int, default=4)
     ap.add_argument("--lambda-ce", type=float, default=0.1)
@@ -128,12 +151,11 @@ def main():
             if arm["target"] == "kd":
                 with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
                     lt = shifted_logits(teacher, x)[0, front].float()
-                p_t = F.softmax(lt, -1)
-                conf_s = logp_s.detach().exp().max(-1).values
+                conf_s = logp_s.detach().exp().max(-1).values          # selection always on the raw (T=1) student confidence = the gate's signal
                 sel = conf_s < a.theta if arm["select"] else torch.ones_like(conf_s, dtype=torch.bool)
                 acc["n_sel"] += int(sel.sum()); acc["n_front"] += len(front)
                 if sel.any():
-                    kd = (p_t * (torch.log(p_t + 1e-12) - logp_s)).sum(-1)[sel].mean()
+                    kd = divergence(ls[sel], lt[sel], a.kl, a.top_k, a.kd_temp)
                 else:
                     kd = ls.sum() * 0.0; acc["n_empty"] += 1
                 loss = kd + a.lambda_ce * ce

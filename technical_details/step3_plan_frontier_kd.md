@@ -40,7 +40,7 @@ gives p_T(·|x^c, j).
 
     frontier F(x^c) = the first K = 4 masked positions (c … c+3)
     selected S(x^c) = { j ∈ F : max_v p_S(v | x^c, j) < θ },  θ = 0.8
-    L_KD  = (1/|S|) Σ_{j∈S} KL( p_T(·|x^c, j) ‖ p_S(·|x^c, j) )          forward KL, full vocabulary, teacher detached
+    L_KD  = (1/|S|) Σ_{j∈S} KL( p_S(·|x^c, j) ‖ p_T(·|x^c, j) )          reverse KL (default; TOPD: reverse > JSD > forward), full vocabulary, teacher detached
     L_CE  = standard Dream masked CE on the rollout tokens at the frontier (keeps the diffusion objective; weight λ = 0.1)
     L     = L_KD + λ L_CE
 
@@ -51,7 +51,7 @@ no loss where they disagree) is a follow-up, not in the first ladder — one tea
 
 Why these choices: K = 4 is where frontier precision is still 0.55 and recall 0.97 (K = 1 alone gives ~one position per state — too sparse
 for a 7B update at 17 k prompts; K = 16 is 0.33 precision). θ = 0.8 is the gate's operating point and the frontier p distribution matches
-decoding by construction, so no ratio-dependent θ. Forward KL on the full distribution rather than the argmax token because the teacher's
+decoding by construction, so no ratio-dependent θ. KL on the full distribution rather than the argmax token because the teacher's mass away from its argmax is the part the gate never used (free information), and hard targets are what C2 tests. Reverse rather than forward KL after the survey (`step3_recipe_survey.md` §3): forward KL has to cover the teacher's whole support at a noisy state and lost 3 points in TOPD's ablation; forward stays as arm C5.
 mass away from its argmax is the part the gate never used (free information), and hard targets are what C2 tests.
 
 ## 3. Arms (LoRA r = 64, α = 128, all linear modules, lr 1e-4, 2 epochs, batch 32 states, max length 1 024, bf16, grad-ckpt)
@@ -62,6 +62,7 @@ mass away from its argmax is the part the gate never used (free information), an
 | C2 self-SFT | suffix | frontier, all K | rollout token (CE) | is the *teacher* needed (= on-policy SFT / unfiltered RFT, dOPSD-like) |
 | C3 non-over teacher | suffix | frontier, p_S < 0.8 | A(1.0) distribution | is *over* needed (A(1.0) gate = 44.3 vs A(1.5) 48.3) |
 | C4 random-mask KD | i.i.d. mask r ~ U(0,1) | masked, p_S < 0.8 | A(1.5) | is the *suffix corruption* needed (standard dLLM SFT corruption) |
+| C5 forward KL | suffix | frontier, p_S < 0.8 | A(1.5), KL(p_T‖p_S) | divergence direction (TOPD says reverse; cheap check on our teacher) |
 | C0 | — | — | — | Ins untouched (exists) |
 Reference lines: gate Ins ⇐ A(1.5) @0.8 = 48.3 (1.14×), A(1.5) alone, best merge M(.4,.6) = 46.6 all-500.
 Budget rule: M first with C2 (the cheapest and most damaging control); C1/C3/C4 only if M clears the success bar.

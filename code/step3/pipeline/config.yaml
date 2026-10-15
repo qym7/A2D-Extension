@@ -5,7 +5,7 @@ rollout_shards: 4
 rollout_batch: 4
 
 # shared training hyperparameters (plan §3): LoRA r64/alpha128, lr 1e-4, 2 epochs, batch 32 states, 2 cuts per canvas, theta 0.8, K 4
-train_args: "--theta 0.8 --K 4 --lambda-ce 0.1 --cuts-per-canvas 2 --epochs 2 --batch 32 --lr 1e-4 --lora-r 64 --lora-alpha 128 --max-len 1024"
+train_args: "--kl reverse --top-k 0 --kd-temp 1.0 --theta 0.8 --K 4 --lambda-ce 0.1 --cuts-per-canvas 2 --epochs 2 --batch 32 --lr 1e-4 --lora-r 64 --lora-alpha 128 --max-len 1024"
 
 # arms: teacher = beta on the addition line A(beta) = D_b + tau_D + beta*tau_A (null = no teacher). extra = arm-specific train args.
 arms:
@@ -14,5 +14,6 @@ arms:
   C1: {teacher: 1.5}                        # frontier KD, every frontier position  (is selection needed)
   C3: {teacher: 1.0}                        # non-over teacher A(1.0)               (is "over" needed)
   C4: {teacher: 1.5}                        # random-mask corruption (runner adds --corruption random)   (is suffix needed)
+  C5: {teacher: 1.5, extra: "--kl forward"} # forward KL instead of reverse                               (divergence direction)
 first_wave: [M, C2]
 guard_arms: [M]            # GSM8K / HumanEval+ / IFEval only for arms that clear the MATH bar (plan §4); add arms here after reading MATH
