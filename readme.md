@@ -18,7 +18,7 @@ Everything else is in `technical_details/`, prefixed by the step it supports (`s
 | `step1_*` | the gated decoder `code/step1/lockstep_gated.py` (modes: content_gated, schedule_gated, both_gated, content_random, content_random_uncond), `step1_merge_shards.py` (sharded runs → `*-merged`), `step1_main_table.py` (→ `technical_details/step1_main_table.md`), votes, dose/finish decompositions |
 
 Job submitters shared across ideas live one level up in `../modules/` (`run_gated_shard*.sh`, `submit.sh`); they call `code/step1/lockstep_gated.py`, which is a symlink to `code/step1/lockstep_gated.py`.
-`spec.md` / `task.md` / `analysis.md` are the working documents.
+`spec.md` / `analysis.md` are the original STEP0 working documents (superseded, headers say so); `task.md` holds the current gate and next actions.
 Raw outputs (`outputs/`, `outputs/stepN/`, `results/`), checkpoints and `trash/` are not tracked.
 
 ## Summary (2026-10-13)

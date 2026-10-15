@@ -1,6 +1,6 @@
 # STEP2 — Can several models do better than one teacher? What does that tell us for distillation? (2026-10-15)
 
-Protocol as in STEP1: MATH-500 last 300, lockstep @1024, H200·0.51. Details: `technical_details/step2_*.md`; old full tables: `technical_details/step2_verdict_20261012_archive.md`.
+Protocol as in STEP1: MATH-500 last 300, lockstep @1024, H200·0.51. Details: `technical_details/step2_*.md`; old full tables: `technical_details/archive/step2_verdict_20261012.md`.
 
 ## Takeaways
 1. **One over teacher is the ceiling.** Every way of combining models at decode time — soft mixing, teacher averaging, picking the more confident teacher, voting, a second teacher line — lands at the single-teacher number (≈ 48–49). Only an answer-level cascade gains (+4–6) and it costs 1.5–2.5×.

@@ -1,3 +1,5 @@
+> **Status 2026-10-15:** superseded by `technical_details/` (one file per result, with sources and deviations). Kept as the original source/deviation log of STEP0.
+
 # Idea 1 — ANALYSIS
 
 ## Sources

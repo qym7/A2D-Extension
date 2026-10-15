@@ -10,7 +10,7 @@ written instead; otherwise the student's. The teacher never changes the order. (
 step; since p is known before the teacher is needed, it could be called only on the ~15% low-confidence steps, i.e. ≈1.15× compute.)
 
 Earlier dead ends, one line each: item-level routing by sequence confidence = random (offline, `technical_details/step0_figs/confidence_rerun_sim.md`);
-the 512-token gate was truncation-bound (`technical_details/step1_gate512_e1_e3_e4.md`); answer-level voting works (59.6 at 3 decodes) but is not
+the 512-token gate was truncation-bound (`technical_details/archive/step1_gate512_e1_e3_e4.md`); answer-level voting works (59.6 at 3 decodes) but is not
 online and the AR reference under lenient scoring is 71 (`technical_details/step1_theta_vote.md`).
 
 ## 1. All student ⇐ teacher pairs (big table)

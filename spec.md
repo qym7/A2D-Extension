@@ -1,3 +1,5 @@
+> **Status 2026-10-15:** the idea has moved past this spec. Read `readme.md` → `step0_setup_baselines.md` → `step1_methods.md` → `step2_verdict.md`; the kill criterion below still applies, now phrased as STEP3's success/kill rule in `step2_verdict.md` §3.
+
 # Idea 1 — Harvest over-scaled AR vectors at uncertain positions only
 
 ## The observation we are standing on
