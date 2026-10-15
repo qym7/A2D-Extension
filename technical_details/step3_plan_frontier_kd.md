@@ -19,15 +19,14 @@ Deployment target: the trained student decoded with the *standard* Dream sampler
 Prompts (verified on HF 2026-10-14, all public, none gated except LIMA = auto):
 | source | rows | role | why |
 |---|---:|---|---|
-| `allenai/tulu-3-sft-mixture` (Ke Wang's 100k sample at `/mnt/lts4/scratch/home/kewang/sft/DFT/verl/data/tulu3_sft_100k_seed20260919_allassistant_v2/train.parquet`, read-only) | 8 000 stratified by `source`, **math-style sources excluded** (personas-math, math-grade, numina …) | general backbone | Dream-Instruct's own SFT distribution → "no regression" is tested in-distribution; math signal comes only from MATH train |
+| `allenai/tulu-3-sft-mixture` (Ke Wang's 100k sample at `/mnt/lts4/scratch/home/kewang/sft/DFT/verl/data/tulu3_sft_100k_seed20260919_allassistant_v2/train.parquet`, read-only) | 8 000 stratified by `source` (all components incl. its math subsets; only safety-refusal / hard-coded sources dropped) | general backbone | Dream-Instruct's own SFT distribution; Tulu-3 → GSM8K/MATH-500 is the standard protocol (user, 2026-10-15) |
 | `EleutherAI/hendrycks_math` train (all 7 subjects) | 6 000 | reasoning (in-domain by design) | the target; MATH-500 ⊂ MATH test, disjoint from train |
 | `ise-uiuc/Magicoder-OSS-Instruct-75K` | 2 000 | code | HumanEval+ regression guard (HumanEval is hand-written, disjoint) |
 | `HuggingFaceH4/no_robots` | 1 000 | chat / instruction following | IFEval guard (disjoint) |
 Total 17 k prompts, single turn, Qwen chat template, prompt ≤ 512 tokens. The reference responses are **not used** (label-free);
 they are kept only for the RFT/SFT control C2.
-**GSM8K train is deliberately not in the mix** (user, 2026-10-15): GSM8K stays fully held-out as the clean "does reasoning transfer"
-metric; with its train prompts in the mix it would become an in-domain number and could not serve as a guard. (Tulu-3 itself contains
-GSM8K/MATH-style subsets and Dream-Instruct was trained on Tulu-3, so those were seen before STEP3 regardless; we just do not add more.)
+**GSM8K train itself is not added** (user, 2026-10-15): Tulu-3 already carries GSM8K/MATH-style subsets (open_math_2_gsm8k, personahub_math, numina),
+which is the standard Tulu-3 → GSM8K/MATH-500 setting and is fine; we simply do not add the GSM8K train split on top.
 
 Prefixes are **on-policy**: the student (Ins) decodes each prompt once with the standard Dream sampler (gen length 512, 512 steps,
 top-p 0.9, temperature 0.1 — the official MATH-500 settings), giving the canvas the training states are cut from. This is what the prelim
@@ -71,7 +70,7 @@ Budget rule: M first with C2 (the cheapest and most damaging control); C1/C3/C4 
 | benchmark | protocol | regression bar |
 |---|---|---|
 | MATH-500 | last 300 (ids 200–499), official `math500_minerva_v2.sh` and the lockstep @1024 (comparability with STEP1 tables) | primary: M ≥ Ins + 6 (≈ 43+) with McNemar p < 0.05 vs Ins; M > C2 by ≥ 3 |
-| GSM8K | official (`dreaminst_gsm8k_full` exists as Ins reference); **held-out, no GSM8K train in the mix** | ≥ Ins − 1; a gain here = reasoning transfer |
+| GSM8K | official (`dreaminst_gsm8k_full` exists as Ins reference); no GSM8K train split added (Tulu-3's math subsets are in) | ≥ Ins − 1 |
 | HumanEval+ | EvalPlus official (`dreamv0_humanevalplus` protocol) | ≥ Ins − 2 |
 | IFEval | official `eval/ifeval.sh` (1280 steps; 9 h) | ≥ Ins − 2 (prompt-level strict) |
 Finish rate and answer length on MATH-500 are reported alongside (the over teacher's failure mode is early EOS/non-finishing;
