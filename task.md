@@ -1,6 +1,6 @@
 # Idea 1 — TASK (current gate and next actions; updated 2026-10-15)
 
-**Current gate:** STEP3 rollout smoke running (2026-10-15); training smoke next. Formulation: `technical_details/step3_training_formulation.md`.
+**Current gate:** all STEP3 smokes passed (2026-10-15: rollout, training, merge); first_wave awaits user go + prompt count (17k vs 8k). Formulation: `technical_details/step3_training_formulation.md`.
 
 ## Where things stand
 - STEP0–2 closed: gate established and explained (`step1_methods.md`); decode-time multi-model work closed (`step2_verdict.md`).
@@ -8,9 +8,9 @@
 - Prompt set built: `outputs/step3/prompts.jsonl` (17 k).
 
 ## Next actions, in order
-1. Rollout smoke: SUBMITTED 2026-10-15 (`yqin-i1-s3roll-smoke-m46-h200f051`, student M(.4,.6), prompts 0–49, batch 4) — checks batched left-padded decoding, gives s/prompt.
-2. Training smoke: arm M, `--max-steps 20 --n-canvases 200` — loss decreasing, `sel_rate` ≈ 0.5, merged checkpoint decodes 20 MATH problems.
-3. `snakemake first_wave` (M + C2, MATH last 300 only; ≈ 75 GPU·h).
+1. DONE rollout smokes (m46 50 prompts, Ins 200 prompts): 19–22 s/prompt regardless of batch → batch 1; commit_conf <0.8 ≈ 24 %.
+2. DONE training smoke (arm M, Ins ⇐ A(2.0), 200 canvases, 20 steps): micro-batch 4 (69.7 GB), 0.23 s/frame ≈ 6.5 GPU·h per arm, kd 0.61 → 0.3, merged checkpoint decodes.
+3. `snakemake first_wave` (M + M06 + C2, MATH last 300 only): Ins rollout 17k ≈ 92 GPU·h (8k ≈ 43) + 3 × 6.5 training + 3 × 7 eval ≈ 130 (or 80) GPU·h.
 4. Read by the rules in `technical_details/step3_plan_frontier_kd.md` §4; enable guards (`guard_arms`) for arms that clear the MATH bar; then C1/C3/C4.
 
 ## Done criteria for STEP3

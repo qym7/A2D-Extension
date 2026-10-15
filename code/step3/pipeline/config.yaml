@@ -2,7 +2,7 @@
 tag: s3a
 n_prompts: 17000          # outputs/step3/prompts.jsonl (Tulu-3 8k incl. its math subsets, MATH train 6k, Magicoder 2k, no_robots 1k)
 rollout_shards: 4
-rollout_batch: 4
+rollout_batch: 1          # batching gives no speed-up (512 full forwards per prompt); batch 1 = the official single-prompt run exactly
 
 # student init (user 2026-10-15): the official Ins with teacher A(2.0) is the main line (gate 36.7 -> 49.0; A(2.0) = A(1.5) within noise, one teacher ckpt for all arms);
 # m46 = best merge M(.4,.6) (gate 42.0 -> 51.0) is the second-init arm. Arms inherit `student` unless they set their own.
