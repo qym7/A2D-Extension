@@ -20,20 +20,21 @@ def mcnemar(a, b):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--logs", required=True)
+    ap.add_argument("--run", default="step3", help="checkpoint/log prefix: step3-<tag> (pipeline RUN)")
     ap.add_argument("--arms", nargs="+", required=True)
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
     L = Path(a.logs)
     rows = {}
     for arm in a.arms:
-        f = L / f"step3/step3-{arm}" / "math500" / "free-last300-merged" / "summary.json"
+        f = L / f"step3/{a.run}-{arm}" / "math500" / "free-last300-merged" / "summary.json"
         if f.exists():
             rows[arm] = json.load(open(f))
     ins = L / INS_OK_FILE
     ins_ok = {json.loads(l)["id"] for l in open(ins) if json.loads(l)["ok"]} if ins.exists() else None
 
     def guard(arm, g):
-        f = L / f"step3/step3-{arm}" / f"{g}.done"
+        f = L / f"step3/{a.run}-{arm}" / f"{g}.done"
         if not f.exists():
             return "—"
         try:

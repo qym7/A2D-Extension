@@ -23,7 +23,9 @@ N_PROMPTS = config["n_prompts"]
 N_SHARDS  = config["rollout_shards"]
 SHARD = math.ceil(N_PROMPTS / N_SHARDS)
 ARMS  = config["arms"]                         # name -> {teacher: beta|null, extra: "..."}
-MATH_SHARDS = [(200, 300), (300, 400), (400, 500)]   # last 300 only (user rule 2026-10-12)
+N_MATH = config.get("math_shards", 3)         # last 300 only (user rule 2026-10-12), split into N_MATH equal jobs
+MATH_SHARDS = [(200 + k * (300 // N_MATH), 200 + (k + 1) * (300 // N_MATH)) for k in range(N_MATH)]
+RUN = f"step3-{TAG}"                           # every trained checkpoint / eval log carries the pipeline tag (1k test vs 8k run never overwrite)
 
 def teacher_ckpt(arm):
     b = ARMS[arm]["teacher"]
@@ -36,13 +38,13 @@ def student_ckpt(arm):
     return config["students"][student_name(arm)]
 
 wildcard_constraints:
-    arm="|".join(ARMS), i="[0-9]+", s="[0-9]", st="|".join(config["students"])
+    arm="|".join(ARMS), i="[0-9]+", s="[0-9]+", st="|".join(config["students"])
 
 rule all:
-    input: f"{I1}/technical_details/step3_results_table.md"
+    input: f"{I1}/technical_details/step3_results_{TAG}.md"
 
 rule first_wave:          # M + C2, MATH only (plan §3 budget rule)
-    input: expand(f"{LOGS}/step3/step3-{{arm}}/math500/free-last300-merged/summary.json", arm=config["first_wave"])
+    input: expand(f"{LOGS}/step3/{RUN}-{{arm}}/math500/free-last300-merged/summary.json", arm=config["first_wave"])
 
 # ---------- data ----------
 rule prompts:
@@ -76,51 +78,51 @@ rule train:   # C4 = ARMS[arm].extra carries --corruption random; C1 drops the a
     input:
         roll=lambda w: f"{OUT}/rollouts/{student_name(w.arm)}/all.jsonl",
         teacher=lambda w: [] if ARMS[w.arm]["teacher"] is None else f"{teacher_ckpt(w.arm)}/merge_manifest.json"
-    output: f"{CK}/step3-{{arm}}/merged/config.json"
+    output: f"{CK}/{RUN}-{{arm}}/merged/config.json"
     params: jn=lambda w: w.arm.lower(), teacher=lambda w: teacher_ckpt(w.arm), student=lambda w: student_ckpt(w.arm), extra=lambda w: ARMS[w.arm].get("extra", ""), common=config["train_args"]
     shell: "{SW} yqin-i1-s3train-{params.jn}-{TAG}-h200f051 {output} "
-           "bash {MOD}/run_step3_train.sh {wildcards.arm} {CK}/step3-{wildcards.arm} {params.teacher} {params.student} {input.roll} {params.common} {params.extra}"
+           "bash {MOD}/run_step3_train.sh {wildcards.arm} {CK}/{RUN}-{wildcards.arm} {params.teacher} {params.student} {input.roll} {params.common} {params.extra}"
 
 # ---------- MATH-500 last 300, lockstep @1024, student alone (1x), 3 shards ----------
 rule eval_math_shard:
-    input: f"{CK}/step3-{{arm}}/merged/config.json"
-    output: directory(f"{LOGS}/step3/step3-{{arm}}/math500/free-last300-s{{s}}")
+    input: f"{CK}/{RUN}-{{arm}}/merged/config.json"
+    output: directory(f"{LOGS}/step3/{RUN}-{{arm}}/math500/free-last300-s{{s}}")
     params: jn=lambda w: w.arm.lower(), start=lambda w: MATH_SHARDS[int(w.s)][0], end=lambda w: MATH_SHARDS[int(w.s)][1]
     shell: "{SW} yqin-i1-s3m500-{params.jn}-s{wildcards.s}-{TAG}-h200f051 {output}/run.log "
-           "bash {MOD}/run_gated_shard5.sh {LOGS}/step3/step3-{wildcards.arm}/math500 {CK}/step3-{wildcards.arm}/merged none free "
+           "bash {MOD}/run_gated_shard5.sh {LOGS}/step3/{RUN}-{wildcards.arm}/math500 {CK}/{RUN}-{wildcards.arm}/merged none free "
            "{params.start} {params.end} free-last300-s{wildcards.s} 0"
 
 rule eval_math_merge:
-    input: expand(f"{LOGS}/step3/step3-{{{{arm}}}}/math500/free-last300-s{{s}}", s=range(3))
-    output: f"{LOGS}/step3/step3-{{arm}}/math500/free-last300-merged/summary.json"
+    input: expand(f"{LOGS}/step3/{RUN}-{{{{arm}}}}/math500/free-last300-s{{s}}", s=range(N_MATH))
+    output: f"{LOGS}/step3/{RUN}-{{arm}}/math500/free-last300-merged/summary.json"
     shell: "export PYTHONPATH=; source {MOD}/jobenv.sh mdlm-math-b300 && python {I1}/code/step3/merge_math_shards.py --shards {input} --out $(dirname {output})"
 
 # ---------- guards: official harnesses from dream_study (zsh wrappers; labels keyed by arm) ----------
 DS_EVAL = "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/scripts/eval"
 rule eval_ifeval:
-    input: f"{CK}/step3-{{arm}}/merged/config.json"
-    output: f"{LOGS}/step3/step3-{{arm}}/ifeval.done"
+    input: f"{CK}/{RUN}-{{arm}}/merged/config.json"
+    output: f"{LOGS}/step3/{RUN}-{{arm}}/ifeval.done"
     params: jn=lambda w: w.arm.lower()
     shell: "{SW} yqin-i1-s3ifeval-{params.jn}-{TAG}-h200f051 {output} "
-           "bash {MOD}/run_official_eval.sh ifeval {CK}/step3-{wildcards.arm}/merged step3-{wildcards.arm} {output}"
+           "bash {MOD}/run_official_eval.sh ifeval {CK}/{RUN}-{wildcards.arm}/merged {RUN}-{wildcards.arm} {output}"
 
 rule eval_humaneval:
-    input: f"{CK}/step3-{{arm}}/merged/config.json"
-    output: f"{LOGS}/step3/step3-{{arm}}/humaneval.done"
+    input: f"{CK}/{RUN}-{{arm}}/merged/config.json"
+    output: f"{LOGS}/step3/{RUN}-{{arm}}/humaneval.done"
     params: jn=lambda w: w.arm.lower()
     shell: "{SW} yqin-i1-s3heval-{params.jn}-{TAG}-h200f051 {output} "
-           "bash {MOD}/run_official_eval.sh coding {CK}/step3-{wildcards.arm}/merged step3-{wildcards.arm} {output}"
+           "bash {MOD}/run_official_eval.sh coding {CK}/{RUN}-{wildcards.arm}/merged {RUN}-{wildcards.arm} {output}"
 
 rule eval_gsm8k:
-    input: f"{CK}/step3-{{arm}}/merged/config.json"
-    output: f"{LOGS}/step3/step3-{{arm}}/gsm8k.done"
+    input: f"{CK}/{RUN}-{{arm}}/merged/config.json"
+    output: f"{LOGS}/step3/{RUN}-{{arm}}/gsm8k.done"
     params: jn=lambda w: w.arm.lower()
     shell: "{SW} yqin-i1-s3gsm8k-{params.jn}-{TAG}-h200f051 {output} "
-           "bash {MOD}/run_official_eval.sh gsm8k {CK}/step3-{wildcards.arm}/merged step3-{wildcards.arm} {output}"
+           "bash {MOD}/run_official_eval.sh gsm8k {CK}/{RUN}-{wildcards.arm}/merged {RUN}-{wildcards.arm} {output}"
 
 rule results_table:
     input:
-        math=expand(f"{LOGS}/step3/step3-{{arm}}/math500/free-last300-merged/summary.json", arm=ARMS),
-        guards=expand(f"{LOGS}/step3/step3-{{arm}}/{{g}}.done", arm=config["guard_arms"], g=["ifeval", "humaneval", "gsm8k"])
-    output: f"{I1}/technical_details/step3_results_table.md"
-    shell: "export PYTHONPATH=; source {MOD}/jobenv.sh mdlm-math-b300 && python {I1}/code/step3/results_table.py --logs {LOGS}/step3 --arms {' '.join(ARMS)} --out {output}"
+        math=expand(f"{LOGS}/step3/{RUN}-{{arm}}/math500/free-last300-merged/summary.json", arm=ARMS),
+        guards=expand(f"{LOGS}/step3/{RUN}-{{arm}}/{{g}}.done", arm=config["guard_arms"], g=["ifeval", "humaneval", "gsm8k"])
+    output: f"{I1}/technical_details/step3_results_{TAG}.md"
+    shell: "export PYTHONPATH=; source {MOD}/jobenv.sh mdlm-math-b300 && python {I1}/code/step3/results_table.py --logs {LOGS} --run {RUN} --arms {' '.join(ARMS)} --out {output}"

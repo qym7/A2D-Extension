@@ -1,7 +1,8 @@
 # STEP3 pipeline config (technical_details/step3_plan_frontier_kd.md). Change `tag` for a fresh set of job names.
-tag: s3a
-n_prompts: 17000          # outputs/step3/prompts.jsonl (Tulu-3 8k incl. its math subsets, MATH train 6k, Magicoder 2k, no_robots 1k)
-rollout_shards: 4
+tag: t1k                  # 1k offline test (user 2026-10-15): M + C2, MATH last 300 in 6 shards
+n_prompts: 1000           # outputs/step3/prompts.jsonl (Tulu-3 8k incl. its math subsets, MATH train 6k, Magicoder 2k, no_robots 1k)
+rollout_shards: 5         # 1k test: 5 x 200 so shard 0 = the 200-prompt Ins smoke, reused as is
+math_shards: 6            # MATH last 300 split into this many parallel jobs
 rollout_batch: 1          # batching gives no speed-up (512 full forwards per prompt); batch 1 = the official single-prompt run exactly
 
 # student init (user 2026-10-15): the official Ins with teacher A(2.0) is the main line (gate 36.7 -> 49.0; A(2.0) = A(1.5) within noise, one teacher ckpt for all arms);
@@ -26,5 +27,5 @@ arms:
   C4: {teacher: 2.0, extra: "--corruption random"}   # random-mask corruption                  (is the replayed state needed)
   C5: {teacher: 2.0, extra: "--kl forward"} # forward KL instead of reverse                               (divergence direction)
 # C6 (RFT on GT-correct MATH rollouts) and C7 (plain SFT on reference responses) use the official Dream SFT trainer, not this one — not wired yet.
-first_wave: [M, M06, C2]
+first_wave: [M, C2]
 guard_arms: [M]            # GSM8K / HumanEval+ / IFEval only for arms that clear the MATH bar (plan §4); add arms here after reading MATH
