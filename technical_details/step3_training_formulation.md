@@ -5,15 +5,15 @@ One page. What the trainer in `code/step3/train_frontier_kd.py` actually optimis
 ## 0. Objects
 | symbol | meaning | where it comes from |
 |---|---|---|
-| S₀ | student init: M(.4,.6) (default) or Ins | config `student` |
+| S₀ | student init: Ins (default, user 2026-10-15) or M(.4,.6) | config `student` |
 | S = S₀ + LoRA | the model being trained | peft, r 64 / α 128, all attention + MLP projections |
-| T | frozen teacher A(β) = D_b + τ_D + β·τ_A, β = 2.0 (A(1.5) for the Ins init) | `outputs/checkpoints/add-a10-b20` |
+| T | frozen teacher A(β) = D_b + τ_D + β·τ_A, β = 2.0 for both inits (A(1.5) ≈ A(2.0) on Ins, p=0.64) | `outputs/checkpoints/add-a10-b20` |
 | p_M(· \| x, j) | distribution of model M at position j given canvas x (Dream shift: position j is read from hidden j−1) | `shifted_logits` |
 | c_j = max_v p_S(v \| x, j) | the student's raw confidence at j (T = 1, no top-p) — **the gate's signal** | same forward as the loss |
 | θ | hand-over threshold (0.8; 0.6 arm; 0.8 → 0.5 schedule arm) | `--theta`, `--theta-end` |
 
 ## 1. Data: the student's own trajectories (paid once)
-For every prompt q (17 k), S₀ decodes once with the official MATH-500 sampler (512 tokens / 512 steps, T 0.1, top-p 0.9, entropy order)
+For every prompt q (17 k), S₀ (= Ins for the main line) decodes once with the official MATH-500 sampler (512 tokens / 512 steps, T 0.1, top-p 0.9, entropy order)
 and we store the finished canvas y plus, for every response position j, the step s_j at which it was written and the raw probability
 κ_j of the token written there at that step. No teacher, no ground truth, no filtering: this is pure on-policy data for S₀.
 
@@ -53,10 +53,10 @@ Output: `lora/` and `merged/` (LoRA folded into bf16 weights + Dream's remote-co
 ## 5. Arms = the same loss with one thing changed
 | arm | change | question |
 |---|---|---|
-| M | — (θ 0.8, T = A(2.0), S₀ = M(.4,.6)) | the method |
+| M | — (θ 0.8, T = A(2.0), S₀ = Ins) | the method |
 | M06 | θ 0.6 | less teacher |
 | Msch | θ 0.8 → 0.5 over training | distil less and less |
-| Mi | S₀ = Ins, T = A(1.5) | from the official model |
+| Mm | S₀ = M(.4,.6), T = A(2.0) | from the best merge (higher start) |
 | C1 | U = NEXT(t) (no split, no anchor) | is the selection needed |
 | C2 | ℓ = CE on the student's own rollout token, no teacher | is the teacher needed |
 | C3 | T = A(1.1) | is "over" needed |
