@@ -28,6 +28,9 @@ def teacher_ckpt(arm):
     b = ARMS[arm]["teacher"]
     return "none" if b is None else f"{CK}/add-a10-b{int(round(b * 10)):02d}"
 
+def student_ckpt(arm):
+    return config["students"][ARMS[arm].get("student", config["student"])]
+
 wildcard_constraints:
     arm="|".join(ARMS), i="[0-9]+", s="[0-9]"
 
@@ -63,14 +66,14 @@ rule teacher:
            "bash {MOD}/run_build_addition.sh {CK}/add-a10-b{wildcards.bb} 1.0 {params.beta}"
 
 # ---------- training ----------
-rule train:
+rule train:   # C4 = ARMS[arm].extra carries --corruption random; C1 drops the anchor; the runner only maps arm -> trainer flags listed in config
     input:
         roll=f"{OUT}/rollouts/all.jsonl",
         teacher=lambda w: [] if ARMS[w.arm]["teacher"] is None else f"{teacher_ckpt(w.arm)}/merge_manifest.json"
     output: f"{CK}/step3-{{arm}}/merged/config.json"
-    params: teacher=lambda w: teacher_ckpt(w.arm), extra=lambda w: ARMS[w.arm].get("extra", ""), common=config["train_args"]
+    params: teacher=lambda w: teacher_ckpt(w.arm), student=lambda w: student_ckpt(w.arm), extra=lambda w: ARMS[w.arm].get("extra", ""), common=config["train_args"]
     shell: "{SW} yqin-i1-s3train-{wildcards.arm}-{TAG}-h200f051 {output} "
-           "bash {MOD}/run_step3_train.sh {wildcards.arm} {CK}/step3-{wildcards.arm} {params.teacher} {params.common} {params.extra}"
+           "bash {MOD}/run_step3_train.sh {wildcards.arm} {CK}/step3-{wildcards.arm} {params.teacher} {params.student} {params.common} {params.extra}"
 
 # ---------- MATH-500 last 300, lockstep @1024, student alone (1x), 3 shards ----------
 rule eval_math_shard:

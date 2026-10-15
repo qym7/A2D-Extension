@@ -1,23 +1,26 @@
-"""STEP3 trainer — frontier over-distillation (plan §2–3, `technical_details/step3_plan_frontier_kd.md`). DRAFT 2026-10-15, not yet smoked.
-Single GPU (H200·0.51): student (bf16 + LoRA, grad-ckpt) and a frozen teacher side by side; micro-batch = 1 state (no padding), gradient
-accumulation to `--batch` states.
+"""STEP3 trainer — distil the gate into one model by replaying the student's own denoising trajectory. DRAFT 2026-10-15, not yet smoked.
+Single GPU (H200·0.51): student (bf16 + LoRA, grad-ckpt) and a frozen teacher side by side; micro-batch = 1 frame (no padding), gradient
+accumulation to `--batch` frames.
 
-One training state = a rollout canvas  prompt ‖ x_<c ‖ [MASK]^(L−c)  at a random cut c (suffix corruption; `--corruption random` = i.i.d. masking
-of the response, control C4). The loss lives on the FRONTIER = the first K masked positions:
-  M  : KL(p_T ‖ p_S) at frontier positions where max p_S < θ                (+ λ·CE on the rollout token)
-  C1 : KL at every frontier position (no θ)                                  (selection control)
-  C2 : CE on the rollout token at every frontier position, no teacher        (self-SFT control)
-  C3 : = M with another teacher (pass --teacher add-a10-b10)                 (over control)
-  C4 : = M with --corruption random                                          (suffix control)
-Dream logit convention: the token at position p is predicted from hidden p−1 (shift as in scripts/step3/signal_check.py).
+A training frame = the student's rollout (code/step3/rollout.py) rewound to step t: tokens with commit_step <= t are visible, the rest are
+[MASK] (`--corruption replay`, the default = exactly the state the sampler was in). NEXT(t) = the positions the sampler wrote at step t+1.
+Frames are sampled per canvas: `--low-frames` of them from steps where some NEXT token was written with raw confidence < theta
+("the moment before a low-confidence commit"), the rest uniformly over steps.
+Loss on NEXT(t), split by the student's raw confidence c_j = max p_S(.|frame, j):
+  c_j <  theta  (unsure) : D( p_S(j) , p_T(j) )              teacher distribution, --kl reverse|forward|jsd        ("learn the teacher")
+  c_j >= theta  (sure)   : lambda * KL( p_S(j) || p_S0(j) )  p_S0 = the student before training (LoRA disabled)  ("do not drift")
+so the per-frame target is the gate itself: teacher where the student is unsure, the original student elsewhere.
+Arms (plan §3): M = the above; C1 = no theta split (every NEXT position -> teacher); C2 = CE on the student's own rollout token (self-SFT, no
+teacher); C3 = non-over teacher; C4 = random-mask corruption; C5 = forward KL; `--anchor none|self|ce` selects what the sure positions get.
+Dream logit convention: the token at position p is predicted from hidden p-1 (shift as in code/step3/signal_check.py).
 Writes <out>/lora (adapter), <out>/merged (bf16 full checkpoint loadable by every eval harness), <out>/train_log.jsonl."""
-import argparse, json, random, time, shutil, os, math
+import argparse, json, random, time, shutil, math
 from pathlib import Path
 import torch, torch.nn.functional as F
 from transformers import AutoModel, AutoTokenizer
 
 ARMS = {"M": dict(target="kd", select=True), "C1": dict(target="kd", select=False), "C2": dict(target="ce", select=False),
-        "C3": dict(target="kd", select=True), "C4": dict(target="kd", select=True)}
+        "C3": dict(target="kd", select=True), "C4": dict(target="kd", select=True), "C5": dict(target="kd", select=True)}
 
 
 def shifted_logits(model, x):
@@ -44,42 +47,62 @@ def divergence(ls, lt, kind, top_k, temp):
     return d.mean()
 
 
-def make_state(rec, mask_id, corruption, rng, max_len):
-    """Returns (ids, frontier_positions, targets) for one rollout record; ids already corrupted."""
+def frames_of(rec, theta, n_low, n_uniform, rng):
+    """Sample frame steps t for one canvas. A step t is 'low' if some token written at step t+1 had commit_conf < theta."""
+    cs, cc = rec["commit_step"], rec["commit_conf"]
+    steps = sorted(set(cs))
+    low = sorted({s - 1 for s, c in zip(cs, cc) if c < theta and s - 1 >= 0})
+    cand = [s for s in steps if s < max(steps)]        # a frame must have a next step
+    out = []
+    if low:
+        out += [rng.choice(low) for _ in range(n_low)]
+    out += [rng.choice(cand) for _ in range(n_uniform + (0 if low else n_low))]
+    return out
+
+
+def make_state(rec, mask_id, corruption, t, rng, max_len):
+    """Returns (ids, loss_positions) for one frame. replay: rewind the trajectory to step t, loss on what the sampler wrote at the next step."""
     P = rec["prompt_len"]; resp = rec["resp_ids"]; L = len(resp)
     ids = list(rec["prompt_ids"]) + resp
     if len(ids) > max_len:
         return None
-    if corruption == "suffix":
+    cs = rec["commit_step"]
+    if corruption == "replay":
+        nxt = min(s for s in cs if s > t)
+        masked = [P + j for j in range(L) if cs[j] > t]
+        pos = [P + j for j in range(L) if cs[j] == nxt]
+    elif corruption == "suffix":    # the STEP3-prelim corruption: prefix visible, everything to the right masked, loss on the first 4 masks
         c = rng.randint(1, L - 1) if L > 2 else 1
-        masked = list(range(P + c, P + L))
-    else:   # random i.i.d. masking at ratio r ~ U(0,1), control C4
+        masked = list(range(P + c, P + L)); pos = masked[:4]
+    else:                           # random i.i.d. masking at ratio r ~ U(0,1) (control C4); loss on the 4 masked positions the student is most sure of
         r = rng.random()
         masked = [P + j for j in range(L) if rng.random() < r] or [P + rng.randint(0, L - 1)]
+        pos = None                  # chosen after the forward (needs the student's confidence)
     for q in masked:
         ids[q] = mask_id
-    return ids, masked
+    return ids, masked, pos
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--arm", choices=list(ARMS), required=True)
-    ap.add_argument("--student", required=True)
+    ap.add_argument("--student", required=True, help="init checkpoint: Dream-org/Dream-v0-Instruct-7B or the best merge M(.4,.6)")
     ap.add_argument("--teacher", default=None, help="checkpoint dir; required for kd arms")
-    ap.add_argument("--rollouts", required=True, help="rollouts.jsonl (with prompt_ids attached, see --prompts)")
+    ap.add_argument("--rollouts", required=True, help="rollouts.jsonl from code/step3/rollout.py")
     ap.add_argument("--prompts", required=True, help="prompts.jsonl (prompt text -> prompt_ids via the chat template)")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--corruption", choices=["suffix", "random"], default="suffix")
+    ap.add_argument("--corruption", choices=["replay", "suffix", "random"], default="replay")
+    ap.add_argument("--anchor", choices=["self", "ce", "none"], default="self", help="loss on the SURE next positions: KL to the untouched student, CE on its own token, or nothing")
     ap.add_argument("--kl", choices=["reverse", "forward", "jsd"], default="reverse",
                     help="reverse = KL(p_S||p_T) (TOPD's ablation: reverse > JSD > forward for dLLM distillation); forward = KL(p_T||p_S)")
     ap.add_argument("--top-k", type=int, default=0, help="truncate the teacher distribution to its top-k and renormalise (0 = full vocabulary)")
     ap.add_argument("--kd-temp", type=float, default=1.0, help="temperature applied to both logits before the divergence")
     ap.add_argument("--theta", type=float, default=0.8)
-    ap.add_argument("--K", type=int, default=4)
-    ap.add_argument("--lambda-ce", type=float, default=0.1)
-    ap.add_argument("--cuts-per-canvas", type=int, default=2)
+    ap.add_argument("--lambda-anchor", type=float, default=0.3, help="weight of the sure-position anchor term (means are taken separately)")
+    ap.add_argument("--low-frames", type=int, default=2, help="frames per canvas per epoch sampled right before a low-confidence commit")
+    ap.add_argument("--uniform-frames", type=int, default=1, help="frames per canvas per epoch sampled uniformly over steps")
     ap.add_argument("--epochs", type=int, default=2)
-    ap.add_argument("--batch", type=int, default=32, help="states per optimizer step (micro-batch is 1)")
+    ap.add_argument("--batch", type=int, default=32, help="frames per optimizer step (micro-batch is 1)")
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--lora-r", type=int, default=64)
     ap.add_argument("--lora-alpha", type=int, default=128)
@@ -100,14 +123,15 @@ def main():
     recs = []
     for l in open(a.rollouts):
         r = json.loads(l)
-        if r["resp_len"] < 4:
+        if r["resp_len"] < 4 or len(set(r["commit_step"])) < 2:
             continue
         r["prompt_ids"] = tok.apply_chat_template([{"role": "user", "content": ptext[r["id"]]}], add_generation_prompt=True)
         assert len(r["prompt_ids"]) == r["prompt_len"], (r["id"], len(r["prompt_ids"]), r["prompt_len"])
         recs.append(r)
         if a.n_canvases and len(recs) >= a.n_canvases:
             break
-    print(f"[data] {len(recs)} canvases, {a.cuts_per_canvas} cuts each, {a.epochs} epochs", flush=True)
+    fpc = a.low_frames + a.uniform_frames
+    print(f"[data] {len(recs)} canvases, {fpc} frames each ({a.low_frames} before a low-confidence commit), {a.epochs} epochs", flush=True)
 
     from peft import LoraConfig, get_peft_model
     student = AutoModel.from_pretrained(a.student, trust_remote_code=True, torch_dtype=torch.bfloat16).cuda()
@@ -124,56 +148,68 @@ def main():
         for p in teacher.parameters():
             p.requires_grad_(False)
     opt = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=a.lr, betas=(0.9, 0.95), weight_decay=0.0)
-    n_states = len(recs) * a.cuts_per_canvas * a.epochs
-    total_steps = max(1, n_states // a.batch)
+    n_frames = len(recs) * fpc * a.epochs
+    total_steps = max(1, n_frames // a.batch)
     if a.max_steps:
         total_steps = min(total_steps, a.max_steps)
     sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: min(1.0, (s + 1) / max(1, int(0.1 * total_steps))) * max(0.0, 1 - s / total_steps))
     log = open(out / "train_log.jsonl", "a")
-    step = 0; acc = dict(n=0, n_sel=0, n_front=0, n_empty=0, kd=0.0, ce=0.0); t0 = time.time()
-    student.train()
-    done = False
+    zero = lambda: dict(n=0, n_pos=0, n_unsure=0, n_empty=0, kd=0.0, anchor=0.0, ce=0.0)
+    step = 0; acc = zero(); t0 = time.time(); student.train(); done = False
     for ep in range(a.epochs):
-        order = [(i, k) for i in range(len(recs)) for k in range(a.cuts_per_canvas)]
+        order = [(i, t) for i, r in enumerate(recs) for t in frames_of(r, a.theta, a.low_frames, a.uniform_frames, rng)]
         rng.shuffle(order)
-        for i, _ in order:
-            st = make_state(recs[i], MASK, a.corruption, rng, a.max_len)
+        for i, t in order:
+            st = make_state(recs[i], MASK, a.corruption, t, rng, a.max_len)
             if st is None:
                 continue
-            ids, masked = st
-            front = masked[: a.K] if a.corruption == "suffix" else masked
+            ids, masked, pos = st
             x = torch.tensor([ids], device="cuda")
             with torch.autocast("cuda", dtype=torch.bfloat16):
-                ls = shifted_logits(student, x)[0, front].float()
+                ls_all = shifted_logits(student, x)[0].float()
+            if pos is None:   # random-mask control: the 4 masked positions the student is most confident about = what it would write next
+                conf_m = F.softmax(ls_all[masked].detach(), -1).max(-1).values
+                pos = [masked[k] for k in conf_m.topk(min(4, len(masked))).indices.tolist()]
+            ls = ls_all[pos]
             logp_s = F.log_softmax(ls, -1)
-            gold = torch.tensor([recs[i]["prompt_ids"] + recs[i]["resp_ids"]], device="cuda")[0, front]
+            gold = torch.tensor(recs[i]["prompt_ids"] + recs[i]["resp_ids"], device="cuda")[pos]
             ce = F.nll_loss(logp_s, gold)
-            if arm["target"] == "kd":
-                with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
-                    lt = shifted_logits(teacher, x)[0, front].float()
-                conf_s = logp_s.detach().exp().max(-1).values          # selection always on the raw (T=1) student confidence = the gate's signal
-                sel = conf_s < a.theta if arm["select"] else torch.ones_like(conf_s, dtype=torch.bool)
-                acc["n_sel"] += int(sel.sum()); acc["n_front"] += len(front)
-                if sel.any():
-                    kd = divergence(ls[sel], lt[sel], a.kl, a.top_k, a.kd_temp)
-                else:
-                    kd = ls.sum() * 0.0; acc["n_empty"] += 1
-                loss = kd + a.lambda_ce * ce
-                acc["kd"] += float(kd)
-            else:
+            acc["n_pos"] += len(pos); acc["ce"] += float(ce)
+            if arm["target"] == "ce":
                 loss = ce
-                acc["n_front"] += len(front)
-            acc["ce"] += float(ce); acc["n"] += 1
+            else:
+                conf_s = logp_s.detach().exp().max(-1).values           # raw T=1 confidence = the gate's signal
+                unsure = conf_s < a.theta if arm["select"] else torch.ones_like(conf_s, dtype=torch.bool)
+                acc["n_unsure"] += int(unsure.sum())
+                loss = ls.sum() * 0.0
+                if unsure.any():
+                    with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+                        lt = shifted_logits(teacher, x)[0, pos].float()
+                    kd = divergence(ls[unsure], lt[unsure], a.kl, a.top_k, a.kd_temp)
+                    loss = loss + kd; acc["kd"] += float(kd)
+                else:
+                    acc["n_empty"] += 1
+                sure = ~unsure
+                if sure.any() and a.anchor != "none":
+                    if a.anchor == "self":
+                        with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16), student.disable_adapter():
+                            l0 = shifted_logits(student, x)[0, pos].float()
+                        an = divergence(ls[sure], l0[sure], "reverse", 0, 1.0)
+                    else:
+                        an = F.nll_loss(logp_s[sure], gold[sure])
+                    loss = loss + a.lambda_anchor * an; acc["anchor"] += float(an)
+            acc["n"] += 1
             (loss / a.batch).backward()
             if acc["n"] % a.batch == 0:
                 torch.nn.utils.clip_grad_norm_([p for p in student.parameters() if p.requires_grad], 1.0)
                 opt.step(); sched.step(); opt.zero_grad(set_to_none=True); step += 1
-                rec = dict(step=step, epoch=ep, kd=acc["kd"] / a.batch, ce=acc["ce"] / a.batch, sel_rate=acc["n_sel"] / max(1, acc["n_front"]),
-                           empty_states=acc["n_empty"], lr=sched.get_last_lr()[0], s_per_state=(time.time() - t0) / (step * a.batch))
+                rec = dict(step=step, epoch=ep, kd=acc["kd"] / a.batch, anchor=acc["anchor"] / a.batch, ce=acc["ce"] / a.batch,
+                           pos_per_frame=acc["n_pos"] / a.batch, unsure_rate=acc["n_unsure"] / max(1, acc["n_pos"]), empty_frames=acc["n_empty"],
+                           lr=sched.get_last_lr()[0], s_per_frame=(time.time() - t0) / (step * a.batch))
                 log.write(json.dumps(rec) + "\n"); log.flush()
                 if step % 10 == 1 or step == total_steps:
                     print("[train]", json.dumps(rec), flush=True)
-                acc = dict(n=0, n_sel=0, n_front=0, n_empty=0, kd=0.0, ce=0.0)
+                acc = zero()
                 if step >= total_steps:
                     done = True; break
         if done:

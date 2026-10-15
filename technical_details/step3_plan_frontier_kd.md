@@ -33,36 +33,42 @@ top-p 0.9, temperature 0.1 — the official MATH-500 settings), giving the canva
 validated (decode-time states); dataset responses as prefixes are off-policy and the prelim says nothing about them. Rollouts are
 generated once and reused by every arm (one job, ≈ 17 k × ~8 s / 0.51 ≈ 40 GPU·h-units at batch 8; verify with a 50-prompt smoke).
 
-## 2. Objective
-For a canvas x (prompt + student rollout of length L) sample a cut point c ~ U[1, L] and build the suffix state
-x^c = prompt ‖ x_{<c} ‖ [MASK]^{L−c}. Student forward on x^c gives p_S(·|x^c, j) at every masked j; teacher forward on the **same** x^c
-gives p_T(·|x^c, j).
+## 2. Objective (revised 2026-10-15 after discussion: replay the trajectory, gate-shaped target)
+The student's rollout is a recording: for every response token we know the sampler step that wrote it and the raw confidence it had.
+A training **frame** is the recording rewound to step t — tokens written at steps ≤ t visible, the rest [MASK] — i.e. exactly a state the
+student was in while decoding (no new noise is added; random masking is the control C4). NEXT(t) = the positions the sampler filled at step t+1.
+Frames per canvas per epoch: 2 sampled from steps right before a low-confidence commit ("the moment before a likely mistake"), 1 uniform.
 
-    frontier F(x^c) = the first K = 4 masked positions (c … c+3)
-    selected S(x^c) = { j ∈ F : max_v p_S(v | x^c, j) < θ },  θ = 0.8
-    L_KD  = (1/|S|) Σ_{j∈S} KL( p_S(·|x^c, j) ‖ p_T(·|x^c, j) )          reverse KL (default; TOPD: reverse > JSD > forward), full vocabulary, teacher detached
-    L_CE  = standard Dream masked CE on the rollout tokens at the frontier (keeps the diffusion objective; weight λ = 0.1)
-    L     = L_KD + λ L_CE
+Student forward on the frame gives p_S at NEXT(t); c_j = max p_S(·|j) is the gate's signal. Teacher forward on the **same** frame gives p_T.
 
-Two cuts per canvas per epoch (one of them drawn from the low-confidence steps recorded during the rollout, so half the states are
-"interesting" as in the prelim). Positions outside S get no KD gradient. Teacher = A(1.5) (`add-a10-b15`: smallest β past the peak,
-rate 2 = 3.2 %, `step2_plan_ladder_softmix.md`). Consensus variant (target = mean of A(1.5)/A(2.0)/A(2.5) where their argmax agrees,
-no loss where they disagree) is a follow-up, not in the first ladder — one teacher forward is enough to decide whether the recipe works.
+    unsure  j (c_j < θ=0.8):   D( p_S(j) , p_T(j) )                 reverse KL by default (`step3_recipe_survey.md`)   "learn the teacher"
+    sure    j (c_j ≥ θ):       λ · KL( p_S(j) ‖ p_S0(j) ),  λ = 0.3  p_S0 = the student before training (LoRA disabled)  "do not drift"
+    L = mean over unsure + λ · mean over sure      (means taken separately so the 90 % sure positions do not drown the signal)
 
-Why these choices: K = 4 is where frontier precision is still 0.55 and recall 0.97 (K = 1 alone gives ~one position per state — too sparse
-for a 7B update at 17 k prompts; K = 16 is 0.33 precision). θ = 0.8 is the gate's operating point and the frontier p distribution matches
-decoding by construction, so no ratio-dependent θ. KL on the full distribution rather than the argmax token because the teacher's mass away from its argmax is the part the gate never used (free information), and hard targets are what C2 tests. Reverse rather than forward KL after the survey (`step3_recipe_survey.md` §3): forward KL has to cover the teacher's whole support at a noisy state and lost 3 points in TOPD's ablation; forward stays as arm C5.
-mass away from its argmax is the part the gate never used (free information), and hard targets are what C2 tests.
+So the per-frame target is the gate itself — the teacher where the student is unsure, the original student elsewhere. Positions beyond
+NEXT(t) get no loss (prelim: they are uncertain for lack of left context, the gate never scores them).
+Teacher = A(1.5) when the student is Ins; A(2.0) when the student is the best merge M(.4,.6) (the two gates measured in STEP1).
+
+Why a wrong token already in the prefix is not a dead end: the frame *before* it was written is also in the recording, with that position still
+masked and low-confidence — that frame is where the teacher corrects it, and the low-confidence frame sampling makes such frames the majority.
+After the mistake, later frames teach "the best continuation given this prefix", exactly what the gate does at decode time (it keeps confident
+wrong tokens too). A second round (re-record with the trained student, train again) is the on-policy iteration that improves the later frames.
+
+Student init: run both **Ins** (the "enhance the official model" story, ceiling ≈ 48–49) and **M(.4,.6)** (higher start, ceiling ≈ 51; its weights
+are free, so distilling the merge into Ins at the sure positions would be wasted compute — use it as the init instead). Same code, two configs.
+Ground truth is not used in the main method (prefixes are the student's own text, GT tokens do not align); it appears only in the RFT control C6.
 
 ## 3. Arms (LoRA r = 64, α = 128, all linear modules, lr 1e-4, 2 epochs, batch 32 states, max length 1 024, bf16, grad-ckpt)
 | arm | corruption | positions | target | tests |
 |---|---|---|---|---|
-| **M** frontier over-KD | suffix | frontier, p_S < 0.8 | A(1.5) distribution | the method |
-| C1 all-frontier KD | suffix | frontier, all K | A(1.5) | is *selection* needed, or is it "KD at the frontier" |
-| C2 self-SFT | suffix | frontier, all K | rollout token (CE) | is the *teacher* needed (= on-policy SFT / unfiltered RFT, dOPSD-like) |
-| C3 non-over teacher | suffix | frontier, p_S < 0.8 | A(1.0) distribution | is *over* needed (A(1.0) gate = 44.3 vs A(1.5) 48.3) |
-| C4 random-mask KD | i.i.d. mask r ~ U(0,1) | masked, p_S < 0.8 | A(1.5) | is the *suffix corruption* needed (standard dLLM SFT corruption) |
-| C5 forward KL | suffix | frontier, p_S < 0.8 | A(1.5), KL(p_T‖p_S) | divergence direction (TOPD says reverse; cheap check on our teacher) |
+| **M** gate distillation | replay | NEXT, p_S < 0.8 → teacher; sure → anchor to untouched student | A(1.5) / A(2.0) | the method |
+| C1 no split | replay | every NEXT position → teacher | A(1.5) | is *selection* needed |
+| C2 self-SFT | replay | NEXT, all | rollout token (CE) | is the *teacher* needed (= on-policy SFT / unfiltered RFT, dOPSD-like) |
+| C3 non-over teacher | replay | NEXT, p_S < 0.8 | A(1.0) distribution | is *over* needed (A(1.0) gate = 44.3 vs A(1.5) 48.3) |
+| C4 random-mask KD | i.i.d. mask r ~ U(0,1) | the 4 most confident masks, p_S < 0.8 | A(1.5) | is the *replayed state* needed (standard dLLM SFT corruption) |
+| C5 forward KL | replay | NEXT, p_S < 0.8 | A(1.5), KL(p_T‖p_S) | divergence direction (TOPD says reverse; cheap check on our teacher) |
+| C6 RFT | official random mask | all masked (official Dream SFT loss) | rollout tokens of MATH prompts whose answer matches GT | the classic "why not just RFT" baseline (MATH 6 k only) |
+| C7 plain SFT | official random mask | all masked | the datasets' reference responses | "is it just more training" (same 17 k prompts) |
 | C0 | — | — | — | Ins untouched (exists) |
 Reference lines: gate Ins ⇐ A(1.5) @0.8 = 48.3 (1.14×), A(1.5) alone, best merge M(.4,.6) = 46.6 all-500.
 Budget rule: M first with C2 (the cheapest and most damaging control); C1/C3/C4 only if M clears the success bar.

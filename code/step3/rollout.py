@@ -2,8 +2,11 @@
 (MATH-500 settings: max_new_tokens 512, steps 512, temperature 0.1, top_p 0.9, alg=entropy) and we keep the canvas + commit order.
 Training states are cut from these canvases (suffix corruption); the per-position commit step lets the trainer sample cuts along the
 decode order if wanted. One line per prompt in <out>/rollouts.jsonl:
-  {id, source, prompt_len, resp_ids (up to and incl. the first <|im_end|>/<|endoftext|>), resp_len, finished, commit_step[list, resp positions],
+  {id, source, prompt_len, resp_ids (up to and incl. the first <|im_end|>/<|endoftext|>), resp_len, finished,
+   commit_step[per response position: the sampler step that wrote it], commit_conf[raw T=1 probability of the written token at that step],
    text}
+The trainer replays frames of this trajectory (state after step t = tokens with commit_step <= t, the rest masked) and samples frames
+preferentially right before a low-confidence commit (commit_conf < theta at step t+1).
 Batched with left padding (Dream's generate accepts attention_mask); batch=1 reproduces the official per-prompt run exactly.
 Shardable: --start/--end over prompt ids. GPU job only (never on the login node)."""
 import argparse, json, time
@@ -50,14 +53,33 @@ def main():
         enc = tok(texts, return_tensors="pt", padding=True, add_special_tokens=False)
         ids, am = enc.input_ids.cuda(), enc.attention_mask.cuda()
         P = ids.shape[1]
+        # raw (T = 1) probability of each committed token at the step it was written = the gate's confidence signal; captured through the
+        # sampler's token hook (called after step i with the step's shifted raw logits). Used by the trainer to sample "frames before a
+        # low-confidence commit".
+        conf_at = torch.zeros(ids.shape[0], a.max_new, device="cuda"); prev = {"x": None}
+
+        def hook(step, x, logits):
+            if step is None:
+                prev["x"] = x.clone(); return x
+            new = (prev["x"] == MASK) & (x != MASK)
+            if new.any():
+                with torch.no_grad():
+                    p = torch.softmax(logits.float(), -1).gather(-1, x.unsqueeze(-1)).squeeze(-1)   # [B, L]
+                nr = new[:, P:]
+                conf_at[nr] = p[:, P:][nr]
+            prev["x"] = x.clone(); return x
+
         with torch.no_grad():
             o = m.diffusion_generate(ids, attention_mask=am, max_new_tokens=a.max_new, output_history=True, return_dict_in_generate=True,
-                                     steps=a.steps, temperature=a.temperature, top_p=a.top_p, alg="entropy", alg_temp=0.0)
+                                     steps=a.steps, temperature=a.temperature, top_p=a.top_p, alg="entropy", alg_temp=0.0,
+                                     generation_tokens_hook_func=hook)
         seq = o.sequences[:, P:].cpu()                                   # [B, max_new]
-        hist = torch.stack([h[:, P:].cpu() for h in o.history])          # [S+1, B, max_new]
+        hist = torch.stack([h[:, P:].cpu() for h in o.history])          # [S, B, max_new]  (state after step 0 … S-1)
         was_mask = hist == MASK
-        # commit step of each response position = first history index where it is no longer MASK (0 = never masked, should not happen)
-        commit = (was_mask.cumsum(0) * was_mask).max(0).values           # number of steps spent masked = step index at which it was committed
+        # commit step of each response position: number of recorded states in which it is still MASK = index of the step that wrote it
+        # (history[k] is the state AFTER step k, so a token written at step k is masked in history[0..k-1] -> commit = k)
+        commit = was_mask.sum(0)
+        conf_cpu = conf_at.cpu()
         for i, r in enumerate(batch):
             resp = seq[i]
             ends = [(resp == t).nonzero() for t in (IM_END, EOS)]
@@ -66,7 +88,8 @@ def main():
             L = (min(ends) + 1) if finished else resp.shape[0]
             resp_ids = resp[:L].tolist()
             rec = dict(id=r["id"], source=r["source"], prompt_len=int(am[i].sum().item()), resp_ids=resp_ids, resp_len=L, finished=finished,
-                       commit_step=commit[i, :L].tolist(), text=tok.decode(resp[:L], skip_special_tokens=True))
+                       commit_step=commit[i, :L].tolist(), commit_conf=[round(c, 4) for c in conf_cpu[i, :L].tolist()],
+                       text=tok.decode(resp[:L], skip_special_tokens=True))
             fo.write(json.dumps(rec, ensure_ascii=False) + "\n")
         fo.flush(); n += len(batch)
         if (b // a.batch) % 10 == 0:

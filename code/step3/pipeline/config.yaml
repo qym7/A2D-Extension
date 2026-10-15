@@ -4,16 +4,24 @@ n_prompts: 17000          # outputs/step3/prompts.jsonl (Tulu-3 8k incl. its mat
 rollout_shards: 4
 rollout_batch: 4
 
-# shared training hyperparameters (plan §3): LoRA r64/alpha128, lr 1e-4, 2 epochs, batch 32 states, 2 cuts per canvas, theta 0.8, K 4
-train_args: "--kl reverse --top-k 0 --kd-temp 1.0 --theta 0.8 --K 4 --lambda-ce 0.1 --cuts-per-canvas 2 --epochs 2 --batch 32 --lr 1e-4 --lora-r 64 --lora-alpha 128 --max-len 1024"
+# student init (plan §2): ins = Dream-org/Dream-v0-Instruct-7B (teacher A(1.5)); m46 = best merge M(.4,.6) (teacher A(2.0)). Arms inherit `student` unless they set their own.
+student: m46
+students:
+  ins: Dream-org/Dream-v0-Instruct-7B
+  m46: /mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/outputs/checkpoints/dream-ins-04a_D-06a_A
+# shared training hyperparameters (plan §2–3): replayed frames (2 before a low-confidence commit + 1 uniform per canvas per epoch), gate-shaped loss,
+# LoRA r64/alpha128, lr 1e-4, 2 epochs, batch 32 frames
+train_args: "--corruption replay --anchor self --lambda-anchor 0.3 --low-frames 2 --uniform-frames 1 --kl reverse --top-k 0 --kd-temp 1.0 --theta 0.8 --epochs 2 --batch 32 --lr 1e-4 --lora-r 64 --lora-alpha 128 --max-len 1024"
 
-# arms: teacher = beta on the addition line A(beta) = D_b + tau_D + beta*tau_A (null = no teacher). extra = arm-specific train args.
+# arms: teacher = beta on the addition line A(beta) = D_b + tau_D + beta*tau_A (null = no teacher). extra = arm-specific train args; student overrides the global init.
 arms:
-  M:  {teacher: 1.5}                        # frontier KD, theta-selected          (the method)
+  M:  {teacher: 2.0}                        # gate distillation: unsure -> teacher, sure -> anchor to untouched student   (the method)
+  Mi: {teacher: 1.5, student: ins}          # same, from the official Instruct model
   C2: {teacher: null}                       # self-SFT on the rollout token         (is the teacher needed)
-  C1: {teacher: 1.5}                        # frontier KD, every frontier position  (is selection needed)
-  C3: {teacher: 1.0}                        # non-over teacher A(1.0)               (is "over" needed)
-  C4: {teacher: 1.5}                        # random-mask corruption (runner adds --corruption random)   (is suffix needed)
-  C5: {teacher: 1.5, extra: "--kl forward"} # forward KL instead of reverse                               (divergence direction)
+  C1: {teacher: 2.0, extra: "--anchor none"}   # every NEXT position -> teacher, no split      (is selection needed)
+  C3: {teacher: 1.1}                        # non-over teacher A(1.1) = best addition         (is "over" needed)
+  C4: {teacher: 2.0, extra: "--corruption random"}   # random-mask corruption                  (is the replayed state needed)
+  C5: {teacher: 2.0, extra: "--kl forward"} # forward KL instead of reverse                               (divergence direction)
+# C6 (RFT on GT-correct MATH rollouts) and C7 (plain SFT on reference responses) use the official Dream SFT trainer, not this one — not wired yet.
 first_wave: [M, C2]
 guard_arms: [M]            # GSM8K / HumanEval+ / IFEval only for arms that clear the MATH bar (plan §4); add arms here after reading MATH
