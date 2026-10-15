@@ -10,16 +10,16 @@ Post-A2D exploration on Dream-v0-7B ↔ Qwen2.5-7B. Three documents, in reading 
 
 Everything else is in `technical_details/`, prefixed by the step it supports (`step0_*` baselines / headroom / subset checks, `step1_*` generated tables, dose-curve decomposition, votes, the older 512-era notes, `step2_*` idea notes) — kept for traceability, not required to follow the story.
 
-`scripts/` is organised the same way:
+`code/` is organised the same way:
 
 | prefix | what |
 |---|---|
 | `step0_*` | baseline runner (`step0_run_lockstep_m500.sh`, `step0_submit_s0.sh`), headroom / AR-help figures, DreamReasoner analyses, subset-reliability checks |
-| `step1_*` | the gated decoder `step1_lockstep_gated.py` (modes: content_gated, schedule_gated, both_gated, content_random, content_random_uncond), `step1_merge_shards.py` (sharded runs → `*-merged`), `step1_main_table.py` (→ `technical_details/step1_main_table.md`), votes, dose/finish decompositions |
+| `step1_*` | the gated decoder `code/step1/lockstep_gated.py` (modes: content_gated, schedule_gated, both_gated, content_random, content_random_uncond), `step1_merge_shards.py` (sharded runs → `*-merged`), `step1_main_table.py` (→ `technical_details/step1_main_table.md`), votes, dose/finish decompositions |
 
-Job submitters shared across ideas live one level up in `../modules/` (`run_gated_shard*.sh`, `submit.sh`); they call `details/draft_scripts/lockstep_gated.py`, which is a symlink to `scripts/step1/lockstep_gated.py`.
+Job submitters shared across ideas live one level up in `../modules/` (`run_gated_shard*.sh`, `submit.sh`); they call `code/step1/lockstep_gated.py`, which is a symlink to `code/step1/lockstep_gated.py`.
 `spec.md` / `task.md` / `analysis.md` are the working documents.
-Raw outputs (`outputs/`, `details/logs/`, `results/`), checkpoints and `trash/` are not tracked.
+Raw outputs (`outputs/`, `outputs/stepN/`, `results/`), checkpoints and `trash/` are not tracked.
 
 ## Summary (2026-10-13)
 
@@ -58,4 +58,4 @@ through precision on finished problems (52 → 62) with no finish-rate change. T
 teacher, votes, other line, cascades, AR) equals one over teacher; only an answer-level cascade gains (+4–6 at 1.5–2.5×) and AR stays 20 points above.
 The gate is therefore kept as a *training signal*, and STEP2 fixes the distillation design: one over teacher A(1.5), full-distribution KL, only at the
 student's low-confidence frontier of a prefix-visible state, label-free prompts, short LoRA adaptation.
-**STEP3** (`technical_details/step3_plan_frontier_kd.md`, `pipeline/`): the distillation training itself — arms M / C1–C4, MATH-500 last 300 + GSM8K / HumanEval+ / IFEval guards.
+**STEP3** (`technical_details/step3_plan_frontier_kd.md`, `code/step3/pipeline/`): the distillation training itself — arms M / C1–C4, MATH-500 last 300 + GSM8K / HumanEval+ / IFEval guards.

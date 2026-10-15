@@ -1,13 +1,5 @@
 # raw outputs, checkpoints, logs, result data — never tracked (new_ideas/CLAUDE.md)
+# outputs/ holds every run output, split by step (outputs/step{0..3}/, outputs/checkpoints/)
 outputs/
-details/logs/
-results/
 trash/
 commands_gen/
-# generated figures / result json
-*.png
-technical_details/step0_figs/*.json
-# python / editor
-__pycache__/
-*.pyc
-*.bak

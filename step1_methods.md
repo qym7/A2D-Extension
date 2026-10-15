@@ -2,7 +2,7 @@
 
 Protocol: MATH-500, Dream-v0 family, lockstep decoder @1024 tokens / 1024 steps (one token committed per step), top_p 0.9, conf_temp 0.1.
 Subsets: first 200 = ids 0–199 (screening), last 300 = ids 200–499 (harder; the default since 2026-10-12), all 500.
-Notation in `technical_details/step0_naming.md`; generated numbers in `technical_details/step1_main_table.md`; sharded runs merged by `scripts/step1/merge_shards.py`.
+Notation in `technical_details/step0_naming.md`; generated numbers in `technical_details/step1_main_table.md`; sharded runs merged by `code/step1/merge_shards.py`.
 
 **The method (content gate).** Two models decode the same canvas in lockstep. At every step the *student* picks the position to
 write (its own confidence ranking) and proposes a token with raw probability p. If p < θ the *teacher's* token for that position is

@@ -1,6 +1,6 @@
 # Dream MATH: addition > merge 只是因为写得完（2026-10-10，零 GPU）
 
-MATH-500 前 200 题，@1024，lockstep 单独跑（`details/logs/lockstep1024/math500/*-free`）。写完 = 文本含 `\boxed`。
+MATH-500 前 200 题，@1024，lockstep 单独跑（`outputs/step0/lockstep1024/math500/*-free`）。写完 = 文本含 `\boxed`。
 
 | 模型 | acc | 写完题数 | 写完的题里 acc |
 |---|---:|---:|---:|

@@ -38,4 +38,4 @@ Protocol as in STEP1: MATH-500 last 300, lockstep @1024, H200·0.51. Details: `t
 
 Success: 1× student ≥ Ins + 6 on MATH last 300 and > C2 + 3, no loss on GSM8K / HumanEval+ / IFEval.
 Kill: C2 matches (teacher adds nothing), or a guard regresses after one retry.
-Plan: `technical_details/step3_plan_frontier_kd.md`. Pipeline: `pipeline/`.
+Plan: `technical_details/step3_plan_frontier_kd.md`. Pipeline: `code/step3/pipeline/`.

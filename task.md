@@ -54,7 +54,7 @@ content_gated --theta θ`), plus a substitution counter. ~10 lines.
 ## Steps
 
 ### S0 — baseline gate (`todo`)
-Copy `lockstep_port.py` to `details/draft_scripts/lockstep_gated.py` **unmodified**, run the four
+Copy `lockstep_port.py` to `code/step1/lockstep_gated.py` **unmodified**, run the four
 Table-2 cells at n=200 on B300, and confirm each within the noise band of the published value.
 Do not touch the gate code until S0 passes. *(Note: Table 2's cells are the parent↔A2D-merge pair,
 so S0 also confirms the checkpoints on disk are the paper's.)*
@@ -92,7 +92,7 @@ before looking at S2**.
 ## Verification commands
 
 ```bash
-python -m py_compile details/draft_scripts/lockstep_gated.py
+python -m py_compile code/step1/lockstep_gated.py
 bash -n commands/*.sh
 # θ=0 must equal free mode; assert in the sweep aggregator
 ```

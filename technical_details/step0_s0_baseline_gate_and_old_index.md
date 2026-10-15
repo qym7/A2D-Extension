@@ -28,7 +28,7 @@ wrong baseline through. The two redundant n=200 port runs were stopped.
 
 ## A bug the same document caught, before it wasted a sweep
 
-`scripts/step1/lockstep_gated.py` originally gated on the driver's **protocol-sharpened**
+`code/step1/lockstep_gated.py` originally gated on the driver's **protocol-sharpened**
 confidence `pd`. That same README records that the sharpened confidence "saturates at 1.0 everywhere"
 and "cannot rank tokens by confidence" — which is exactly why the instrument's author added a raw
 value on 2026-09-21. A gate on the sharpened number would have been degenerate: identical to free mode

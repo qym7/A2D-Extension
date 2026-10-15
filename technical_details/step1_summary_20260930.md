@@ -320,10 +320,10 @@ AR-ness 测量也一致：`local@1_full` 随 λ 从 0.954 单调降到 0.867 —
 | 结论 | 证据文件 |
 |---|---|
 | 全部 51 个 512 arm，五列 + 配对 | `../CLEAN_TABLES.md`（脚本生成：`../details/gen_clean_tables.py`） |
-| 随机对照（修好的）| `details/logs/gated/math500/e6-rand-f{025,060,092}/`；坏的在 `trash/invalid_rand_control_20260929/README.md` |
-| 收尾 = 预算耗尽的诊断 | `details/logs/lockstep/math500/eosdiag-a15-rec/records/`（500 个完整 512-token final_ids） |
-| @1024 n=500 | `details/logs/lockstep1024/math500/`、`details/logs/gated1024/math500/` |
-| @1024 n=100 / 200（k2、k3） | `details/logs/lockstep1024/math500/k2-*`、`details/logs/gated1024n100/math500/k3-*`（k3 可能还没跑完） |
+| 随机对照（修好的）| `outputs/step1/gated/math500/e6-rand-f{025,060,092}/`；坏的在 `trash/invalid_rand_control_20260929/README.md` |
+| 收尾 = 预算耗尽的诊断 | `outputs/step0/lockstep/math500/eosdiag-a15-rec/records/`（500 个完整 512-token final_ids） |
+| @1024 n=500 | `outputs/step0/lockstep1024/math500/`、`outputs/step1/gated1024/math500/` |
+| @1024 n=100 / 200（k2、k3） | `outputs/step0/lockstep1024/math500/k2-*`、`outputs/step1/gated1024n100/math500/k3-*`（k3 可能还没跑完） |
 | λ 家族 AR-ness | `results/arness_lambda_b300/*.json` |
 | 集成投票（已否定的那条线） | `results/ENSEMBLE_FINDING.md`（含撤回说明） |
 | gate 的完整记录 | `results/E1_E3_E4_gate_summary.md` |

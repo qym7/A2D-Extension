@@ -1,7 +1,7 @@
 # STEP2 — Are the two clean pairs complementary? A zero-GPU cascade check (2026-10-13)
 
 Question (user): can Ins ⇐ A(2.0) (finish-rate line) and M(.4,.6) ⇐ M(0,1) (precision line) be combined?
-Everything below is recomputed from saved outputs (`details/logs/.../t08*`), MATH-500, @1024 lockstep, θ = 0.8 on both.
+Everything below is recomputed from saved outputs (`outputs/stepN/.../t08*`), MATH-500, @1024 lockstep, θ = 0.8 on both.
 
 ## 1. Where each one wins (last 300)
 | | count | of which |

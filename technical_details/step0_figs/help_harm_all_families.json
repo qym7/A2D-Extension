@@ -1,0 +1,326 @@
+{
+ "Dream-v0 \u00b7 IFEval": {
+  "n": 541,
+  "acc": {
+   "D": 56.6,
+   "A": 70.4,
+   "merge": 66.5,
+   "add": 72.1
+  },
+  "labels": [
+   "0.4/0.6",
+   "\u03b2=1.1"
+  ],
+  "help_pool": 127,
+  "harm_pool": 52,
+  "merge": {
+   "help_inh": 68,
+   "synergy": 27,
+   "harm_inh": 12,
+   "own_loss": 29
+  },
+  "add": {
+   "help_inh": 85,
+   "synergy": 37,
+   "harm_inh": 11,
+   "own_loss": 27
+  }
+ },
+ "Dream-v0 \u00b7 MATH-500": {
+  "n": 500,
+  "acc": {
+   "D": 38.4,
+   "A": 56.0,
+   "merge": 45.0,
+   "add": 50.0
+  },
+  "labels": [
+   "0.4/0.6",
+   "\u03b2=1.1"
+  ],
+  "help_pool": 140,
+  "harm_pool": 52,
+  "merge": {
+   "help_inh": 55,
+   "synergy": 17,
+   "harm_inh": 14,
+   "own_loss": 25
+  },
+  "add": {
+   "help_inh": 64,
+   "synergy": 33,
+   "harm_inh": 10,
+   "own_loss": 29
+  }
+ },
+ "Dream-Coder \u00b7 HumanEval": {
+  "n": 164,
+  "acc": {
+   "D": 81.7,
+   "A": 90.2,
+   "merge": 84.8,
+   "add": 83.5
+  },
+  "labels": [
+   "0.8/0.2",
+   "\u03b2=0.4"
+  ],
+  "help_pool": 18,
+  "harm_pool": 4,
+  "merge": {
+   "help_inh": 9,
+   "synergy": 1,
+   "harm_inh": 1,
+   "own_loss": 4
+  },
+  "add": {
+   "help_inh": 10,
+   "synergy": 0,
+   "harm_inh": 0,
+   "own_loss": 7
+  }
+ },
+ "Dream-Coder \u00b7 MBPP": {
+  "n": 378,
+  "acc": {
+   "D": 79.1,
+   "A": 84.1,
+   "merge": 80.4,
+   "add": 81.7
+  },
+  "labels": [
+   "0.8/0.2",
+   "\u03b2=0.4"
+  ],
+  "help_pool": 40,
+  "harm_pool": 21,
+  "merge": {
+   "help_inh": 16,
+   "synergy": 5,
+   "harm_inh": 3,
+   "own_loss": 13
+  },
+  "add": {
+   "help_inh": 20,
+   "synergy": 4,
+   "harm_inh": 2,
+   "own_loss": 12
+  }
+ },
+ "DiffuCoder-SFT \u00b7 HumanEval": {
+  "n": 164,
+  "acc": {
+   "D": 72.6,
+   "A": 90.2,
+   "merge": 79.3,
+   "add": 73.8
+  },
+  "labels": [
+   "0.8/0.2",
+   "\u03b2=0.6"
+  ],
+  "help_pool": 33,
+  "harm_pool": 4,
+  "merge": {
+   "help_inh": 14,
+   "synergy": 1,
+   "harm_inh": 0,
+   "own_loss": 4
+  },
+  "add": {
+   "help_inh": 17,
+   "synergy": 0,
+   "harm_inh": 0,
+   "own_loss": 15
+  }
+ },
+ "DiffuCoder-SFT \u00b7 MBPP": {
+  "n": 378,
+  "acc": {
+   "D": 77.5,
+   "A": 84.1,
+   "merge": 78.6,
+   "add": 75.7
+  },
+  "labels": [
+   "0.8/0.2",
+   "\u03b2=0.6"
+  ],
+  "help_pool": 46,
+  "harm_pool": 21,
+  "merge": {
+   "help_inh": 15,
+   "synergy": 3,
+   "harm_inh": 6,
+   "own_loss": 8
+  },
+  "add": {
+   "help_inh": 12,
+   "synergy": 4,
+   "harm_inh": 8,
+   "own_loss": 15
+  }
+ },
+ "DiffuCoder-RL \u00b7 MBPP+": {
+  "n": 378,
+  "acc": {
+   "D": 66.9,
+   "A": 70.6,
+   "merge": 69.0,
+   "add": 66.9
+  },
+  "labels": [
+   "0.5/0.5",
+   "\u03b2=0.4"
+  ],
+  "help_pool": 39,
+  "harm_pool": 25,
+  "merge": {
+   "help_inh": 18,
+   "synergy": 2,
+   "harm_inh": 3,
+   "own_loss": 9
+  },
+  "add": {
+   "help_inh": 1,
+   "synergy": 0,
+   "harm_inh": 0,
+   "own_loss": 1
+  }
+ },
+ "DreamReasoner \u00b7 MATH-500 (8k)": {
+  "n": 500,
+  "acc": {
+   "D": 93.6,
+   "A": 83.8,
+   "merge": 94.8,
+   "add": 94.4
+  },
+  "labels": [
+   "0.8/0.2",
+   "\u03b2=0.5"
+  ],
+  "help_pool": 14,
+  "harm_pool": 63,
+  "merge": {
+   "help_inh": 8,
+   "synergy": 7,
+   "harm_inh": 6,
+   "own_loss": 3
+  },
+  "add": {
+   "help_inh": 9,
+   "synergy": 8,
+   "harm_inh": 8,
+   "own_loss": 5
+  }
+ },
+ "Nemotron-3B \u00b7 MATH-500": {
+  "n": 500,
+  "acc": {
+   "D": 76.8,
+   "A": 83.0,
+   "merge": 79.6,
+   "add": 76.4
+  },
+  "labels": [
+   "D_p\u22120.3a_D+0.3a_A",
+   "D_p+0.4a_A"
+  ],
+  "help_pool": 61,
+  "harm_pool": 30,
+  "merge": {
+   "help_inh": 30,
+   "synergy": 17,
+   "harm_inh": 8,
+   "own_loss": 25
+  },
+  "add": {
+   "help_inh": 22,
+   "synergy": 13,
+   "harm_inh": 10,
+   "own_loss": 27
+  }
+ },
+ "Nemotron-3B \u00b7 HumanEval": {
+  "n": 164,
+  "acc": {
+   "D": 73.2,
+   "A": 80.5,
+   "merge": 75.0,
+   "add": 67.7
+  },
+  "labels": [
+   "D_p\u22120.3a_D+0.3a_A",
+   "D_p+0.4a_A"
+  ],
+  "help_pool": 26,
+  "harm_pool": 14,
+  "merge": {
+   "help_inh": 11,
+   "synergy": 7,
+   "harm_inh": 3,
+   "own_loss": 12
+  },
+  "add": {
+   "help_inh": 9,
+   "synergy": 5,
+   "harm_inh": 4,
+   "own_loss": 19
+  }
+ },
+ "Nemotron-3B \u00b7 MBPP": {
+  "n": 378,
+  "acc": {
+   "D": 73.0,
+   "A": 75.9,
+   "merge": 75.7,
+   "add": 73.0
+  },
+  "labels": [
+   "D_p\u22120.3a_D+0.3a_A",
+   "D_p+0.4a_A"
+  ],
+  "help_pool": 41,
+  "harm_pool": 30,
+  "merge": {
+   "help_inh": 20,
+   "synergy": 11,
+   "harm_inh": 6,
+   "own_loss": 15
+  },
+  "add": {
+   "help_inh": 19,
+   "synergy": 9,
+   "harm_inh": 3,
+   "own_loss": 25
+  }
+ },
+ "Nemotron-3B \u00b7 IFEval": {
+  "n": 541,
+  "acc": {
+   "D": 61.7,
+   "A": 56.0,
+   "merge": 66.9,
+   "add": 65.2
+  },
+  "labels": [
+   "D_p\u22120.3a_D+0.3a_A",
+   "D_p+0.4a_A"
+  ],
+  "help_pool": 82,
+  "harm_pool": 113,
+  "merge": {
+   "help_inh": 31,
+   "synergy": 35,
+   "harm_inh": 26,
+   "own_loss": 12
+  },
+  "add": {
+   "help_inh": 29,
+   "synergy": 28,
+   "harm_inh": 24,
+   "own_loss": 14
+  }
+ }
+}

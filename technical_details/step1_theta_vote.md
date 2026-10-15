@@ -1,6 +1,6 @@
 # 单系统内的互补性：同一对 student ⇐ teacher，不同 θ 的答案投票（2026-10-12，零 GPU）
 
-脚本 `scripts/step1/theta_vote.py`（投票规则同 weight_vote.py：弃权剔除、平票按期望计分、minerva is_equiv 分组）。
+脚本 `code/step1/theta_vote.py`（投票规则同 weight_vote.py：弃权剔除、平票按期望计分、minerva is_equiv 分组）。
 AR 参考线：Qwen2.5-7B-Instruct 贪心 1024 token，全 500 = 56.0（`mathins_rev-qweninst-plain-t1024-h200-full`）。
 
 ## 重合（正确题集合）

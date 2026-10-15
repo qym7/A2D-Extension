@@ -1,0 +1,114 @@
+# STEP3 over-distillation pipeline (Snakemake 7).  prompts -> on-policy rollouts (sharded GPU jobs) -> teacher checkpoints ->
+# LoRA training per arm -> MATH-500 last-300 (lockstep @1024, 3 shards) -> guards (GSM8K / HumanEval+ / IFEval, official harnesses) -> table.
+# Snakemake runs on the login node and only ORCHESTRATES: every GPU step is a RunAI job submitted through modules/submit_wait.sh
+# (H200 x 0.51, the standing pool rule), which polls until the job finishes and checks the expected output. Rules are idempotent, so
+# `snakemake -j 8` can be re-run after a failure and continues where it stopped.
+#   cd idea1_selective_distill/code/step3/pipeline && PYTHONPATH=../../../../modules/pydeps snakemake -n            # dry run
+#   PYTHONPATH=../../../../modules/pydeps snakemake -j 6 --keep-going first_wave                           # M + C2 on MATH only
+#   PYTHONPATH=../../../../modules/pydeps snakemake -j 6 all                                               # every arm incl. guards
+# See pipeline/README.md. Plan and reading rules: technical_details/step3_plan_frontier_kd.md.
+import math, json
+configfile: "config.yaml"
+
+NI   = "/mnt/lts4/scratch/home/yqin/DllmAR/new_ideas"
+I1   = f"{NI}/idea1_selective_distill"
+MOD  = f"{NI}/modules"
+OUT  = f"{I1}/outputs/step3"
+CK   = f"{I1}/outputs/checkpoints"
+LOGS = f"{I1}/outputs"
+SW   = f"bash {MOD}/submit_wait.sh"
+TAG  = config["tag"]                           # job-name suffix for this pipeline run, e.g. s3a
+N_PROMPTS = config["n_prompts"]
+N_SHARDS  = config["rollout_shards"]
+SHARD = math.ceil(N_PROMPTS / N_SHARDS)
+ARMS  = config["arms"]                         # name -> {teacher: beta|null, extra: "..."}
+MATH_SHARDS = [(200, 300), (300, 400), (400, 500)]   # last 300 only (user rule 2026-10-12)
+
+def teacher_ckpt(arm):
+    b = ARMS[arm]["teacher"]
+    return "none" if b is None else f"{CK}/add-a10-b{int(round(b * 10)):02d}"
+
+wildcard_constraints:
+    arm="|".join(ARMS), i="[0-9]+", s="[0-9]"
+
+rule all:
+    input: f"{I1}/technical_details/step3_results_table.md"
+
+rule first_wave:          # M + C2, MATH only (plan §3 budget rule)
+    input: expand(f"{LOGS}/step3/step3-{{arm}}/math500/free-last300-merged/summary.json", arm=config["first_wave"])
+
+# ---------- data ----------
+rule prompts:
+    output: f"{OUT}/prompts.jsonl"
+    shell: "export PYTHONPATH=; systemd-run --user --scope -p MemoryMax=4G -p MemorySwapMax=0 -q "
+           "bash -c 'source {MOD}/jobenv.sh mdlm-math-b300 && python {I1}/code/step3/build_prompts.py --out {output}'"
+
+rule rollout_shard:
+    input: f"{OUT}/prompts.jsonl"
+    output: f"{OUT}/rollouts/s{{i}}/rollouts.jsonl"
+    params: start=lambda w: int(w.i) * SHARD, end=lambda w: min(N_PROMPTS, (int(w.i) + 1) * SHARD), batch=config["rollout_batch"]
+    shell: "{SW} yqin-i1-s3roll-{wildcards.i}-{TAG}-h200f051 {output} "
+           "bash {MOD}/run_step3_rollout.sh {OUT}/rollouts/s{wildcards.i} {params.start} {params.end} {params.batch}"
+
+rule rollouts_merged:
+    input: expand(f"{OUT}/rollouts/s{{i}}/rollouts.jsonl", i=range(N_SHARDS))
+    output: f"{OUT}/rollouts/all.jsonl"
+    shell: "cat {input} > {output} && wc -l {output}"
+
+# ---------- teachers (addition line A(beta) = D_b + tau_D + beta*tau_A; built once, flock-serialised inside the runner) ----------
+rule teacher:
+    output: f"{CK}/add-a10-b{{bb}}/merge_manifest.json"
+    params: beta=lambda w: int(w.bb) / 10
+    shell: "{SW} yqin-i1-s3build-b{wildcards.bb}-{TAG}-h200f051 {output} "
+           "bash {MOD}/run_build_addition.sh {CK}/add-a10-b{wildcards.bb} 1.0 {params.beta}"
+
+# ---------- training ----------
+rule train:
+    input:
+        roll=f"{OUT}/rollouts/all.jsonl",
+        teacher=lambda w: [] if ARMS[w.arm]["teacher"] is None else f"{teacher_ckpt(w.arm)}/merge_manifest.json"
+    output: f"{CK}/step3-{{arm}}/merged/config.json"
+    params: teacher=lambda w: teacher_ckpt(w.arm), extra=lambda w: ARMS[w.arm].get("extra", ""), common=config["train_args"]
+    shell: "{SW} yqin-i1-s3train-{wildcards.arm}-{TAG}-h200f051 {output} "
+           "bash {MOD}/run_step3_train.sh {wildcards.arm} {CK}/step3-{wildcards.arm} {params.teacher} {params.common} {params.extra}"
+
+# ---------- MATH-500 last 300, lockstep @1024, student alone (1x), 3 shards ----------
+rule eval_math_shard:
+    input: f"{CK}/step3-{{arm}}/merged/config.json"
+    output: directory(f"{LOGS}/step3/step3-{{arm}}/math500/free-last300-s{{s}}")
+    params: start=lambda w: MATH_SHARDS[int(w.s)][0], end=lambda w: MATH_SHARDS[int(w.s)][1]
+    shell: "{SW} yqin-i1-s3m500-{wildcards.arm}-s{wildcards.s}-{TAG}-h200f051 {output}/run.log "
+           "bash {MOD}/run_gated_shard5.sh {LOGS}/step3/step3-{wildcards.arm}/math500 {CK}/step3-{wildcards.arm}/merged none free "
+           "{params.start} {params.end} free-last300-s{wildcards.s} 0"
+
+rule eval_math_merge:
+    input: expand(f"{LOGS}/step3/step3-{{{{arm}}}}/math500/free-last300-s{{s}}", s=range(3))
+    output: f"{LOGS}/step3/step3-{{arm}}/math500/free-last300-merged/summary.json"
+    shell: "export PYTHONPATH=; source {MOD}/jobenv.sh mdlm-math-b300 && python {I1}/code/step3/merge_math_shards.py --shards {input} --out $(dirname {output})"
+
+# ---------- guards: official harnesses from dream_study (zsh wrappers; labels keyed by arm) ----------
+DS_EVAL = "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/scripts/eval"
+rule eval_ifeval:
+    input: f"{CK}/step3-{{arm}}/merged/config.json"
+    output: f"{LOGS}/step3/step3-{{arm}}/ifeval.done"
+    shell: "{SW} yqin-i1-s3ifeval-{wildcards.arm}-{TAG}-h200f051 {output} "
+           "bash {MOD}/run_official_eval.sh ifeval {CK}/step3-{wildcards.arm}/merged step3-{wildcards.arm} {output}"
+
+rule eval_humaneval:
+    input: f"{CK}/step3-{{arm}}/merged/config.json"
+    output: f"{LOGS}/step3/step3-{{arm}}/humaneval.done"
+    shell: "{SW} yqin-i1-s3heval-{wildcards.arm}-{TAG}-h200f051 {output} "
+           "bash {MOD}/run_official_eval.sh coding {CK}/step3-{wildcards.arm}/merged step3-{wildcards.arm} {output}"
+
+rule eval_gsm8k:
+    input: f"{CK}/step3-{{arm}}/merged/config.json"
+    output: f"{LOGS}/step3/step3-{{arm}}/gsm8k.done"
+    shell: "{SW} yqin-i1-s3gsm8k-{wildcards.arm}-{TAG}-h200f051 {output} "
+           "bash {MOD}/run_official_eval.sh gsm8k {CK}/step3-{wildcards.arm}/merged step3-{wildcards.arm} {output}"
+
+rule results_table:
+    input:
+        math=expand(f"{LOGS}/step3/step3-{{arm}}/math500/free-last300-merged/summary.json", arm=ARMS),
+        guards=expand(f"{LOGS}/step3/step3-{{arm}}/{{g}}.done", arm=config["guard_arms"], g=["ifeval", "humaneval", "gsm8k"])
+    output: f"{I1}/technical_details/step3_results_table.md"
+    shell: "export PYTHONPATH=; source {MOD}/jobenv.sh mdlm-math-b300 && python {I1}/code/step3/results_table.py --logs {LOGS}/step3 --arms {' '.join(ARMS)} --out {output}"

@@ -3,7 +3,7 @@
 零 GPU。全部来自 A2D 自己的 E3 lockstep 产物
 `dream_study/step2_instruct/outputs/official_eval/stepdiv/{ent-dream-mrg,ent-dream-aq,ent-dream-ad}/step_divergence.json`
 （GSM8K 100 题，256 token，T=0，教师强制；**这是分析仪器，不是官方评测协议**）。
-分析脚本：`scripts/`（见本文件末尾的复现命令）。
+分析脚本：`code/`（见本文件末尾的复现命令）。
 
 ## 0. 先说三个读表前要知道的事
 
@@ -163,7 +163,7 @@ idea 1 的 30 多个 gate arm（`SUMMARY.md` 结果 1、结果 2）**全部**是
 
 ## 7. 预注册的实验（MATH-500 @512，0.5 H200，6 个 arm）
 
-仪器已有：`scripts/step1/lockstep_gated.py`。需要加一个 mode（gate 在 **donor 自己的**
+仪器已有：`code/step1/lockstep_gated.py`。需要加一个 mode（gate 在 **donor 自己的**
 `praw` 上，不是 driver 的；`model_step_ext` 已经能返回所需量）。
 
 | arm | host | donor | gate | 作用 |
@@ -322,7 +322,7 @@ W = D_b + τ_D + λ·τ_A        （= parent + λ·τ_A，instruct-anchored）
 # 追加 2（2026-10-06）：best merge 和过度 merge 的剂量曲线 —— 这张表改写整个故事
 
 零 GPU。全部来自 idea 1 自己已经跑完的 free 模式 arm
-（`details/logs/lockstep/math500/{s0-free-parent,e3-mrg04-free,s0-free-a2d,e3-mrg08-free,e3-mrg10-free,donor-a12-free,donor-a15-free}/texts.jsonl`）。
+（`outputs/step0/lockstep/math500/{s0-free-parent,e3-mrg04-free,s0-free-a2d,e3-mrg08-free,e3-mrg10-free,donor-a12-free,donor-a15-free}/texts.jsonl`）。
 **MATH-500、512 token、free 模式、单模型、同一条代码路径、同样的 200 道题**。
 长度是用 tokenizer 数的**真 token 数**（`gen_len` 字段是整张画布恒为 512，不可用；`text` 已截到 EOS）。
 脚本：`details/draft_scripts/dose_paired.py`。

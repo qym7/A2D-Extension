@@ -63,13 +63,13 @@ Reading rules, fixed now:
 - Prior: B3 ≈ 47–50 (at the 94 % of steps where both are confident the mean's argmax is the student's own token, so always-mix ≈ a gate with a lower effective θ); B1 ≈ 49 ± 2; "gate matters" likely fails or is marginal. This is the experiment that decides whether the method is distinguishable from an ensemble.
 
 ## Implementation (no edits to files that running jobs use)
-- `scripts/step1/lockstep_gated_v2.py` = copy of `step1_lockstep_gated.py` + one new mode `content_mean` (`--other` takes a comma-separated list of 1–3 teachers; at a low-confidence step the token is the argmax of the mean of the listed models' distributions, with `--with-student` adding the student to the mean). A3 = three teachers without the student; B1/B3 = one teacher with the student. Content gate / both / random code paths untouched (byte-identical outputs on the existing modes is
+- `code/step1/lockstep_gated_v2.py` = copy of `step1_lockstep_gated.py` + one new mode `content_mean` (`--other` takes a comma-separated list of 1–3 teachers; at a low-confidence step the token is the argmax of the mean of the listed models' distributions, with `--with-student` adding the student to the mean). A3 = three teachers without the student; B1/B3 = one teacher with the student. Content gate / both / random code paths untouched (byte-identical outputs on the existing modes is
   checked by re-running one existing problem in the smoke).
 - `modules/run_gated_shard5.sh` = shard4 pointing at v2, with mode tokens `mean:θ` (teachers only) and `smix:θ` (student + teacher).
 - Checkpoints: A(1.5) and A(2.5) built once at `outputs/checkpoints/add-a10-b15`, `add-a10-b25` (build-at-host, flock-serialised, as before).
 - Gates before submission: `py_compile`, CPU dry run of the token rule on saved logits, one 2-problem smoke per new mode on the GPU, then the 6 arms × 3 shards.
-- Output dirs: `details/logs/gated_ins_add-a10-b15_1024/math500/t08-last300-s*`, `…b25…/t08-…`, `details/logs/mean_ins_1024/math500/b15-b20-b25-t08-last300-s*`,
-  `details/logs/softmix_ins_add-a10-b20_1024/math500/{t08,t10}-last300-s*`.
+- Output dirs: `outputs/step1/gated_ins_add-a10-b15_1024/math500/t08-last300-s*`, `…b25…/t08-…`, `outputs/stepN/mean_ins_1024/math500/b15-b20-b25-t08-last300-s*`,
+  `outputs/step2/softmix_ins_add-a10-b20_1024/math500/{t08,t10}-last300-s*`.
 
 ## Cost
 5 arms × 3 shards = 15 jobs; 2× arms ≈ 6 h per shard, the 4× mean ≈ 12 h per shard at 0.51 → ≈ 35 GPU·h (H200·0.51 units), one day of wall

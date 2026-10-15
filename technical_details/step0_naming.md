@@ -24,7 +24,7 @@ M(a,b) = D_b + a·τ_D + b·τ_A 且 a+b=1；A(β) = D_b + 1.0·τ_D + β·τ_A�
 - 替换率 1 = 交给 teacher 的位置占比（student p<θ）；替换率 2 = teacher 的 token 与 student 不同的占比。
 
 ## 目录名对照（已有目录不改名，避免打断正在跑的 job）
-| 目录 `details/logs/…/math500/` | arm |
+| 目录 `outputs/stepN/…/math500/` | arm |
 |---|---|
 | `lockstep1024/{parent,merge,add11,add20,l10}-free` | Ins, M(.4,.6), A(1.1), A(2.0), M(0,1) 单独跑 |
 | `gated_ins_add-a10-b11_1024/tXX` | Ins ⇐ A(1.1) @0.XX |

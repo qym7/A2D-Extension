@@ -14,7 +14,7 @@
 > 7. If the goal stays "beat AR": find a benchmark/family where diffusion is within reach of AR under *lenient* scoring; on MATH-500 with Dream-7B it is not (71 vs ≤ 55).
 
 所有数字：MATH-500，lockstep 解码 @1024 token / 1024 步，top_p 0.9，conf_temp 0.1。前 200 = id 0–199，后 300 = id 200–499，全 500 = 两者合并。
-硬件：9/30 的 run 是 B300 整卡（标 †），其余 H200·0.51。空格 = 没跑。写法见 `technical_details/step0_naming.md`；生成脚本 `scripts/step1/main_table.py`，分片合并 `merge_shards.py`。
+硬件：9/30 的 run 是 B300 整卡（标 †），其余 H200·0.51。空格 = 没跑。写法见 `technical_details/step0_naming.md`；生成脚本 `code/step1/main_table.py`，分片合并 `merge_shards.py`。
 配对比较 = 赢/输（McNemar 精确 p）。
 
 ## 1. 单模型基线（1×）
