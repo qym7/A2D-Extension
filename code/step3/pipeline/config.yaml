@@ -17,6 +17,7 @@ train_args: "--corruption replay --anchor self --lambda-anchor 0.3 --low-frames 
 arms:
   M:  {teacher: 2.0}                        # gate distillation: unsure -> teacher, sure -> anchor to untouched student   (the method)
   Mi: {teacher: 1.5, student: ins}          # same, from the official Instruct model
+  Msch: {teacher: 2.0, extra: "--theta-end 0.5"}   # threshold decays 0.8 -> 0.5 over training: distil less and less (user idea)
   C2: {teacher: null}                       # self-SFT on the rollout token         (is the teacher needed)
   C1: {teacher: 2.0, extra: "--anchor none"}   # every NEXT position -> teacher, no split      (is selection needed)
   C3: {teacher: 1.1}                        # non-over teacher A(1.1) = best addition         (is "over" needed)

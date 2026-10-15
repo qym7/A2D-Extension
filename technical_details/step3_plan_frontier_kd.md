@@ -66,6 +66,7 @@ Ground truth is not used in the main method (prefixes are the student's own text
 | C2 self-SFT | replay | NEXT, all | rollout token (CE) | is the *teacher* needed (= on-policy SFT / unfiltered RFT, dOPSD-like) |
 | C3 non-over teacher | replay | NEXT, p_S < 0.8 | A(1.0) distribution | is *over* needed (A(1.0) gate = 44.3 vs A(1.5) 48.3) |
 | C4 random-mask KD | i.i.d. mask r ~ U(0,1) | the 4 most confident masks, p_S < 0.8 | A(1.5) | is the *replayed state* needed (standard dLLM SFT corruption) |
+| Msch θ schedule | replay | NEXT, p_S < θ(t), θ 0.8 → 0.5 linearly over training | A(2.0) | distil less and less as the student improves (user, 2026-10-15); on top of the natural shrinking of the unsure set |
 | C5 forward KL | replay | NEXT, p_S < 0.8 | A(1.5), KL(p_T‖p_S) | divergence direction (TOPD says reverse; cheap check on our teacher) |
 | C6 RFT | official random mask | all masked (official Dream SFT loss) | rollout tokens of MATH prompts whose answer matches GT | the classic "why not just RFT" baseline (MATH 6 k only) |
 | C7 plain SFT | official random mask | all masked | the datasets' reference responses | "is it just more training" (same 17 k prompts) |

@@ -98,6 +98,7 @@ def main():
     ap.add_argument("--top-k", type=int, default=0, help="truncate the teacher distribution to its top-k and renormalise (0 = full vocabulary)")
     ap.add_argument("--kd-temp", type=float, default=1.0, help="temperature applied to both logits before the divergence")
     ap.add_argument("--theta", type=float, default=0.8)
+    ap.add_argument("--theta-end", type=float, default=None, help="linear schedule of the selection threshold from --theta to this value over training (user 2026-10-15: distil less and less); default = constant")
     ap.add_argument("--lambda-anchor", type=float, default=0.3, help="weight of the sure-position anchor term (means are taken separately)")
     ap.add_argument("--low-frames", type=int, default=2, help="frames per canvas per epoch sampled right before a low-confidence commit")
     ap.add_argument("--uniform-frames", type=int, default=1, help="frames per canvas per epoch sampled uniformly over steps")
@@ -179,7 +180,8 @@ def main():
                 loss = ce
             else:
                 conf_s = logp_s.detach().exp().max(-1).values           # raw T=1 confidence = the gate's signal
-                unsure = conf_s < a.theta if arm["select"] else torch.ones_like(conf_s, dtype=torch.bool)
+                th = a.theta + (a.theta_end - a.theta) * min(1.0, step / total_steps) if a.theta_end is not None else a.theta
+                unsure = conf_s < th if arm["select"] else torch.ones_like(conf_s, dtype=torch.bool)
                 acc["n_unsure"] += int(unsure.sum())
                 loss = ls.sum() * 0.0
                 if unsure.any():
@@ -205,6 +207,7 @@ def main():
                 opt.step(); sched.step(); opt.zero_grad(set_to_none=True); step += 1
                 rec = dict(step=step, epoch=ep, kd=acc["kd"] / a.batch, anchor=acc["anchor"] / a.batch, ce=acc["ce"] / a.batch,
                            pos_per_frame=acc["n_pos"] / a.batch, unsure_rate=acc["n_unsure"] / max(1, acc["n_pos"]), empty_frames=acc["n_empty"],
+                           theta=(a.theta + (a.theta_end - a.theta) * min(1.0, step / total_steps) if a.theta_end is not None else a.theta),
                            lr=sched.get_last_lr()[0], s_per_frame=(time.time() - t0) / (step * a.batch))
                 log.write(json.dumps(rec) + "\n"); log.flush()
                 if step % 10 == 1 or step == total_steps:
