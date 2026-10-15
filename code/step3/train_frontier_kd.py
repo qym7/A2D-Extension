@@ -20,7 +20,7 @@ import torch, torch.nn.functional as F
 from transformers import AutoModel, AutoTokenizer
 
 _KD = dict(target="kd", select=True)
-ARMS = {"M": _KD, "M06": _KD, "Mi": _KD, "Msch": _KD, "C3": _KD, "C4": _KD, "C5": _KD,     # gate-shaped loss; they differ only by flags
+ARMS = {"M": _KD, "M06": _KD, "Mm": _KD, "Msch": _KD, "C3": _KD, "C4": _KD, "C5": _KD,     # gate-shaped loss; they differ only by flags
         "C1": dict(target="kd", select=False), "C2": dict(target="ce", select=False)}
 
 
