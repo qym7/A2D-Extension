@@ -1,6 +1,6 @@
 """STEP3 trainer — distil the gate into one model by replaying the student's own denoising trajectory. DRAFT 2026-10-15, not yet smoked.
-Single GPU (H200·0.51): student (bf16 + LoRA, grad-ckpt) and a frozen teacher side by side; micro-batch = 1 frame (no padding), gradient
-accumulation to `--batch` frames.
+Single GPU (H200·0.51): student (bf16 + LoRA, grad-ckpt) and a frozen teacher side by side; right-padded micro-batches (`--micro-batch`, 0 = probe
+the largest that fits), gradient accumulation to `--batch` frames.
 
 A training frame = the student's rollout (code/step3/rollout.py) rewound to step t: tokens with commit_step <= t are visible, the rest are
 [MASK] (`--corruption replay`, the default = exactly the state the sampler was in). NEXT(t) = the positions the sampler wrote at step t+1.
@@ -24,9 +24,43 @@ ARMS = {"M": _KD, "M06": _KD, "Mm": _KD, "Msch": _KD, "C3": _KD, "C4": _KD, "C5"
         "C1": dict(target="kd", select=False), "C2": dict(target="ce", select=False)}
 
 
-def shifted_logits(model, x):
-    logits = model(x, "full", None).logits
+def shifted_logits(model, x, am=None):
+    """x [B, L]; am [B, L] 1 = real token (right padding). Keys-only mask: pad keys invisible to everyone, pad queries still see the real keys
+    (no all-False SDPA row -> no NaN that could leak into backward). Returns logits shifted so index p predicts the token at position p."""
+    mask = "full" if am is None else am.bool()[:, None, None, :].expand(x.shape[0], 1, x.shape[1], x.shape[1])
+    logits = model(x, mask, None).logits
     return torch.cat([logits[:, :1], logits[:, :-1]], dim=1)
+
+
+def collate(items, pad_id):
+    """items: list of (ids, masked, pos). Right-pad to the longest; returns x [B, L], am [B, L], and the per-item pos lists."""
+    L = max(len(it[0]) for it in items)
+    x = torch.full((len(items), L), pad_id, dtype=torch.long); am = torch.zeros((len(items), L), dtype=torch.long)
+    for b, (ids, _, _) in enumerate(items):
+        x[b, :len(ids)] = torch.tensor(ids); am[b, :len(ids)] = 1
+    return x.cuda(), am.cuda()
+
+
+def probe_micro_batch(student, teacher, max_len, candidates=(32, 16, 8, 4, 2, 1)):
+    """Largest micro-batch whose full step (student fwd+bwd with grad-ckpt, teacher fwd, LoRA-off fwd) fits at max_len. Called once at start."""
+    for mb in candidates:
+        try:
+            x = torch.randint(0, 1000, (mb, max_len), device="cuda"); am = torch.ones_like(x)
+            with torch.autocast("cuda", dtype=torch.bfloat16):
+                ls = shifted_logits(student, x, am)[:, -4:].float()
+                with torch.no_grad():
+                    if teacher is not None:
+                        shifted_logits(teacher, x, am)
+                    with student.disable_adapter():
+                        shifted_logits(student, x, am)
+            (ls.float().logsumexp(-1).mean()).backward()
+            student.zero_grad(set_to_none=True); del ls, x, am; torch.cuda.empty_cache()
+            print(f"[probe] micro-batch {mb} fits at len {max_len} (peak {torch.cuda.max_memory_allocated() / 2**30:.1f} GB)", flush=True)
+            return mb
+        except torch.cuda.OutOfMemoryError:
+            student.zero_grad(set_to_none=True); torch.cuda.empty_cache(); torch.cuda.reset_peak_memory_stats()
+            print(f"[probe] micro-batch {mb} OOM", flush=True)
+    return 1
 
 
 def divergence(ls, lt, kind, top_k, temp):
@@ -104,7 +138,8 @@ def main():
     ap.add_argument("--low-frames", type=int, default=2, help="frames per canvas per epoch sampled right before a low-confidence commit")
     ap.add_argument("--uniform-frames", type=int, default=1, help="frames per canvas per epoch sampled uniformly over steps")
     ap.add_argument("--epochs", type=int, default=2)
-    ap.add_argument("--batch", type=int, default=32, help="frames per optimizer step (micro-batch is 1)")
+    ap.add_argument("--batch", type=int, default=32, help="frames per optimizer step (gradient accumulation over micro-batches)")
+    ap.add_argument("--micro-batch", type=int, default=0, help="frames per forward (right-padded); 0 = probe the largest that fits at --max-len")
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--lora-r", type=int, default=64)
     ap.add_argument("--lora-alpha", type=int, default=128)
@@ -155,61 +190,76 @@ def main():
     if a.max_steps:
         total_steps = min(total_steps, a.max_steps)
     sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: min(1.0, (s + 1) / max(1, int(0.1 * total_steps))) * max(0.0, 1 - s / total_steps))
+    mb = a.micro_batch or probe_micro_batch(student, teacher, a.max_len)
+    assert a.batch % mb == 0 or a.batch < mb, f"--batch {a.batch} must be a multiple of micro-batch {mb}"
+    mb = min(mb, a.batch); PAD = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
+    print(f"[train] micro-batch {mb}, {a.batch // mb} micro-batches per optimizer step", flush=True)
     log = open(out / "train_log.jsonl", "a")
     zero = lambda: dict(n=0, n_pos=0, n_unsure=0, n_empty=0, kd=0.0, anchor=0.0, ce=0.0)
     step = 0; acc = zero(); t0 = time.time(); student.train(); done = False
+    theta_now = lambda: a.theta + (a.theta_end - a.theta) * min(1.0, step / total_steps) if a.theta_end is not None else a.theta
     for ep in range(a.epochs):
         order = [(i, t) for i, r in enumerate(recs) for t in frames_of(r, a.theta, a.low_frames, a.uniform_frames, rng)]
         rng.shuffle(order)
+        items = []
         for i, t in order:
             st = make_state(recs[i], MASK, a.corruption, t, rng, a.max_len)
-            if st is None:
+            if st is not None:
+                items.append((i, st))
+            if len(items) < mb and (i, t) != order[-1]:
                 continue
-            ids, masked, pos = st
-            x = torch.tensor([ids], device="cuda")
+            if not items:
+                continue
+            x, am = collate([st for _, st in items], PAD)
             with torch.autocast("cuda", dtype=torch.bfloat16):
-                ls_all = shifted_logits(student, x)[0].float()
-            if pos is None:   # random-mask control: the 4 masked positions the student is most confident about = what it would write next
-                conf_m = F.softmax(ls_all[masked].detach(), -1).max(-1).values
-                pos = [masked[k] for k in conf_m.topk(min(4, len(masked))).indices.tolist()]
-            ls = ls_all[pos]
-            logp_s = F.log_softmax(ls, -1)
-            gold = torch.tensor(recs[i]["prompt_ids"] + recs[i]["resp_ids"], device="cuda")[pos]
-            ce = F.nll_loss(logp_s, gold)
-            acc["n_pos"] += len(pos); acc["ce"] += float(ce)
-            if arm["target"] == "ce":
-                loss = ce
-            else:
+                ls_all = shifted_logits(student, x, am)          # [B, L, V] bf16; only the loss positions are cast to float below
+            need_t = arm["target"] == "kd"
+            lt_all = l0_all = None
+            if need_t:
+                with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
+                    lt_all = shifted_logits(teacher, x, am)
+                    if a.anchor == "self" and arm["select"]:
+                        with student.disable_adapter():
+                            l0_all = shifted_logits(student, x, am)
+            loss = ls_all.sum() * 0.0
+            th = theta_now()
+            for b, (i, (ids, masked, pos)) in enumerate(items):
+                if pos is None:   # random-mask control: the 4 masked positions the student is most confident about = what it would write next
+                    conf_m = F.softmax(ls_all[b, masked].detach().float(), -1).max(-1).values
+                    pos = [masked[k] for k in conf_m.topk(min(4, len(masked))).indices.tolist()]
+                ls = ls_all[b, pos].float()
+                logp_s = F.log_softmax(ls, -1)
+                gold = torch.tensor(recs[i]["prompt_ids"] + recs[i]["resp_ids"], device="cuda")[pos]
+                ce = F.nll_loss(logp_s, gold)
+                acc["n_pos"] += len(pos); acc["ce"] += float(ce)
+                if arm["target"] == "ce":
+                    loss = loss + ce; continue
                 conf_s = logp_s.detach().exp().max(-1).values           # raw T=1 confidence = the gate's signal
-                th = a.theta + (a.theta_end - a.theta) * min(1.0, step / total_steps) if a.theta_end is not None else a.theta
                 unsure = conf_s < th if arm["select"] else torch.ones_like(conf_s, dtype=torch.bool)
                 acc["n_unsure"] += int(unsure.sum())
-                loss = ls.sum() * 0.0
                 if unsure.any():
-                    with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
-                        lt = shifted_logits(teacher, x)[0, pos].float()
-                    kd = divergence(ls[unsure], lt[unsure], a.kl, a.top_k, a.kd_temp)
+                    kd = divergence(ls[unsure], lt_all[b, pos].float()[unsure], a.kl, a.top_k, a.kd_temp)
                     loss = loss + kd; acc["kd"] += float(kd)
                 else:
                     acc["n_empty"] += 1
                 sure = ~unsure
                 if sure.any() and a.anchor != "none":
                     if a.anchor == "self":
-                        with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16), student.disable_adapter():
-                            l0 = shifted_logits(student, x)[0, pos].float()
-                        an = divergence(ls[sure], l0[sure], "reverse", 0, 1.0)
+                        an = divergence(ls[sure], l0_all[b, pos].float()[sure], "reverse", 0, 1.0)
                     else:
                         an = F.nll_loss(logp_s[sure], gold[sure])
                     loss = loss + a.lambda_anchor * an; acc["anchor"] += float(an)
-            acc["n"] += 1
+            acc["n"] += len(items)
             (loss / a.batch).backward()
-            if acc["n"] % a.batch == 0:
+            del ls_all, lt_all, l0_all, loss
+            items = []
+            if acc["n"] >= a.batch:
                 torch.nn.utils.clip_grad_norm_([p for p in student.parameters() if p.requires_grad], 1.0)
                 opt.step(); sched.step(); opt.zero_grad(set_to_none=True); step += 1
-                rec = dict(step=step, epoch=ep, kd=acc["kd"] / a.batch, anchor=acc["anchor"] / a.batch, ce=acc["ce"] / a.batch,
-                           pos_per_frame=acc["n_pos"] / a.batch, unsure_rate=acc["n_unsure"] / max(1, acc["n_pos"]), empty_frames=acc["n_empty"],
-                           theta=(a.theta + (a.theta_end - a.theta) * min(1.0, step / total_steps) if a.theta_end is not None else a.theta),
-                           lr=sched.get_last_lr()[0], s_per_frame=(time.time() - t0) / (step * a.batch))
+                rec = dict(step=step, epoch=ep, kd=acc["kd"] / acc["n"], anchor=acc["anchor"] / acc["n"], ce=acc["ce"] / acc["n"],
+                           pos_per_frame=acc["n_pos"] / acc["n"], unsure_rate=acc["n_unsure"] / max(1, acc["n_pos"]), empty_frames=acc["n_empty"],
+                           theta=theta_now(), lr=sched.get_last_lr()[0], s_per_frame=(time.time() - t0) / (step * a.batch),
+                           peak_gb=round(torch.cuda.max_memory_allocated() / 2**30, 1))
                 log.write(json.dumps(rec) + "\n"); log.flush()
                 if step % 10 == 1 or step == total_steps:
                     print("[train]", json.dumps(rec), flush=True)
