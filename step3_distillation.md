@@ -54,6 +54,14 @@ low-confidence steps (M) or the student's own token (C2).
   prompts, the student writes its own answers, and the teacher's distribution at the student's unsure steps is the only external signal.
   The proportions (≈ ½ Tulu-3, ⅓ MATH, the rest code/chat) are ours and were not tuned.
 
+**Decision 2026-10-16 (user): go with the most standard recipe = Tulu-3 only, native proportions.** Tulu-3 already has the sub-structure we were
+adding by hand: in the 100 k sample it is ≈ 36 % math (personahub_math 15.9 %, NuminaMath-TIR 6.9 %, personas-math-grade 5.4 %,
+open_math_2_gsm8k 5.3 %, intermediate-algebra 2.1 %), ≈ 15 % code (evol_codealpaca 11.4 %, personahub_code 3.7 %), ≈ 40 % chat / general
+(wildchat, aya, flan, oasst, no_robots 1 %), 3 % IF data, ≈ 12 % safety (wildjailbreak, wildguard, coconot). So MATH train, Magicoder and
+no_robots on top were redundant (no_robots is even a Tulu-3 subset), and the equal-share stratification distorted Tulu's own mix. The next pool
+is `outputs/step3/prompts_tulu3.jsonl` (`build_prompts.py --mix tulu3-native`: 17 k uniform draws from all Tulu-3 sources, nothing excluded,
+prompt ≤ 512 tokens; `pipeline/config.yaml: prompt_set: tulu3`). The t1k numbers above were obtained on the earlier mix17k pool and stay labelled as such.
+
 ## Test data and leakage
 Test = MATH-500 (`HuggingFaceH4/MATH-500`, the standard 500-problem subset of the MATH **test** split), ids 200–499 (last 300, user rule
 2026-10-12). Checked (`tmp.md` 2026-10-16): the 1 000 training prompts vs the 300 test problems, normalised text —

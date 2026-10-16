@@ -54,6 +54,14 @@ Checkpoint：`outputs/checkpoints/step3-t1k-{M,C2}/{lora,merged}`，日志 `trai
 - **不标准**的地方：完全不使用参考回答。标准 SFT 拟合数据集里的答案；这里数据集只提供 prompt，学生自己写回答，
   唯一的外部信号是教师在学生不确定的步上的分布。比例（≈ ½ Tulu-3、⅓ MATH、其余代码/对话）是我们自定的，没有调过。
 
+**2026-10-16 决定（用户）：按最规范的配方 = 只用 Tulu-3、原生比例。** Tulu-3 内部本来就有我们手工外加的那些子结构：在 100 k 样本中
+≈ 36% 数学（personahub_math 15.9%、NuminaMath-TIR 6.9%、personas-math-grade 5.4%、open_math_2_gsm8k 5.3%、intermediate-algebra 2.1%），
+≈ 15% 代码（evol_codealpaca 11.4%、personahub_code 3.7%），≈ 40% 对话/通用（wildchat、aya、flan、oasst、no_robots 1%），3% IF 数据，
+≈ 12% 安全（wildjailbreak、wildguard、coconot）。所以额外加 MATH train、Magicoder、no_robots 是多余的（no_robots 本身就是 Tulu-3 的子集），
+而且按来源等份分层也扭曲了 Tulu 自己的比例。下一个 prompt 池是 `outputs/step3/prompts_tulu3.jsonl`（`build_prompts.py --mix tulu3-native`：
+从全部 Tulu-3 来源均匀抽 17 k，不排除任何子集，prompt ≤ 512 token；`pipeline/config.yaml: prompt_set: tulu3`）。上面的 t1k 数字来自之前的
+mix17k 池，保持这个标注。
+
 ## 测试数据与泄漏
 测试集 = MATH-500（`HuggingFaceH4/MATH-500`，MATH **test** split 的标准 500 题子集），ids 200–499（最后 300 题，用户规则
 2026-10-12）。已检查（`tmp.md` 2026-10-16）：1 000 条训练 prompt vs 300 道测试题，文本归一化后 —

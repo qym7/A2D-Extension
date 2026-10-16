@@ -19,6 +19,9 @@ CK   = f"{I1}/outputs/checkpoints"
 LOGS = f"{I1}/outputs"
 SW   = f"bash {MOD}/submit_wait.sh"
 TAG  = config["tag"]                           # job-name suffix for this pipeline run, e.g. s3a
+PSET = config.get("prompt_set", "mix17k")      # prompt pool: mix17k = prompts.jsonl (t1k test); tulu3 = prompts_tulu3.jsonl (native Tulu-3, standard)
+PROMPTS = f"{OUT}/prompts.jsonl" if PSET == "mix17k" else f"{OUT}/prompts_{PSET}.jsonl"
+ROLL = f"{OUT}/rollouts" if PSET == "mix17k" else f"{OUT}/rollouts_{PSET}"
 N_PROMPTS = config["n_prompts"]
 N_SHARDS  = config["rollout_shards"]
 SHARD = math.ceil(N_PROMPTS / N_SHARDS)
@@ -48,22 +51,23 @@ rule first_wave:          # M + C2, MATH only (plan §3 budget rule)
 
 # ---------- data ----------
 rule prompts:
-    output: f"{OUT}/prompts.jsonl"
-    shell: "export PYTHONPATH=; systemd-run --user --scope -p MemoryMax=4G -p MemorySwapMax=0 -q "
-           "bash -c 'source {MOD}/jobenv.sh mdlm-math-b300 && python {I1}/code/step3/build_prompts.py --out {output}'"
+    output: PROMPTS
+    params: mix=lambda w: "mix17k" if PSET == "mix17k" else "tulu3-native"
+    shell: "export PYTHONPATH=; systemd-run --user --scope -p MemoryMax=6G -p MemorySwapMax=0 -q "
+           "bash -c 'source {MOD}/jobenv.sh mdlm-math-b300 && python {I1}/code/step3/build_prompts.py --mix {params.mix} --out {output}'"
 
 # on-policy: every student init decodes the prompts itself (rollouts/<student>/); an arm trains on its own student's rollouts only
 rule rollout_shard:
-    input: f"{OUT}/prompts.jsonl"
-    output: f"{OUT}/rollouts/{{st}}/s{{i}}/rollouts.jsonl"
+    input: PROMPTS
+    output: f"{ROLL}/{{st}}/s{{i}}/rollouts.jsonl"
     params: start=lambda w: int(w.i) * SHARD, end=lambda w: min(N_PROMPTS, (int(w.i) + 1) * SHARD), batch=config["rollout_batch"],
             model=lambda w: config["students"][w.st]
-    shell: "{SW} yqin-i1-s3roll-{wildcards.st}-{wildcards.i}-{TAG}-h200f051 {output} "
-           "bash {MOD}/run_step3_rollout.sh {OUT}/rollouts/{wildcards.st}/s{wildcards.i} {params.start} {params.end} {params.batch} {params.model}"
+    shell: "PROMPTS={PROMPTS} {SW} yqin-i1-s3roll-{wildcards.st}-{wildcards.i}-{TAG}-h200f051 {output} "
+           "bash {MOD}/run_step3_rollout.sh {ROLL}/{wildcards.st}/s{wildcards.i} {params.start} {params.end} {params.batch} {params.model}"
 
 rule rollouts_merged:
-    input: expand(f"{OUT}/rollouts/{{{{st}}}}/s{{i}}/rollouts.jsonl", i=range(N_SHARDS))
-    output: f"{OUT}/rollouts/{{st}}/all.jsonl"
+    input: expand(f"{ROLL}/{{{{st}}}}/s{{i}}/rollouts.jsonl", i=range(N_SHARDS))
+    output: f"{ROLL}/{{st}}/all.jsonl"
     shell: "cat {input} > {output} && wc -l {output}"
 
 # ---------- teachers (addition line A(beta) = D_b + tau_D + beta*tau_A; built once, flock-serialised inside the runner) ----------
@@ -76,11 +80,11 @@ rule teacher:
 # ---------- training ----------
 rule train:   # C4 = ARMS[arm].extra carries --corruption random; C1 drops the anchor; the runner only maps arm -> trainer flags listed in config
     input:
-        roll=lambda w: f"{OUT}/rollouts/{student_name(w.arm)}/all.jsonl",
+        roll=lambda w: f"{ROLL}/{student_name(w.arm)}/all.jsonl",
         teacher=lambda w: [] if ARMS[w.arm]["teacher"] is None else f"{teacher_ckpt(w.arm)}/merge_manifest.json"
     output: f"{CK}/{RUN}-{{arm}}/merged/config.json"
     params: jn=lambda w: w.arm.lower(), teacher=lambda w: teacher_ckpt(w.arm), student=lambda w: student_ckpt(w.arm), extra=lambda w: ARMS[w.arm].get("extra", ""), common=config["train_args"]
-    shell: "{SW} yqin-i1-s3train-{params.jn}-{TAG}-h200f051 {output} "
+    shell: "PROMPTS={PROMPTS} {SW} yqin-i1-s3train-{params.jn}-{TAG}-h200f051 {output} "
            "bash {MOD}/run_step3_train.sh {wildcards.arm} {CK}/{RUN}-{wildcards.arm} {params.teacher} {params.student} {input.roll} {params.common} {params.extra}"
 
 # ---------- MATH-500 last 300, lockstep @1024, student alone (1x), 3 shards ----------

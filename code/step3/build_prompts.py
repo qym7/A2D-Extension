@@ -43,6 +43,10 @@ def main():
     ap.add_argument("--tokenizer", default="Dream-org/Dream-v0-Instruct-7B")
     ap.add_argument("--max-prompt-tokens", type=int, default=512)
     ap.add_argument("--seed", type=int, default=20261015)
+    ap.add_argument("--mix", choices=["mix17k", "tulu3-native"], default="mix17k",
+                    help="mix17k = Tulu-3 stratified 8k + MATH train 6k + Magicoder 2k + no_robots 1k (t1k test, 2026-10-15); "
+                         "tulu3-native = ONLY Tulu-3 at its native sub-source proportions, nothing excluded (= Dream-Instruct's own SFT distribution; user 2026-10-16: the most standard recipe)")
+    ap.add_argument("--n", type=int, default=17000, help="tulu3-native: number of prompts")
     a = ap.parse_args()
     rng = random.Random(a.seed)
     from transformers import AutoTokenizer
@@ -51,6 +55,19 @@ def main():
     def fits(p):
         ids = tok.apply_chat_template([{"role": "user", "content": p}], add_generation_prompt=True)
         return len(ids) <= a.max_prompt_tokens
+
+    if a.mix == "tulu3-native":
+        global TULU_EXCLUDE
+        TULU_EXCLUDE = ()
+        allrows = [r for rows in tulu_rows().values() for r in rows]
+        rng.shuffle(allrows)
+        rows = []
+        for r in allrows:
+            if len(rows) >= a.n:
+                break
+            if fits(r["prompt"]):
+                rows.append(r)
+        write(rows, a.out); return
 
     pools = {}
     # Tulu-3: stratified by source (equal share per source, remainder filled from the largest pools)
@@ -91,7 +108,11 @@ def main():
 
     rows = [r for k in ["tulu3", "math", "magicoder", "no_robots"] for r in pools[k]]
     rng.shuffle(rows)   # shards get a uniform mix (rollout wall time is similar across shards)
-    out = Path(a.out); out.parent.mkdir(parents=True, exist_ok=True)
+    write(rows, a.out)
+
+
+def write(rows, out):
+    out = Path(out); out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w") as f:
         for i, r in enumerate(rows):
             f.write(json.dumps(dict(id=i, source=r["source"], sid=r["sid"], prompt=r["prompt"], ref=r["ref"]), ensure_ascii=False) + "\n")

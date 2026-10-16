@@ -1,5 +1,6 @@
 # STEP3 pipeline config (technical_details/step3_plan_frontier_kd.md). Change `tag` for a fresh set of job names.
-tag: t1k                  # 1k offline test (user 2026-10-15): M + C2, MATH last 300 in 6 shards
+tag: n1k                  # NEXT (not launched): 1k test on the native Tulu-3 pool. t1k = the 2026-10-15 run on the mix17k pool (done)
+prompt_set: tulu3         # tulu3 = outputs/step3/prompts_tulu3.jsonl (Tulu-3 only, native proportions = Dream-Instruct's own SFT distribution, user 2026-10-16); mix17k = the t1k pool
 n_prompts: 1000           # outputs/step3/prompts.jsonl (Tulu-3 8k incl. its math subsets, MATH train 6k, Magicoder 2k, no_robots 1k)
 rollout_shards: 5         # 1k test: 5 x 200 so shard 0 = the 200-prompt Ins smoke, reused as is
 math_shards: 6            # MATH last 300 split into this many parallel jobs
