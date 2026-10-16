@@ -1,0 +1,66 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 12
+Rules claiming more threads will be scaled down.
+Job stats:
+job                count
+---------------  -------
+eval_math_merge        2
+eval_math_shard       12
+first_wave             1
+rollout_shard          5
+rollouts_merged        1
+train                  2
+total                 23
+
+Select jobs to execute...
+
+[Fri Oct 16 11:51:41 2026]
+rule rollout_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/prompts_tulu3.jsonl
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts_tulu3/ins/s0/rollouts.jsonl
+    jobid: 5
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts_tulu3/ins/s0/rollouts.jsonl
+    wildcards: st=ins, i=0
+    resources: tmpdir=/tmp
+
+
+[Fri Oct 16 11:51:41 2026]
+rule rollout_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/prompts_tulu3.jsonl
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts_tulu3/ins/s1/rollouts.jsonl
+    jobid: 7
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts_tulu3/ins/s1/rollouts.jsonl
+    wildcards: st=ins, i=1
+    resources: tmpdir=/tmp
+
+
+[Fri Oct 16 11:51:41 2026]
+rule rollout_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/prompts_tulu3.jsonl
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts_tulu3/ins/s3/rollouts.jsonl
+    jobid: 9
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts_tulu3/ins/s3/rollouts.jsonl
+    wildcards: st=ins, i=3
+    resources: tmpdir=/tmp
+
+
+[Fri Oct 16 11:51:41 2026]
+rule rollout_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/prompts_tulu3.jsonl
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts_tulu3/ins/s2/rollouts.jsonl
+    jobid: 8
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts_tulu3/ins/s2/rollouts.jsonl
+    wildcards: st=ins, i=2
+    resources: tmpdir=/tmp
+
+
+[Fri Oct 16 11:51:41 2026]
+rule rollout_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/prompts_tulu3.jsonl
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts_tulu3/ins/s4/rollouts.jsonl
+    jobid: 10
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts_tulu3/ins/s4/rollouts.jsonl
+    wildcards: st=ins, i=4
+    resources: tmpdir=/tmp
+

@@ -1,4 +1,10 @@
-"""STEP3 prompt set (plan §1, `technical_details/step3_plan_frontier_kd.md`): label-free prompts for the student rollouts.
+"""STEP3 prompt pool. DEFAULT (user 2026-10-16, "the most standard recipe"): --mix tulu3-native = Tulu-3 SFT mixture only, sampled uniformly
+(= native sub-source proportions: ~36 % math, ~15 % code, ~40 % chat/general, ~12 % safety, 3 % IF), nothing excluded, prompt <= 512 tokens,
+one shuffled draw of --n rows -> a run that uses the first N ids (pipeline n_prompts) gets a native-proportion sample of size N.
+Kept for the record: --mix mix17k = the 2026-10-15 pool (Tulu-3 stratified 8k + MATH train 6k + Magicoder 2k + no_robots 1k) used by the t1k test;
+it was redundant (Tulu-3 already contains math / code / no_robots) and non-standard (equal-share stratification), see step3_distillation.md.
+
+STEP3 prompt set (plan §1, `technical_details/step3_plan_frontier_kd.md`): label-free prompts for the student rollouts.
 Writes outputs/step3/prompts.jsonl, one line per prompt: {id, source, prompt, ref} — `prompt` is the user turn as the student will see it
 (MATH gets the official MATH-500 wrapper "Problem:\n…\n\nSolution:"), `ref` the dataset's own response, kept only for the self-SFT control C2.
 Mix (2026-10-15, GSM8K train deliberately absent — it stays held-out):
@@ -43,7 +49,7 @@ def main():
     ap.add_argument("--tokenizer", default="Dream-org/Dream-v0-Instruct-7B")
     ap.add_argument("--max-prompt-tokens", type=int, default=512)
     ap.add_argument("--seed", type=int, default=20261015)
-    ap.add_argument("--mix", choices=["mix17k", "tulu3-native"], default="mix17k",
+    ap.add_argument("--mix", choices=["mix17k", "tulu3-native"], default="tulu3-native",
                     help="mix17k = Tulu-3 stratified 8k + MATH train 6k + Magicoder 2k + no_robots 1k (t1k test, 2026-10-15); "
                          "tulu3-native = ONLY Tulu-3 at its native sub-source proportions, nothing excluded (= Dream-Instruct's own SFT distribution; user 2026-10-16: the most standard recipe)")
     ap.add_argument("--n", type=int, default=17000, help="tulu3-native: number of prompts")

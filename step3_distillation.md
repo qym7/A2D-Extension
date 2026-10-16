@@ -59,8 +59,15 @@ adding by hand: in the 100 k sample it is ≈ 36 % math (personahub_math 15.9 %,
 open_math_2_gsm8k 5.3 %, intermediate-algebra 2.1 %), ≈ 15 % code (evol_codealpaca 11.4 %, personahub_code 3.7 %), ≈ 40 % chat / general
 (wildchat, aya, flan, oasst, no_robots 1 %), 3 % IF data, ≈ 12 % safety (wildjailbreak, wildguard, coconot). So MATH train, Magicoder and
 no_robots on top were redundant (no_robots is even a Tulu-3 subset), and the equal-share stratification distorted Tulu's own mix. The next pool
-is `outputs/step3/prompts_tulu3.jsonl` (`build_prompts.py --mix tulu3-native`: 17 k uniform draws from all Tulu-3 sources, nothing excluded,
-prompt ≤ 512 tokens; `pipeline/config.yaml: prompt_set: tulu3`). The t1k numbers above were obtained on the earlier mix17k pool and stay labelled as such.
+is `outputs/step3/prompts_tulu3.jsonl` (`build_prompts.py --mix tulu3-native`, now the default: one shuffled uniform draw of 17 k from all
+Tulu-3 sources, nothing excluded, prompt ≤ 512 tokens; a run with `n_prompts: N` takes ids 0–N−1, which is a native-proportion sample of size N;
+`pipeline/config.yaml: prompt_set: tulu3`). The t1k numbers above were obtained on the earlier mix17k pool and stay labelled as such.
+
+The **n1k run** (launched 2026-10-16) uses ids 0–999 of this pool: 415 math (personahub_math 179, NuminaMath-TIR 84, personas-math-grade 64,
+open_math_2_gsm8k 63, intermediate-algebra 25), 123 code (evol_codealpaca 98, personahub_code 25), 289 chat / general (aya 97, wildchat 89,
+flan 85, oasst 9, no_robots 4, sciriff 3, table_gpt 2), 42 IF, 131 safety (wildguard 68, wildjailbreak 51, coconot 12). Math is 41 % rather
+than the raw 36 % because the ≤ 512-token filter removes more long chat prompts than math prompts. Leakage check of these 1 000 prompts against
+MATH-500 ids 200–499: 0 containments, 0 shared 13-grams.
 
 ## Test data and leakage
 Test = MATH-500 (`HuggingFaceH4/MATH-500`, the standard 500-problem subset of the MATH **test** split), ids 200–499 (last 300, user rule

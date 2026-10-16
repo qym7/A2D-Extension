@@ -58,9 +58,14 @@ Checkpoint：`outputs/checkpoints/step3-t1k-{M,C2}/{lora,merged}`，日志 `trai
 ≈ 36% 数学（personahub_math 15.9%、NuminaMath-TIR 6.9%、personas-math-grade 5.4%、open_math_2_gsm8k 5.3%、intermediate-algebra 2.1%），
 ≈ 15% 代码（evol_codealpaca 11.4%、personahub_code 3.7%），≈ 40% 对话/通用（wildchat、aya、flan、oasst、no_robots 1%），3% IF 数据，
 ≈ 12% 安全（wildjailbreak、wildguard、coconot）。所以额外加 MATH train、Magicoder、no_robots 是多余的（no_robots 本身就是 Tulu-3 的子集），
-而且按来源等份分层也扭曲了 Tulu 自己的比例。下一个 prompt 池是 `outputs/step3/prompts_tulu3.jsonl`（`build_prompts.py --mix tulu3-native`：
-从全部 Tulu-3 来源均匀抽 17 k，不排除任何子集，prompt ≤ 512 token；`pipeline/config.yaml: prompt_set: tulu3`）。上面的 t1k 数字来自之前的
-mix17k 池，保持这个标注。
+而且按来源等份分层也扭曲了 Tulu 自己的比例。下一个 prompt 池是 `outputs/step3/prompts_tulu3.jsonl`（`build_prompts.py --mix tulu3-native`，现在是默认：
+从全部 Tulu-3 来源一次性均匀打乱抽 17 k，不排除任何子集，prompt ≤ 512 token；`n_prompts: N` 的 run 取 id 0–N−1，即原生比例的 N 条样本；
+`pipeline/config.yaml: prompt_set: tulu3`）。上面的 t1k 数字来自之前的 mix17k 池，保持这个标注。
+
+**n1k run**（2026-10-16 启动）用这个池的 id 0–999：数学 415（personahub_math 179、NuminaMath-TIR 84、personas-math-grade 64、
+open_math_2_gsm8k 63、intermediate-algebra 25），代码 123（evol_codealpaca 98、personahub_code 25），对话/通用 289（aya 97、wildchat 89、
+flan 85、oasst 9、no_robots 4、sciriff 3、table_gpt 2），IF 42，安全 131（wildguard 68、wildjailbreak 51、coconot 12）。数学占 41% 而不是
+原始的 36%，是因为 ≤ 512 token 的过滤去掉的长对话 prompt 比数学 prompt 多。这 1 000 条与 MATH-500 id 200–499 的泄漏检查：0 条包含、0 个共享 13-gram。
 
 ## 测试数据与泄漏
 测试集 = MATH-500（`HuggingFaceH4/MATH-500`，MATH **test** split 的标准 500 题子集），ids 200–499（最后 300 题，用户规则
