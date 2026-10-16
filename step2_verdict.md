@@ -1,11 +1,13 @@
-# STEP2 — Can several models do better than one teacher? What does that tell us for distillation? (2026-10-15)
+# STEP2 — Can several models do better than one teacher? What does that tell us for distillation? (2026-10-15, CLOSED)
+
+> Closed 2026-10-15. Nothing in this step is being run or changed any more; the distillation stage is `step3_distillation.md`.
 
 Protocol as in STEP1: MATH-500 last 300, lockstep @1024, H200·0.51. Details: `technical_details/step2_*.md`; old full tables: `technical_details/archive/step2_verdict_20261012.md`.
 
 ## Takeaways
 1. **One over teacher is the ceiling.** Every way of combining models at decode time — soft mixing, teacher averaging, picking the more confident teacher, voting, a second teacher line — lands at the single-teacher number (≈ 48–49). Only an answer-level cascade gains (+4–6) and it costs 1.5–2.5×.
 2. **The gain is one simple signal**: *where* = the student's low-confidence steps (≈ 10 % of steps), *what* = the over teacher's token. That signal can be reproduced at training time without labels (STEP3 prelim).
-3. **So distil, don't combine.** STEP3 trains one 1× model with: one over teacher A(1.5), KL to its distribution, only at the student's low-confidence frontier of a prefix-visible state, label-free prompts, short LoRA adaptation.
+3. **So distil, don't combine.** STEP3 trains one 1× model with: one over teacher A(2.0) (A(1.5) and A(2.0) are equal within noise on Ins), reverse KL to its distribution, only at the student's low-confidence frontier of a prefix-visible state, label-free prompts, short LoRA adaptation.
 
 ## 1. Reference points
 | system | acc | cost |

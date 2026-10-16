@@ -1,6 +1,6 @@
 # Idea 1 — TASK (current gate and next actions; updated 2026-10-15)
 
-**Current gate:** all STEP3 smokes passed (2026-10-15: rollout, training, merge); first_wave awaits user go + prompt count (17k vs 8k). Formulation: `technical_details/step3_training_formulation.md`.
+**Current gate:** 1k test ran (2026-10-16): M 50.5 / C2 38.0 / Ins 38.5 on 200 of the last 300 (`step3_distillation.md`); last 100 running. Next jobs need user go: Ins on H200 (last 300), guards on M.
 
 ## Where things stand
 - STEP0–2 closed: gate established and explained (`step1_methods.md`); decode-time multi-model work closed (`step2_verdict.md`).

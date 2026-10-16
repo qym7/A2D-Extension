@@ -6,7 +6,8 @@ Post-A2D exploration on Dream-v0-7B ↔ Qwen2.5-7B. Three documents, in reading 
 |---|---|
 | `step0_setup_baselines.md` | notation, protocol (lockstep @1024, last-300 default), single-model baselines incl. the AR reference, two facts that condition every reading (finish-rate effect; AR under-scored) |
 | `step1_methods.md` | the method, the full student ⇐ teacher table (all pairs × θ, three subsets, replacement rates), and the mechanism ablations |
-| `step2_verdict.md` | consolidated results, what died and why, what survives, main takeaway, next steps (generalisation + pipeline + distillation) |
+| `step2_verdict.md` | CLOSED 2026-10-15: decode-time combinations, why one over teacher is the ceiling, what to distil |
+| `step3_distillation.md` | the distillation stage (current): the three rows (Ins / C2 self-SFT / M distilled), training data, test data, leakage check, what generalisation is and is not shown |
 
 Everything else is in `technical_details/`, prefixed by the step it supports (`step0_*` baselines / headroom / subset checks, `step1_*` generated tables, dose-curve decomposition, votes, the older 512-era notes, `step2_*` idea notes) — kept for traceability, not required to follow the story.
 
@@ -58,4 +59,4 @@ through precision on finished problems (52 → 62) with no finish-rate change. T
 teacher, votes, other line, cascades, AR) equals one over teacher; only an answer-level cascade gains (+4–6 at 1.5–2.5×) and AR stays 20 points above.
 The gate is therefore kept as a *training signal*, and STEP2 fixes the distillation design: one over teacher A(1.5), full-distribution KL, only at the
 student's low-confidence frontier of a prefix-visible state, label-free prompts, short LoRA adaptation.
-**STEP3** (`technical_details/step3_plan_frontier_kd.md`, `code/step3/pipeline/`): the distillation training itself — arms M / C1–C4, MATH-500 last 300 + GSM8K / HumanEval+ / IFEval guards.
+**STEP3** (`step3_distillation.md`, `technical_details/step3_plan_frontier_kd.md`, `code/step3/pipeline/`): the distillation training itself. 1k test (2026-10-16): the distilled 1× model M = 50.5 vs Ins 38.5 vs self-SFT C2 38.0 on 200 held-out MATH-500 problems (p < 0.001) — the gate's accuracy in one model. Pending: full 300, Ins on H200, guards.
