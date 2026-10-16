@@ -1,6 +1,6 @@
 # Idea 1 — TASK (current gate and next actions; updated 2026-10-15)
 
-**Current gate:** 1k test ran (2026-10-16): M 50.5 / C2 38.0 / Ins 38.5 on 200 of the last 300 (`step3_distillation.md`); last 100 running. Next jobs need user go: Ins on H200 (last 300), guards on M.
+**Current gate:** 1k test done on the full last 300 (2026-10-16): M(t1k) 50.3 / M(n1k, Tulu-3 only) 50.3 / C2 36.3 / Ins 36.7 (`step3_distillation.md`). Next jobs need user go: guards (GSM8K / HumanEval+ / IFEval) on M n1k = Amel's first mission; Ins + M(.4,.6) on H200 (last 300).
 
 ## Where things stand
 - STEP0–2 closed: gate established and explained (`step1_methods.md`); decode-time multi-model work closed (`step2_verdict.md`).
