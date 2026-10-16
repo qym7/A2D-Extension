@@ -100,7 +100,7 @@ HumanEval+ Ins 为 2026-09-19 的结果）。McNemar 格：行赢/列赢（共�
   100 题的子集分辨不出 10 分的 IFEval 差异，这就是为什么下面的验证集是每个任务 100 题，但任何正式结论都要上全集。
 - **HumanEval+**：蒸馏 M 60.4 ≈ 最佳合并 61.0 > Ins 57.3 > 教师 56.7；两两差异都不显著（164 题）。教师在代码上并不更强，学生也没有变差。
 - 解读：在现有证据下，选择性损失拿到了教师的数学，把它的指令跟随 / 代码损伤留在了后面。注意：一个种子、一个训练集、IF 只有 100 题子集；
-  gate 行没有 IF / 代码数字（2× 解码，没跑）。GSM8K 没跑。
+  gate 行的 IF / 代码数字正在解码（2026-10-16，`modules/run_step3_gate_guard.sh`，与它 MATH 行同一段 gate 代码）。GSM8K 没跑。
 - 原始数据：`outputs/step3/guards/<ins|m46|a20|mixpool1k>/{ifeval_rand100,humaneval}.json`（逐题），`guards/math500_rand100_seed0_results.json`。
 
 ## 结果（1k 测试；表由 `code/step3/results_table.py` 生成 → `technical_details/step3_results_t1k.md`）
