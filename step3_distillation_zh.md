@@ -7,11 +7,12 @@ STEP3 把这一行为训练进单个 1× 模型。配方：`technical_details/st
 `technical_details/step3_plan_frontier_kd.md`。
 
 ## 要点（1k 测试，2026-10-16；后 300 题完整数字）
-1. **1× 模型达到了 2× 门控的准确率**：在 1 k 训练 prompt 上训练 185 个优化器步（半小时训练）后，
+1. **1× 模型达到了 2× 门控的准确率**：在 1 k 训练 prompt 上训练 185 个优化器步（13 分钟训练）后，
    在 MATH-500 后 300 题上 50.3 vs Ins 36.7，p < 0.001；它所蒸馏的 gate 是 49.0。
-2. **1 k 规模下训练池无所谓**：临时混合池（t1k）和标准的只用 Tulu-3 的池（n1k）都是 50.3（33/33 赢，p = 1.0）。
-3. **起作用的是教师。** 用同样的 rollout、同样的训练器做 self-SFT（C2）停留在 Ins 水平（36.3，vs Ins 的 p = 1.0）。
-4. 增益带有门控的特征：写完率 76 → 91–92 % **并且** 已写完题目上的准确率 48.5 → 55（门控：93 % / 52.9）。
+2. **起作用的是教师。** 用同样的 rollout、同样的训练器做 self-SFT（C2）停留在 Ins 水平（36.3，vs Ins 的 p = 1.0）。
+3. 增益带有门控的特征：写完率 76 → 92 % **并且** 已写完题目上的准确率 48.5 → 54.7（门控：93 % / 52.9）。
+4. **只用 Tulu-3 的 run（n1k）还没有做成** —— 2026-10-16 那次无效（两个流水线 bug，见“无效的 n1k run”），已重新排队。
+   它唯一可用的观察：只在 **119 条 canvas 上训 22 步** 的模型也拿到 50.3 —— 效应很早就饱和。
 
 ## 三行
 
@@ -82,11 +83,10 @@ correct option."，出现在两道不同的题上（train 875 vs test 255）。M
   是否在别处**有所损失**。它们在 MATH 读数之后、在过了 MATH 门槛的那个 arm 上运行。
 - 尚未展示：第二个种子 / 第二个模型家族；以及用于判断 1 k 是否已是平台期的 8 k / 在线运行。
 
-## 结果（1k 测试；表由 `code/step3/results_table.py` 生成 → `technical_details/step3_results_{t1k,n1k}.md`）
+## 结果（1k 测试；表由 `code/step3/results_table.py` 生成 → `technical_details/step3_results_t1k.md`）
 
 下表每一行都是**单模型**在同样 300 道 MATH-500 题（id 200–499）上解码，只有 gate 那一行是 2×（解码时两个模型）。
-STEP0 的两个**端点基线**都在表里：best merge M(.4,.6)（convex 线）和 over addition A(2.0)（addition 线；它同时也是教师）。
-两行训练过的 M：t1k = 临时混合池，n1k = 标准的只用 Tulu-3 的池（同一配方、同一 θ、各自的 Ins rollout）。McNemar = 行赢次数 / 列赢次数，精确 p。
+STEP0 的两个**端点基线**都在表里：best merge M(.4,.6)（convex 线）和 over addition A(2.0)（addition 线；它同时也是教师）。McNemar = 行赢次数 / 列赢次数，精确 p。
 
 | row | acc | finish | acc\|finished | avg len (tok) | vs Ins | vs C2 | vs M(.4,.6) | vs A(2.0) | HW |
 |---|---:|---:|---:|---:|---|---|---|---|---|
@@ -94,11 +94,8 @@ STEP0 的两个**端点基线**都在表里：best merge M(.4,.6)（convex 线�
 | M(.4,.6) best merge（端点 1） | 42.0 | 81% | 51.9 | 448 | 42/26, p=0.07 | 45/28, p=0.06 | — | 35/49, p=0.16 | B300 |
 | A(2.0) over addition（端点 2 = 教师） | 46.7 | 94% | 49.5 | 1005 | 62/32, p=0.00 | 58/27, p=0.00 | 49/35, p=0.16 | — | H200 |
 | gate Ins ⇐ A(2.0) @0.8（2×） | 49.0 | 93% | 52.9 | 795 | 62/25, p=0.00 | 64/26, p=0.00 | 51/30, p=0.03 | 40/33, p=0.48 | H200 |
-| **M（t1k 池）** = Ins ⇐ A(2.0) 蒸馏，**θ = 0.8**，λ_anchor 0.3，reverse KL，lr 1e-4，2 ep，LoRA r64（1×） | **50.3** | 92% | 54.7 | 639 | 63/22, p=0.00 | 59/17, p=0.00 | 51/26, p=0.01 | 46/35, p=0.27 | H200 |
-| **M（n1k 池，只用 Tulu-3）** —— 同一配方 | **50.3** | 91% | 55.3 | 813 | 64/23, p=0.00 | 58/16, p=0.00 | 47/22, p=0.00 | 41/30, p=0.24 | H200 |
+| **M** = Ins ⇐ A(2.0) 蒸馏（t1k 池），**θ = 0.8**，λ_anchor 0.3，reverse KL，lr 1e-4，2 ep，LoRA r64（1×） | **50.3** | 92% | 54.7 | 639 | 63/22, p=0.00 | 59/17, p=0.00 | 51/26, p=0.01 | 46/35, p=0.27 | H200 |
 | **C2** = Ins 自蒸馏（对自己 rollout 的 token 做 CE，无教师），lr 1e-4，2 ep，LoRA r64（1×） | 36.3 | 80% | 45.6 | 856 | 36/37, p=1.00 | — | 28/45, p=0.06 | 27/58, p=0.00 | H200 |
-
-M（n1k）vs M（t1k）：33/33，p = 1.00 —— 两个池在 MATH 上不可区分。
 
 **M 里的 θ（阈值）**是学生的原始置信度门槛，低于它这一帧就交给教师：在采样器下一步要写的位置上，c = max_v p_S(v | state)；
 c < θ → 对 A(2.0) 做 reverse KL；c ≥ θ → 对未改动的 Ins 做 KL（权重 λ_anchor）。同一个 θ 也用来选训练帧（每条 canvas 的 3 帧里有 2 帧取自
@@ -107,14 +104,13 @@ rollout 时置信度 < θ 的那次写入之前）。θ = 0.8 是解码时 gate 
 
 按可信度排序，这张表说明：
 1. **M ≫ Ins，M ≫ C2**（都是 p < 0.001，≈ 60 赢 vs ≈ 20）：蒸馏后的 1× 模型优于起点，原因是教师（自蒸馏什么都没带来）。
-2. **M ≥ 两个端点。** M 胜过 best merge（51/26，p = 0.01；n1k 47/22，p < 0.001），与 over addition / 教师至少持平（46/35，p = 0.27），
+2. **M ≥ 两个端点。** M 胜过 best merge（51/26，p = 0.01），与 over addition / 教师至少持平（46/35，p = 0.27），
    而它只是 Ins 权重 + 一个 LoRA 的 1× 模型——测试时没有 merge、没有向量运算。
 3. **M ≥ 它所蒸馏的 2× gate**（50.3 vs 49.0；gate 就是我们一开始要达到的天花板）。
 4. 它具有 gate 的两个特征：写完率 76 → 91–92%（教师水平），写完题的正确率 48.5 → 55（高于教师的 49.5）。
-5. **这个规模下与训练池无关**：t1k 和 n1k 完全一致（50.3 / 50.3，33/33）。长度不同（639 vs 813 token）—— 值得看一眼。
 
-训练来源：`outputs/checkpoints/step3-{t1k,n1k}-M/`、`step3-t1k-C2/`（`args.json`、`train_log.jsonl`、`run.log`）；W&B 项目 `a2d-step3`，
-run `step3-t1k-M` / `step3-t1k-C2` / `step3-n1k-M`（MATH 记为 `eval/math500_last300_*`）。注意：t1k 的 M 容器在完成前重启了两次（`run.log` 有三次启动、
+训练来源：`outputs/checkpoints/step3-t1k-{M,C2}/`（`args.json`、`train_log.jsonl`、`run.log`）；W&B 项目 `a2d-step3`，
+run `step3-t1k-M` / `step3-t1k-C2`（MATH 记为 `eval/math500_last300_*`）。注意：t1k 的 M 容器在完成前重启了两次（`run.log` 有三次启动、
 一次 `[done]`）；checkpoint 来自唯一完整的那次，日志文件里也含有中断的尝试。
 
 ## 真正有用的评测需要什么（以及我们已有哪些）
@@ -129,6 +125,28 @@ run `step3-t1k-M` / `step3-t1k-C2` / `step3-n1k-M`（MATH 记为 `eval/math500_l
 | 无泄漏 | 已查（上一节） | prompt 池一变就重查 |
 | 能杀掉其他解释的对照 | C2（需要教师吗）已做；C1（需要选择吗）、C3（需要 over 吗）、C4（需要回放态吗）、C5（KL 方向）未跑 | guards 之后在同一批 rollout 上跑（每个 0.5 h 训练） |
 
+## 训练配方（`code/step3/train_frontier_kd.py` 为 M 实际跑的设置，来自 `args.json` + `run.log`）
+
+| item | value |
+|---|---|
+| 学生 / 教师 | Ins（`Dream-org/Dream-v0-Instruct-7B`）/ A(2.0)（`outputs/checkpoints/add-a10-b20`），都是 bf16；教师冻结、常驻显存 |
+| 可训练参数 | LoRA r 64、α 128、dropout 0、无 bias，挂在每层的 q/k/v/o/gate/up/down 投影上（≈ 160 M 参数）；底座冻结 |
+| anchor 模型 | 同一个网络关掉 LoRA（`disable_adapter`），不另存一份 |
+| 数据 | 1 000 条 Ins rollout → 988 条 canvas（丢 12 条：回答 < 4 token 或只有一个写入步）；每条 canvas 每 epoch 取 3 帧（2 帧在 κ < θ 的写入之前，1 帧均匀）；prompt + 回答 > 1024 token 的帧跳过 |
+| 步数 | 2 epoch × 988 × 3 = 5 928 帧 / 每步 32 帧 = **185 个优化器步** |
+| batch | 每步 32 帧 = micro-batch 4（自动探测：8 在 H200·0.51 上 OOM，峰值 69.7 GB）× 8 次梯度累积 |
+| 损失 | θ = 0.8：c < θ → reverse KL(p_S ‖ p_T)；c ≥ θ → λ·KL(p_S ‖ p_{S₀})，λ = 0.3；温度 1.0，不做 top-k 截断；两组位置分别取均值 |
+| optimizer | AdamW，β = (0.9, 0.95)，ε 默认（1e-8），**weight decay 0** |
+| lr 计划 | 峰值 1e-4，前 10 % 的步数线性 warm-up（18 步），之后线性衰减到第 185 步为 0 |
+| 梯度裁剪 | 全局范数 1.0（只作用于 LoRA 参数） |
+| 精度 | bf16 权重、bf16 autocast 前向、AdamW 里 LoRA 主参数 fp32、开 gradient checkpointing |
+| seed | 0（取帧和 torch） |
+| 成本 | 一张 H200·0.51 上 0.22 h，峰值 69.7 GB；每帧 0.13 s |
+| 输出 | `lora/`（adapter）和 `merged/`（LoRA 折进 bf16 权重 + Dream 远程代码）—— 所有评测都加载 `merged/` |
+
+没有用的东西：dropout、label smoothing、EMA、KL warm-up、θ 的 curriculum（Msch 臂会加）、教师 top-k、长度归一化。
+每步监控（`train_log.jsonl`，W&B `train/*`）：`kd`、`anchor`、`ce`（对 rollout token 的 CE，不优化）、`unsure_rate`、`empty_frames`、`lr`、`peak_gb`。
+
 ## 训练代码是怎么来的
 为这一步专门写的，不是改自某个 trainer：`code/step3/train_frontier_kd.py` 约 300 行纯 PyTorch + HF `transformers` + `peft`（LoRA），
 单卡，没有 Lightning、没有 verl、没有 accelerate。原样复用的部分：Dream 官方采样器做 rollout（`diffusion_generate`，与 MATH-500 协议同设置）、
@@ -136,6 +154,17 @@ Dream 的 logit 约定（位置 p 由隐层 p−1 预测，与官方 SFT trainer
 STEP1 的 lockstep 解码器做评测。新写的部分：轨迹回放作为破坏方式、按置信度分流的 loss、self-anchor、帧采样器、OOM micro-batch 探测、
 以及合并/保存路径（`merge_lora.py`，绕过 Dream 的 `generation_config.validate`）。没有用官方 verl FSDP trainer，因为它的 loss
 （对参考答案做随机 mask CE）正是这一步要替换掉的东西，而且它需要 4 张卡。
+
+## 无效的 n1k run（2026-10-16）—— 哪里错了，还能说明什么
+
+本意：同一配方跑在 1 000 条只用 Tulu-3 的 prompt 上。两个流水线 bug 让它变成了别的东西：
+1. prompt 文件路径是用环境变量传的，而环境变量到不了 job 容器 → rollout job 解码的是 **mix17k 池**（和 t1k 相同的 prompt）；
+2. `rollouts.jsonl` 是增量追加的，snakemake 重启后已存在的文件被当成已完成 → `all.jsonl` 只拼了 **122 行**。
+于是“M (n1k)”实际是在 **119 条 mix 池 canvas 上训了 22 个优化器步** —— 却仍在后 300 题上拿到 **50.3 / 写完 91 % / 813 token**
+（vs M(t1k) 33/33，p = 1.0）。产物移到 `trash/n1k_invalid_20261016/`（有 README）；W&B 的 `step3-n1k-M` 就是这次无效 run。
+修复（已提交）：prompt 文件改为 runner 的显式参数；rollout shard 写 `done` 标记、Snakefile 等这个标记；MATH shard 只有 `summary.json` 存在才算完成。
+只用 Tulu-3 的 run 用修好的流水线、同一 tag 重新排队（15 个 job，≈ 20 GPU·h）。
+这次事故说明的事：MATH 增益在 ~700 帧后就到了 —— 1 k / 185 步的预算对这个指标早已过饱和。所以下一次 run 里有信息量的是 guards（代码 / IF）和长度，不是 MATH。
 
 ## 当前数字的注意事项
 - 每一行都已齐 300 题（t1k 的 merge 规则在两个重跑 shard 完成前就触发了；2026-10-16 13:30 手动合并）。
@@ -150,10 +179,10 @@ STEP1 的 lockstep 解码器做评测。新写的部分：轨迹回放作为破�
 **Amel 的第一个任务，优先于下面所有条目：** 在只用 Tulu-3 的池子上训练蒸馏模型（`n1k`：直接从 Tulu-3 按原生比例抽 1 000 条 prompt，不加别的），
 配方原样不动（Ins ⇐ A(2.0)，θ = 0.8，λ = 0.3，2 epoch），然后在三类任务上测泛化：**数学**（MATH-500 后 300、GSM8K）、**代码**（HumanEval+）、
 **指令遵循**（IFEval）。问题只有一个：只用 Tulu 的学生是否保住 t1k 的 MATH 增益，*并且*在代码 / IF 上没有损失。流水线：`code/step3/pipeline`
-（tag `n1k`，臂 M；guards 通过 `guard_arms`）。2026-10-16 状态：MATH 这一半已完成（50.3，见结果）；代码 / IF 这一半（guards）是下一个要提的 job。列表里其余条目都在这个答案之后。
+（tag `n1k`，臂 M；guards 通过 `guard_arms`）。2026-10-16 状态：还没做成 —— 第一次 n1k 训在了错误的池上（见“无效的 n1k run”）；修好的流水线可以重启。列表里其余条目都在这个答案之后。
 
 按"对结论改变什么"排序。成本为 H200·0.51 GPU·h。两个大项（θ 搜索、多阶段蒸馏）在下面单独成小节。
-1. **干净训练集** —— 已完成（`n1k`，2026-10-16）：只用 Tulu-3 的 M 在 MATH 后 300 上 50.3，与 t1k 完全一致（33/33）。Guards 还没跑。
+1. **干净训练集**（`n1k`）—— 2026-10-16 第一次尝试无效（见“无效的 n1k run”）；用修好的流水线重新排队，≈ 20 GPU·h。然后 guards。
 2. **θ 搜索** —— 见下面 §TODO-θ。≈ 8 GPU·h/点。
 3. **多阶段蒸馏** —— 见下面 §TODO-multi-stage。GPU·h 与 offline 相同，墙钟串行。
 4. **基线同硬件** —— Ins 与 M(.4,.6) 是 B300 数字；在 H200 重测（后 300，2 个 job，≈ 5 GPU·h）。
