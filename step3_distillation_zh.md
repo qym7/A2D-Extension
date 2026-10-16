@@ -159,17 +159,28 @@ STEP1 的 lockstep 解码器做评测。新写的部分：轨迹回放作为破�
 rollout 共用，每个点 = 0.5 h 训练 + 7 GPU·h MATH。看：acc、写完率、平均长度、`unsure_rate`（交给教师的位置占比）—— 后者告诉我们更低的 θ 是否真的意味着更少教师。
 
 ### TODO-multi-stage：online 蒸馏（用更新后的学生 rollout）
-θ 固定（取 TODO-θ 的结果）。S₀ = Ins，教师 T = A(2.0) 冻结，prompt 切成互不相交的块 Q₁ … Q_K。第 k = 1 … K 轮：
+**设定**
+- S₀ = Ins（学生起点），T = A(2.0)（教师，冻结），θ 固定（取 TODO-θ 的结果），λ = 0.3。
+- 一个 LoRA Δ 跨轮延续；Δ₀ = 0，所以 S_k = S₀ + Δ_k。
+- prompt 切成互不相交的块 Q₁ … Q_K（如 1 k run 切成 K = 4 × 250）。
 
-  (a) 用当前学生 rollout：D_k = { Sample(S_{k−1}, q) : q ∈ Q_k } —— 每个样本 = (y, s, κ)：canvas、写入步、写入时置信度
-  (b) 从这些轨迹取帧：F_k = { (x(t), NEXT(t)) : τ ∈ D_k, t ∈ frames(τ, θ) } —— 同现在：2 帧取自低 κ 写入之前 + 1 帧均匀
-  (c) 更新同一个 LoRA Δ（初始化为 Δ_{k−1}）：
-      S_k = argmin_Δ  E_{(x,j)∈F_k} [ 1[c_j < θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_T(·|x,j) )  +  λ · 1[c_j ≥ θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_{S₀}(·|x,j) ) ]，
-      其中 c_j = max_v p_{S₀+Δ}(v | x, j) 为当前学生的置信度；anchor 始终是原始 S₀。
+**第 k = 1 … K 轮**
+- (a) 用当前学生 rollout：D_k = { Sample(S_{k−1}, q) : q ∈ Q_k }。每个样本 = (y, s, κ)：canvas、每个位置的写入步与写入时置信度。
+- (b) 取帧：F_k = { (x(t), NEXT(t)) : τ ∈ D_k, t ∈ frames(τ, θ) } —— 同现在：2 帧取自低 κ 写入之前 + 1 帧均匀。
+- (c) 从 Δ_{k−1} 出发更新 Δ：
+  S_k = argmin_Δ E_{(x,j)∈F_k} [ 1[c_j < θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_T(·|x,j) ) + λ · 1[c_j ≥ θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_{S₀}(·|x,j) ) ]
+  其中 c_j = max_v p_{S₀+Δ}(v | x, j) 是*当前*学生的置信度；anchor 始终是原始 S₀。
 
-K = 1 就是我们现在的 offline run。每个 prompt 仍只 rollout 一次，所以 GPU·h 与 offline 相同；只是墙钟变串行，且第 1 轮之后对照组不能再共用 rollout。
-为什么应当有用：帧是学生*当前*的状态，第 k 轮修好的错误不会在第 k+1 轮从陈旧前缀里再学回来（TOPD 的 on-policy 论证）。
-以后可试的变体：移动教师 T_k，在 S_k 之上重新施加 over 步。需要的代码：`rollout.py --lora`、trainer 的 `--resume-lora`、Snakefile 按轮依赖。
+**性质**
+- K = 1 就是我们现在的 offline run。
+- 每个 prompt 只 rollout 一次 → GPU·h 与 offline 相同；墙钟变串行（K × (rollout + 训练)）。
+- 为什么应当有用：帧是学生当前的状态，第 k 轮修好的错误不会在第 k+1 轮从陈旧前缀里再学回来（TOPD 的 on-policy 论证）。
+- 代价：第 1 轮之后对照组不能再共用 rollout。
+
+**以后 / 需要**
+- 变体：移动教师 T_k = 在 S_k 之上重新施加 over 步。
+- 可选：与 θ 计划 θ_k（TODO-θ）叠加，但先分开测。
+- 代码：`rollout.py --lora`、trainer 的 `--resume-lora`、Snakefile 按轮依赖。
 
 ## 下一步
 1. 完成 300 题（自动）。2. Ins 在 H200 上跑最后 300 题（一个任务）。3. 对 M 跑 guard。4. 8 k 离线 vs 4 × 2 k 在线轮次（`tmp.md` 2026-10-15 计划），

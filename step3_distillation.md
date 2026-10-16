@@ -167,19 +167,28 @@ We used the gate's θ = 0.8 unchanged. Grid in steps of 0.2 (0.1 was too expensi
 (share of positions that went to the teacher) — the latter tells whether a lower θ really means less teacher.
 
 ### TODO-multi-stage: online distillation (roll out with the updated student)
-θ fixed (whatever TODO-θ picks). S₀ = Ins, teacher T = A(2.0) frozen, prompts split into disjoint chunks Q₁ … Q_K. Round k = 1 … K:
+**Setup**
+- S₀ = Ins (student init), T = A(2.0) (teacher, frozen), θ fixed (whatever TODO-θ picks), λ = 0.3.
+- One LoRA Δ, carried across rounds; Δ₀ = 0, so S_k = S₀ + Δ_k.
+- Prompts split into disjoint chunks Q₁ … Q_K (e.g. K = 4 × 250 for a 1 k run).
 
-  (a) rollout with the current student:  D_k = { Sample(S_{k−1}, q) : q ∈ Q_k }   — each sample = (y, s, κ): canvas, commit steps, commit confidences
-  (b) frames from those trajectories:    F_k = { (x(t), NEXT(t)) : τ ∈ D_k, t ∈ frames(τ, θ) }   — as now: 2 before a low-κ commit + 1 uniform
-  (c) update the one LoRA Δ (init Δ_{k−1}):
-      S_k = argmin_Δ  E_{(x,j)∈F_k} [ 1[c_j < θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_T(·|x,j) )  +  λ · 1[c_j ≥ θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_{S₀}(·|x,j) ) ],
-      with c_j = max_v p_{S₀+Δ}(v | x, j) the current student's confidence; anchor always the original S₀.
+**Round k = 1 … K**
+- (a) Rollout with the current student: D_k = { Sample(S_{k−1}, q) : q ∈ Q_k }. Each sample = (y, s, κ): canvas, commit step and commit confidence per position.
+- (b) Frames: F_k = { (x(t), NEXT(t)) : τ ∈ D_k, t ∈ frames(τ, θ) } — as now, 2 frames before a low-κ commit + 1 uniform.
+- (c) Update Δ from Δ_{k−1}:
+  S_k = argmin_Δ E_{(x,j)∈F_k} [ 1[c_j < θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_T(·|x,j) ) + λ · 1[c_j ≥ θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_{S₀}(·|x,j) ) ]
+  with c_j = max_v p_{S₀+Δ}(v | x, j) the *current* student's confidence; the anchor is always the original S₀.
 
-K = 1 is exactly the offline run we have. Each prompt is still rolled out once, so the GPU·h equal the offline cost; only the wall-clock becomes serial,
-and controls can no longer share rollouts after round 1. Why it should help: the frames are the student's *current* states, so a mistake fixed in round k
-is not re-learned from stale prefixes in round k+1 (TOPD's on-policy argument).
-Variant for later: a moving teacher T_k that re-applies the over step on top of S_k. Code needed: `rollout.py --lora`, `--resume-lora` in the trainer,
-Snakefile round dependencies.
+**Properties**
+- K = 1 is exactly the offline run we have.
+- Each prompt is rolled out once → same GPU·h as offline; wall-clock becomes serial (K × (rollout + train)).
+- Why it should help: frames are the student's current states, so a mistake fixed in round k is not re-learned from stale prefixes in round k+1 (TOPD's on-policy argument).
+- Cost of the design: controls cannot share rollouts after round 1.
+
+**Later / needed**
+- Variant: moving teacher T_k = over step re-applied on top of S_k.
+- Optional: combine with a θ schedule θ_k (TODO-θ), but test the two separately first.
+- Code: `rollout.py --lora`, `--resume-lora` in the trainer, Snakefile round dependencies.
 
 ## Next
 1. Finish the 300 (automatic). 2. Ins on H200, last 300 (one job). 3. Guards on M. 4. 8 k offline vs 4 × 2 k online rounds (`tmp.md` 2026-10-15 plan),
