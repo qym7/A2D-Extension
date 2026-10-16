@@ -149,8 +149,14 @@ trainer was not used because its loss (random-mask CE on reference answers) is e
 - Reading rule from the plan still applies: success = ≥ Ins + 6 **and** > C2 + 3 **and** no guard regression.
 
 ## TODO (2026-10-16, @Amel — please read / add)
-Ordered by what each one changes about the claim. Costs are H200·0.51 GPU·h. The two bigger items (θ search, multi-stage distillation) have their own sub-sections below.
 
+**First mission (@Amel), before anything else below:** train the distilled model on the Tulu-3-only pool (`n1k`: 1 000 prompts sampled directly
+from Tulu-3 at its native proportions, nothing else), with the recipe exactly as it is (Ins ⇐ A(2.0), θ = 0.8, λ = 0.3, 2 epochs), and then
+test generalisation on all three families: **math** (MATH-500 last 300, GSM8K), **coding** (HumanEval+), **instruction following** (IFEval).
+The question is only: does the Tulu-only student keep the MATH gain of t1k *and* lose nothing on code / IF. Pipeline: `code/step3/pipeline`
+(tag `n1k`, arm M; guards via `guard_arms`). Everything else in this list comes after that answer.
+
+Ordered by what each one changes about the claim. Costs are H200·0.51 GPU·h. The two bigger items (θ search, multi-stage distillation) have their own sub-sections below.
 1. **Clean training set** (running: `n1k`) — redo M on Tulu-3-only native proportions, same 1 k / MATH last 300. ≈ 20 GPU·h. Pass = M ≥ Ins + 6 again.
 2. **θ search** — see §TODO-θ below. ≈ 8 GPU·h per point.
 3. **Multi-stage distillation** — see §TODO-multi-stage below. Same GPU·h as offline, serial wall-clock.
@@ -168,49 +174,33 @@ We used the gate's θ = 0.8 unchanged. Grid in steps of 0.2 (0.1 was too expensi
 
 ### TODO-multi-stage: online distillation (roll out with the updated student)
 
-**In one sentence.** Today (offline): Ins rolls out all 1 000 prompts once, then we train once. Online: split the 1 000 prompts into K chunks;
-roll out chunk 1 with Ins, train → S₁; roll out chunk 2 **with S₁**, train further → S₂; … The teacher, the loss and the threshold do not change.
-Only *who writes the trajectories* changes: the student as it is now, instead of the student as it was at the start.
+**In one sentence.** Today (offline): S₀ = Ins rolls out all 1 000 prompts once, then we train once → S₁. Online: split the prompts into K chunks;
+roll out chunk 1 with S₀, train → S₁; roll out chunk 2 **with S₁**, train further → S₂; … → S_K. Teacher T, loss and θ never change;
+only *who writes the trajectories* changes.
 
-**Symbols**
+**Notation.** S₀ = Ins; T = A(2.0), frozen; S_k = the student after round k (S₀ plus one LoRA that keeps being trained, so S_k starts from S_{k−1});
+Q_k = the k-th chunk of prompts; p_S(·|x, j) = model S's distribution at position j of canvas x; c_j = max_v p_S(v|x, j) = the student's confidence there.
 
-| symbol | meaning |
-|---|---|
-| S₀ | the untouched student (Ins) |
-| Δ | the LoRA weights, the only thing being trained; S₀ + Δ is the current student |
-| S_k = S₀ + Δ_k | the student after round k; S₀ is also the anchor in every round |
-| T | the teacher A(2.0), never updated |
-| θ, λ | hand-over threshold and anchor weight, fixed (θ from TODO-θ, λ = 0.3) |
-| Q_k | the k-th chunk of prompts (disjoint; e.g. K = 4 chunks of 250) |
-| (y, s, κ) | one rollout: final canvas y, and for every position the step s at which it was written and the confidence κ at that moment |
-| x(t), NEXT(t) | the canvas after sampler step t (positions with s ≤ t filled, the rest [MASK]) and the positions the sampler fills at step t+1 |
-| c_j | the current student's confidence at position j of a frame, max_v p_{S₀+Δ}(v \| x, j) |
+**Round k = 1, …, K**
+1. **Rollout.** S_{k−1} decodes every prompt in Q_k with the official sampler (512 tokens / 512 steps); record the canvas, and per position the step it
+   was written and the confidence at that moment.
+2. **Frames.** Per rollout, 3 training states (x, NEXT): 2 taken just before a commit with confidence < θ, 1 at a uniform step — as in the offline run.
+3. **Train.** Starting from S_{k−1}, on those frames,
 
-**Round k = 1, …, K** (start with Δ₀ = 0)
+   S_k = argmin_S  E_{(x, NEXT)} Σ_{j ∈ NEXT} [ 1[c_j < θ] · KL( p_S(·|x,j) ‖ p_T(·|x,j) )  +  λ · 1[c_j ≥ θ] · KL( p_S(·|x,j) ‖ p_{S₀}(·|x,j) ) ]
 
-1. **Rollout.** Decode every prompt in Q_k with the current student S_{k−1} using the official sampler (512 tokens / 512 steps), recording (y, s, κ).
-   This is the only time these prompts are decoded.
-2. **Frames.** From each rollout take 3 training states: 2 at a step just before a commit with κ < θ (where the gate would have handed over) and 1 at a
-   uniformly random step. A frame is (x(t), NEXT(t)).
-3. **Train.** Continue training Δ from Δ_{k−1} on these frames with the same loss as the offline run:
+   i.e. where S is unsure it moves toward T; where S is sure it is held at S₀. c_j is computed with the S being trained.
 
-   S_k = argmin_Δ  E_{frames} Σ_{j ∈ NEXT(t)} [ 1[c_j < θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_T(·|x,j) )  +  λ · 1[c_j ≥ θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_{S₀}(·|x,j) ) ]
+After round K, S_K is merged and evaluated like the offline model. K = 1 is exactly the offline run.
 
-   Reading the two terms: at positions where the current student is unsure (c_j < θ) it is pulled toward the teacher; where it is sure (c_j ≥ θ)
-   it is held at the original Ins so it does not drift. Both c_j and the first distribution use the *current* Δ; the anchor distribution uses Δ = 0.
-
-After round K the LoRA is merged once and evaluated exactly as the offline model.
-
-**What changes and what does not**
-- K = 1 reproduces the offline run exactly.
-- GPU·h: identical to offline (every prompt decoded once, every frame trained once). Wall-clock: serial, K × (rollout + train).
-- Expected gain: in round k ≥ 2 the frames come from the student's current behaviour, so the unsure positions are the ones it *still* gets wrong,
-  not the ones already fixed in round k−1 (TOPD's on-policy argument).
-- Price: controls (C1 … C5) can share only the round-1 rollouts.
+**Initial plan.** 1 000 Tulu-3 prompts (the n1k pool), K = 4 chunks of 250, θ = 0.8, λ = 0.3, 2 epochs per round, lr 1e-4 with warm-up only in round 1;
+compare S₄ against the offline S₁ on the same MATH last 300 (+ guards). GPU·h ≈ offline (every prompt decoded once, every frame trained once);
+wall-clock ≈ 4 × (1.4 h rollout + 0.1 h train). Expected gain: from round 2 on, the "unsure" positions are the ones the student *still* gets wrong,
+not the ones already fixed (TOPD's on-policy argument). Price: controls C1 … C5 can share only the round-1 rollouts.
 
 **Later / needed**
 - Variant: moving teacher T_k = over step re-applied on top of S_k.
-- Optional: combine with a decaying θ_k (TODO-θ); test the two separately first.
+- Optional: decaying θ_k (TODO-θ); test the two separately first.
 - Code: `rollout.py --lora` (decode with the adapter), `--resume-lora` in the trainer, Snakefile round dependencies.
 
 ## Next

@@ -142,8 +142,13 @@ STEP1 的 lockstep 解码器做评测。新写的部分：轨迹回放作为破�
 - 计划中的读数规则仍然适用：成功 = ≥ Ins + 6 **且** > C2 + 3 **且** 无 guard 回退。
 
 ## TODO（2026-10-16，@Amel —— 请看 / 补充）
-按"对结论改变什么"排序。成本为 H200·0.51 GPU·h。两个大项（θ 搜索、多阶段蒸馏）在下面单独成小节。
 
+**Amel 的第一个任务，优先于下面所有条目：** 在只用 Tulu-3 的池子上训练蒸馏模型（`n1k`：直接从 Tulu-3 按原生比例抽 1 000 条 prompt，不加别的），
+配方原样不动（Ins ⇐ A(2.0)，θ = 0.8，λ = 0.3，2 epoch），然后在三类任务上测泛化：**数学**（MATH-500 后 300、GSM8K）、**代码**（HumanEval+）、
+**指令遵循**（IFEval）。问题只有一个：只用 Tulu 的学生是否保住 t1k 的 MATH 增益，*并且*在代码 / IF 上没有损失。流水线：`code/step3/pipeline`
+（tag `n1k`，臂 M；guards 通过 `guard_arms`）。列表里其余条目都在这个答案之后。
+
+按"对结论改变什么"排序。成本为 H200·0.51 GPU·h。两个大项（θ 搜索、多阶段蒸馏）在下面单独成小节。
 1. **干净训练集**（进行中：`n1k`）—— 只用 Tulu-3 原生比例重做 M，同样 1 k / MATH 后 300。≈ 20 GPU·h。通过 = M 再次 ≥ Ins + 6。
 2. **θ 搜索** —— 见下面 §TODO-θ。≈ 8 GPU·h/点。
 3. **多阶段蒸馏** —— 见下面 §TODO-multi-stage。GPU·h 与 offline 相同，墙钟串行。
@@ -160,45 +165,30 @@ rollout 共用，每个点 = 0.5 h 训练 + 7 GPU·h MATH。看：acc、写完�
 
 ### TODO-multi-stage：online 蒸馏（用更新后的学生 rollout）
 
-**一句话。** 现在（offline）：Ins 把 1 000 条 prompt 全部 rollout 一次，然后训练一次。Online：把 1 000 条切成 K 块；
-第 1 块用 Ins rollout，训练 → S₁；第 2 块**用 S₁** rollout，接着训练 → S₂；…… 教师、损失、阈值都不变，
-变的只有*谁来写轨迹*：是现在的学生，而不是一开始的学生。
+**一句话。** 现在（offline）：S₀ = Ins 把 1 000 条 prompt 全部 rollout 一次，然后训练一次 → S₁。Online：把 prompt 切成 K 块；
+第 1 块用 S₀ rollout，训练 → S₁；第 2 块**用 S₁** rollout，接着训练 → S₂；…… → S_K。教师 T、损失、θ 都不变，变的只有*谁来写轨迹*。
 
-**符号**
+**记号。** S₀ = Ins；T = A(2.0)，冻结；S_k = 第 k 轮之后的学生（S₀ 加一个持续训练的 LoRA，所以 S_k 从 S_{k−1} 出发）；
+Q_k = 第 k 块 prompt；p_S(·|x, j) = 模型 S 在 canvas x 位置 j 的分布；c_j = max_v p_S(v|x, j) = 学生在该处的置信度。
 
-| symbol | meaning |
-|---|---|
-| S₀ | 未动过的学生（Ins） |
-| Δ | LoRA 权重，唯一被训练的东西；S₀ + Δ 是当前学生 |
-| S_k = S₀ + Δ_k | 第 k 轮之后的学生；S₀ 同时也是每一轮的 anchor |
-| T | 教师 A(2.0)，从不更新 |
-| θ, λ | 交接阈值与 anchor 权重，固定（θ 取 TODO-θ 的结果，λ = 0.3） |
-| Q_k | 第 k 块 prompt（互不相交；如 K = 4 块、每块 250） |
-| (y, s, κ) | 一条 rollout：最终 canvas y，以及每个位置的写入步 s 和写入那一刻的置信度 κ |
-| x(t), NEXT(t) | 采样第 t 步之后的 canvas（s ≤ t 的位置已填，其余 [MASK]）以及第 t+1 步要填的位置 |
-| c_j | 当前学生在帧的位置 j 的置信度，max_v p_{S₀+Δ}(v \| x, j) |
+**第 k = 1, …, K 轮**
+1. **Rollout。** S_{k−1} 用官方采样器（512 token / 512 步）解码 Q_k 里的每条 prompt；记录 canvas，以及每个位置的写入步和写入那一刻的置信度。
+2. **取帧。** 每条 rollout 取 3 个训练状态 (x, NEXT)：2 个取在置信度 < θ 的写入之前，1 个取在均匀随机的一步 —— 与 offline 相同。
+3. **训练。** 从 S_{k−1} 出发，在这些帧上
 
-**第 k = 1, …, K 轮**（从 Δ₀ = 0 开始）
+   S_k = argmin_S  E_{(x, NEXT)} Σ_{j ∈ NEXT} [ 1[c_j < θ] · KL( p_S(·|x,j) ‖ p_T(·|x,j) )  +  λ · 1[c_j ≥ θ] · KL( p_S(·|x,j) ‖ p_{S₀}(·|x,j) ) ]
 
-1. **Rollout。** 用当前学生 S_{k−1}、官方采样器（512 token / 512 步）解码 Q_k 里的每条 prompt，记录 (y, s, κ)。这些 prompt 只在这里解码一次。
-2. **取帧。** 每条 rollout 取 3 个训练状态：2 个取在某次 κ < θ 的写入之前的那一步（gate 本来会交接的地方），1 个取在均匀随机的一步。一帧 = (x(t), NEXT(t))。
-3. **训练。** 从 Δ_{k−1} 出发，用与 offline 完全相同的损失在这些帧上继续训练 Δ：
+   即 S 不确定的地方向 T 靠，S 确定的地方按在 S₀ 上。c_j 用正在训练的 S 计算。
 
-   S_k = argmin_Δ  E_{帧} Σ_{j ∈ NEXT(t)} [ 1[c_j < θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_T(·|x,j) )  +  λ · 1[c_j ≥ θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_{S₀}(·|x,j) ) ]
+第 K 轮结束后合并 S_K，评测方式与 offline 模型相同。K = 1 就精确等于 offline run。
 
-   两项的含义：当前学生不确定的位置（c_j < θ）被拉向教师；确定的位置（c_j ≥ θ）被按在原始 Ins 上，防止漂移。c_j 和第一个分布都用*当前*的 Δ；anchor 分布用 Δ = 0。
-
-K 轮结束后 LoRA 合并一次，评测方式与 offline 模型完全相同。
-
-**变了什么、没变什么**
-- K = 1 就精确等于现在的 offline run。
-- GPU·h：与 offline 相同（每条 prompt 解码一次，每帧训练一次）。墙钟：串行，K × (rollout + 训练)。
-- 期望收益：第 k ≥ 2 轮的帧来自学生当前的行为，所以"不确定的位置"是它*现在仍然*会错的，而不是第 k−1 轮已经修好的（TOPD 的 on-policy 论证）。
-- 代价：对照组（C1 … C5）只能共用第 1 轮的 rollout。
+**Initial plan。** 1 000 条 Tulu-3 prompt（n1k 池），K = 4 块、每块 250，θ = 0.8，λ = 0.3，每轮 2 epoch，lr 1e-4、只在第 1 轮 warm-up；
+在同一 MATH 后 300（+ guards）上比较 S₄ 与 offline 的 S₁。GPU·h ≈ offline（每条 prompt 解码一次、每帧训练一次）；墙钟 ≈ 4 × (1.4 h rollout + 0.1 h 训练)。
+期望收益：从第 2 轮起，"不确定的位置"是学生*现在仍然*会错的，而不是已经修好的（TOPD 的 on-policy 论证）。代价：对照组 C1 … C5 只能共用第 1 轮的 rollout。
 
 **以后 / 需要**
 - 变体：移动教师 T_k = 在 S_k 之上重新施加 over 步。
-- 可选：与递减的 θ_k（TODO-θ）叠加；先分开测。
+- 可选：递减的 θ_k（TODO-θ）；先分开测。
 - 代码：`rollout.py --lora`（带 adapter 解码）、trainer 的 `--resume-lora`、Snakefile 按轮依赖。
 
 ## 下一步
