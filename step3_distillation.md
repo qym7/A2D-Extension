@@ -11,6 +11,8 @@ STEP3 trains that behaviour into a single 1× model. Recipe: `technical_details/
 3. The gain has the gate's signature: finish rate 76 → 92 % **and** accuracy on finished problems 48.5 → 54.7 (the gate: 93 % / 52.9).
 4. **The Tulu-3-only run (tulu3-1k) is NOT done** — the 2026-10-16 attempt was invalid (two pipeline bugs, see "Invalid tulu3-1k run"); it is re-queued.
    Its one usable observation: a model trained on only **119 canvases for 22 steps** also scored 50.3 — the effect saturates very early.
+5. **Generalisation (official IFEval / HumanEval+ harnesses, random-100 IFEval):** the distilled model keeps Ins-level instruction following (64 vs 62)
+   and best-merge-level code (60.4 vs 61.0) while the teacher A(2.0) itself is bad at IF (51). It took the teacher's math, not its damage.
 
 ## The three rows
 
@@ -79,13 +81,33 @@ correct option." on two different problems (train 875 vs test 255). MATH train a
 against MATH test by its authors. → **no leakage from the training prompts to the test problems.** The student rollouts are generated on the
 training prompts only, never on MATH-500.
 
-## Generalisation: what is and is not shown yet
-- Shown: the gain transfers from **mixed training prompts** (half of them not math) to **held-out competition math**, with the student
-  decoding alone. The test set is the same held-out set on which STEP0–2 measured Ins, the merges, the teachers and the gate, so all numbers
-  are comparable (hardware caveat below).
-- Not shown yet: the three guards (GSM8K, HumanEval+, IFEval; official harnesses, `pipeline/config.yaml: guard_arms`) — these decide whether M
-  **lost** anything elsewhere. They run after the MATH read, on the arm that clears the MATH bar.
-- Not shown yet: a second seed / a second model family; and the 8 k / online runs that tell whether 1 k is already the plateau.
+## Generalisation: the 1× distilled model vs both end points and the best merge (2026-10-16)
+Every row is **one model decoding alone** (the gate row is the 2× decode-time gate it was distilled from). MATH on the SAME ids per column; IFEval and
+HumanEval+ with the **official harnesses and the official decode settings** (IFEval 1280/1280, HumanEval+ 512/512 T0.1, both on H200·0.51 except where noted).
+Subsets are **fixed random** lists (never the first/last N): MATH rand100 = seed-0 random 100 of all 500 ids; IFEval rand100 = seed-0 random 100 of the 541
+prompts (`code/step3/guards/ifeval_rand100.yaml`, official scorer re-exported). Ins and M(.4,.6) IFEval / HumanEval+ were **not re-run**: their rows are
+read off their existing official full-set logs (IFEval full 541: Ins 56.6, M(.4,.6) 66.5 prompt-strict; HumanEval+ Ins 2026-09-19). McNemar cells:
+wins-of-row / wins-of-column on the shared items, exact two-sided p.
+
+| row | MATH last 300 | MATH rand100/500 | IFEval rand100 (strict) | HumanEval+ (164) | MATH100 vs Ins | IFEval vs Ins | HE+ vs Ins | MATH100 vs M(.4,.6) | IFEval vs M(.4,.6) | HE+ vs M(.4,.6) |
+|---|---:|---:|---:|---:|---|---|---|---|---|---|
+| Ins (student, untouched) | 36.7 | 34 | 62 | 57.3 | — | — | — | 9/17, p=0.17 | 13/16, p=0.71 | 10/18, p=0.18 |
+| M(.4,.6) best merge | 42.0 | 42 | 65 | 61.0 | 17/9, p=0.17 | 16/13, p=0.71 | 18/10, p=0.18 | — | — | — |
+| A(2.0) over addition (= the teacher) | 46.7 | 55 | 51 | 56.7 | 29/8, p=0.00 | 8/19, p=0.05 | 19/18, p=1.00 | 22/9, p=0.03 | 8/22, p=0.02 | 16/23, p=0.34 |
+| gate Ins ⇐ A(2.0) @0.8 (2×) | 49.0 | 51 | — | — | 22/5, p=0.00 | — | — | 18/9, p=0.12 | — | — |
+| M distilled (mixpool-1k) | 50.3 | 58 | 64 | 60.4 | 30/6, p=0.00 | 14/12, p=0.85 | 17/12, p=0.46 | 24/8, p=0.01 | 7/8, p=1.00 | 14/17, p=0.72 |
+
+- **MATH**: distilled M is the best row everywhere (last 300: 50.3; rand100 of all 500: 58), significantly above Ins and above the best merge, and at
+  the level of the 2× gate it was distilled from (51 on rand100) while decoding once.
+- **IFEval**: the teacher A(2.0) is **bad** at instruction following (51, p = 0.05 vs Ins, p = 0.02 vs M(.4,.6)) — exactly the "over" end point's known damage.
+  The distilled student does **not** inherit it: 64 vs Ins 62 / M(.4,.6) 65, p ≈ 1. On the full 541 set the best merge beats Ins by 10 points (66.5 vs 56.6, p < 0.001);
+  on this random 100 the gap is 3 points, p = 0.71 — a 100-prompt subset cannot resolve a 10-point IFEval difference, which is why the validation
+  set below is 100 **per task** but any real claim goes to the full set.
+- **HumanEval+**: distilled M 60.4 ≈ best merge 61.0 > Ins 57.3 > teacher 56.7; none of the pairwise differences is significant (164 problems). The
+  teacher is not better at code, and the student did not get worse.
+- Reading: the selective loss took the teacher's math and left its instruction-following / code damage behind — on this evidence. Caveats: one seed,
+  one training set, 100-prompt subsets for IF; the gate row has no IF / code numbers (2× decode, not run). GSM8K not run.
+- Raw: `outputs/step3/guards/<ins|m46|a20|mixpool1k>/{ifeval_rand100,humaneval}.json` (per-item), `guards/math500_rand100_seed0_results.json`.
 
 ## Results (1k test; table regenerated by `code/step3/results_table.py` → `technical_details/step3_results_t1k.md`)
 
@@ -125,7 +147,7 @@ completing (`run.log` shows three starts, one `[done]`); the checkpoint is from 
 |---|---|---|
 | same hardware for every row | Ins and M(.4,.6) are B300 numbers (2026-09-30); all STEP3 rows H200 | re-decode Ins and M(.4,.6) on H200, last 300 (2 jobs, ≈ 5 GPU·h) |
 | full 300 problems, not 200 | M's shards 0 and 2 running | automatic; table regenerates |
-| the model did not lose elsewhere | not measured | GSM8K, HumanEval+, IFEval official harnesses on M (`guard_arms`), ≈ 20 GPU·h |
+| the model did not lose elsewhere | IFEval rand100 64 (Ins 62), HumanEval+ 60.4 (Ins 57.3) — see Generalisation | GSM8K and full-541 IFEval still open |
 | not a seed artefact | one seed | second training seed of M (0.5 h + 7 GPU·h eval) |
 | not a 1k artefact | one data size | 8k offline (or 4 × 2k online) — also tells whether 1k is already the plateau |
 | statistics that respect pairing | done: exact McNemar on identical problem ids | keep; never compare accuracies across different id sets |

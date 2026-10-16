@@ -13,6 +13,8 @@ STEP3 把这一行为训练进单个 1× 模型。配方：`technical_details/st
 3. 增益带有门控的特征：写完率 76 → 92 % **并且** 已写完题目上的准确率 48.5 → 54.7（门控：93 % / 52.9）。
 4. **只用 Tulu-3 的 run（tulu3-1k）还没有做成** —— 2026-10-16 那次无效（两个流水线 bug，见“无效的 tulu3-1k run”），已重新排队。
    它唯一可用的观察：只在 **119 条 canvas 上训 22 步** 的模型也拿到 50.3 —— 效应很早就饱和。
+5. **泛化（官方 IFEval / HumanEval+ harness，IFEval 随机 100）：** 蒸馏模型保持了 Ins 水平的指令跟随（64 vs 62）和最佳合并水平的代码
+   （60.4 vs 61.0），而教师 A(2.0) 自己的 IF 很差（51）。它拿到了教师的数学，没拿到教师的损伤。
 
 ## 三行
 
@@ -76,12 +78,30 @@ flan 85、oasst 9、no_robots 4、sciriff 3、table_gpt 2），IF 42，安全 13
 correct option."，出现在两道不同的题上（train 875 vs test 255）。MATH 的 train 与 test 按构造互斥；Tulu-3 已由其作者
 针对 MATH test 去污染。→ **训练 prompt 到测试题没有泄漏。** 学生 rollout 只在训练 prompt 上生成，从未在 MATH-500 上生成。
 
-## 泛化：已经展示和尚未展示的
-- 已展示：增益从**混合训练 prompt**（其中一半不是数学）迁移到**留出的竞赛数学**，且学生独立解码。测试集与 STEP0–2
-  衡量 Ins、各合并模型、各教师和门控所用的留出集相同，因此所有数字可比（硬件注意事项见下）。
-- 尚未展示：三个 guard（GSM8K、HumanEval+、IFEval；官方 harness，`pipeline/config.yaml: guard_arms`）— 它们决定 M
-  是否在别处**有所损失**。它们在 MATH 读数之后、在过了 MATH 门槛的那个 arm 上运行。
-- 尚未展示：第二个种子 / 第二个模型家族；以及用于判断 1 k 是否已是平台期的 8 k / 在线运行。
+## 泛化：1× 蒸馏模型 vs 两个端点和最佳合并（2026-10-16）
+每一行都是**单个模型独立解码**（gate 行是它被蒸馏自的 2× 解码期门控）。MATH 每列用相同的题目 id；IFEval 和 HumanEval+ 用**官方 harness
+和官方解码设置**（IFEval 1280/1280，HumanEval+ 512/512 T0.1，除注明外都在 H200·0.51）。子集都是**固定随机**列表（从不取前/后 N 题）：MATH rand100 =
+全 500 题 seed-0 随机 100；IFEval rand100 = 541 条 prompt 的 seed-0 随机 100（`code/step3/guards/ifeval_rand100.yaml`，官方打分器原样导出）。
+Ins 和 M(.4,.6) 的 IFEval / HumanEval+ **没有重跑**：直接从已有的官方全集日志里读这 100 题（IFEval 全 541：Ins 56.6，M(.4,.6) 66.5 prompt-strict；
+HumanEval+ Ins 为 2026-09-19 的结果）。McNemar 格：行赢/列赢（共同题目上），精确双侧 p。
+
+| row | MATH last 300 | MATH rand100/500 | IFEval rand100 (strict) | HumanEval+ (164) | MATH100 vs Ins | IFEval vs Ins | HE+ vs Ins | MATH100 vs M(.4,.6) | IFEval vs M(.4,.6) | HE+ vs M(.4,.6) |
+|---|---:|---:|---:|---:|---|---|---|---|---|---|
+| Ins (student, untouched) | 36.7 | 34 | 62 | 57.3 | — | — | — | 9/17, p=0.17 | 13/16, p=0.71 | 10/18, p=0.18 |
+| M(.4,.6) best merge | 42.0 | 42 | 65 | 61.0 | 17/9, p=0.17 | 16/13, p=0.71 | 18/10, p=0.18 | — | — | — |
+| A(2.0) over addition (= the teacher) | 46.7 | 55 | 51 | 56.7 | 29/8, p=0.00 | 8/19, p=0.05 | 19/18, p=1.00 | 22/9, p=0.03 | 8/22, p=0.02 | 16/23, p=0.34 |
+| gate Ins ⇐ A(2.0) @0.8 (2×) | 49.0 | 51 | — | — | 22/5, p=0.00 | — | — | 18/9, p=0.12 | — | — |
+| M distilled (mixpool-1k) | 50.3 | 58 | 64 | 60.4 | 30/6, p=0.00 | 14/12, p=0.85 | 17/12, p=0.46 | 24/8, p=0.01 | 7/8, p=1.00 | 14/17, p=0.72 |
+
+- **MATH**：蒸馏 M 在所有列都是最好的一行（后 300：50.3；全 500 随机 100：58），显著高于 Ins 和最佳合并，并达到它所蒸馏的 2× gate 的水平
+  （gate 在 rand100 上 51），但只解码一次。
+- **IFEval**：教师 A(2.0) 的指令跟随**很差**（51，vs Ins p = 0.05，vs M(.4,.6) p = 0.02）—— 正是"过度"端点已知的损伤。蒸馏学生**没有**继承它：
+  64 vs Ins 62 / M(.4,.6) 65，p ≈ 1。在全 541 题上最佳合并比 Ins 高 10 分（66.5 vs 56.6，p < 0.001）；在这随机 100 题上差距只有 3 分，p = 0.71 ——
+  100 题的子集分辨不出 10 分的 IFEval 差异，这就是为什么下面的验证集是每个任务 100 题，但任何正式结论都要上全集。
+- **HumanEval+**：蒸馏 M 60.4 ≈ 最佳合并 61.0 > Ins 57.3 > 教师 56.7；两两差异都不显著（164 题）。教师在代码上并不更强，学生也没有变差。
+- 解读：在现有证据下，选择性损失拿到了教师的数学，把它的指令跟随 / 代码损伤留在了后面。注意：一个种子、一个训练集、IF 只有 100 题子集；
+  gate 行没有 IF / 代码数字（2× 解码，没跑）。GSM8K 没跑。
+- 原始数据：`outputs/step3/guards/<ins|m46|a20|mixpool1k>/{ifeval_rand100,humaneval}.json`（逐题），`guards/math500_rand100_seed0_results.json`。
 
 ## 结果（1k 测试；表由 `code/step3/results_table.py` 生成 → `technical_details/step3_results_t1k.md`）
 
@@ -118,7 +138,7 @@ run `step3-mixpool-1k-M` / `step3-mixpool-1k-C2`（MATH 记为 `eval/math500_las
 |---|---|---|
 | 每行同一硬件 | Ins 和 M(.4,.6) 是 B300 的数（2026-09-30）；STEP3 各行是 H200 | 在 H200 上重测 Ins 和 M(.4,.6) 的后 300（2 个 job，≈ 5 GPU·h） |
 | 整 300 题而不是 200 | M 的 shard 0、2 在跑 | 自动；表会重新生成 |
-| 模型没有在别处变差 | 未测 | 对 M 跑 GSM8K、HumanEval+、IFEval 官方 harness（`guard_arms`），≈ 20 GPU·h |
+| 模型没有在别处变差 | IFEval rand100 64（Ins 62），HumanEval+ 60.4（Ins 57.3）—— 见“泛化” | GSM8K 和全 541 题 IFEval 仍未做 |
 | 不是 seed 的偶然 | 一个 seed | M 换一个训练 seed（0.5 h + 7 GPU·h 评测） |
 | 不是 1k 的偶然 | 一个数据量 | 8k offline（或 4 × 2k online）——同时回答 1k 是否已到平台 |
 | 统计尊重配对 | 已做：相同题 id 上的精确 McNemar | 保持；不同题集之间永远不比 acc |
