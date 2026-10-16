@@ -187,9 +187,11 @@ That makes the guards (code / IF) and the length read the informative part of th
 
 **Suggestion 0 (@Amel, before any official training job): fix a validation set.** Every number so far is a test number (MATH-500 last 300;
 IFEval / HumanEval+ guards). Before the real runs we need a *validation* set that hyper-parameters (θ, λ, lr, epochs, pool) are chosen on,
-and the test sets are then touched once. Proposal: three random subsets of 100 from standard datasets, fixed seed, disjoint from every test
-set we report — **100 math** (e.g. MATH train or MATH-500 ids 0–199, which we never score), **100 instruction following** (e.g. IFEval prompts
-not in the reported subset, or IFBench), **100 coding** (e.g. MBPP+ or HumanEval+ problems held out of the reported ones). Running all 300
+and the test sets are then touched once. Proposal (user 2026-10-16: **always a random 100 with a fixed seed, never the first or last 100**): three random subsets of 100 from standard
+datasets, disjoint from every test set we report — **100 math** (random 100 of MATH-500 ids 0–199, the half we never score; seed 0),
+**100 instruction following** (random 100 of IFEval = the existing `ifeval_rand100` task, seed 0), **100 coding** (random 100 of MBPP+, so that
+HumanEval+ stays an untouched test set). Rule: a model that already has an official full-set run (Ins, M(.4,.6) on IFEval / HumanEval+) is never
+re-run — its subset score is read out of the existing per-sample log (`score_ifeval_subset.py`). Running all 300
 costs ≈ 3 GPU·h per checkpoint, so it can be run after every training run. Please pick the datasets, write the three id lists under
 `code/step3/guards/` and say in this doc which test sets stay untouched. A handful of hand-written sanity prompts (one per family) next to the
 subsets is also worth having — cheap to read by eye after each run. The `ifeval_rand100` task / `score_ifeval_subset.py` in `code/step3/guards/`

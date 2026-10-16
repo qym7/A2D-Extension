@@ -177,9 +177,10 @@ STEP1 的 lockstep 解码器做评测。新写的部分：轨迹回放作为破�
 ## TODO（2026-10-16，@Amel —— 请看 / 补充）
 
 **建议 0（@Amel，先于任何正式训练 job）：固定一个 validation set。** 目前所有数字都是测试集数字（MATH-500 后 300；IFEval / HumanEval+ guards）。
-正式跑之前需要一个 *validation* 集来选超参（θ、λ、lr、epoch、训练池），测试集之后只碰一次。建议：从标准数据集里各随机抽 100 条、固定 seed、
-与所有要报告的测试集不相交 —— **100 数学**（如 MATH train，或我们从不评分的 MATH-500 id 0–199）、**100 指令遵循**（如不在报告子集里的 IFEval
-prompt，或 IFBench）、**100 代码**（如 MBPP+，或从报告集里扣出来的 HumanEval+ 题）。300 条全跑一次每个 checkpoint ≈ 3 GPU·h，所以每次训练后都能跑。
+正式跑之前需要一个 *validation* 集来选超参（θ、λ、lr、epoch、训练池），测试集之后只碰一次。建议（用户 2026-10-16：**一律固定 seed 随机抽 100，不要前 100 或后 100**）：从标准数据集里各随机抽 100 条、与所有要报告的测试集不相交 ——
+**100 数学**（从我们从不评分的 MATH-500 id 0–199 里随机 100，seed 0）、**100 指令遵循**（IFEval 随机 100 = 现成的 `ifeval_rand100` task，seed 0）、
+**100 代码**（MBPP+ 随机 100，让 HumanEval+ 保持为不动的测试集）。规则：已经有官方全集结果的模型（Ins、M(.4,.6) 的 IFEval / HumanEval+）
+一律不重跑 —— 子集分数从现成的逐题记录里读出来（`score_ifeval_subset.py`）。300 条全跑一次每个 checkpoint ≈ 3 GPU·h，所以每次训练后都能跑。
 请选定数据集、把三份 id 列表放到 `code/step3/guards/` 下，并在本文档里写明哪些测试集保持不动。子集旁边再放几条手写的 sanity prompt（每类一条）
 也值得 —— 每次训练后肉眼看一眼很便宜。`code/step3/guards/` 里的 `ifeval_rand100` task / `score_ifeval_subset.py` 展示了固定随机子集怎样接进官方 harness。
 
