@@ -43,6 +43,17 @@ Checkpoint：`outputs/checkpoints/step3-t1k-{M,C2}/{lora,merged}`，日志 `trai
 没有 ground truth、没有按正确性过滤的内容进入训练。训练信号是教师在学生自身低置信步上的 next-token 分布（M），
 或学生自己的 token（C2）。
 
+**为什么是这个混合，这是常见的 instruction-following 配方吗？** 数据来源是标准的，用法不是。
+- *Tulu-3 SFT mixture* 是公开的标准 post-training 数据集（AI2），也正是 Dream-v0-Instruct 自己微调所用的数据（官方
+  `examples/run_sft_tulu3.sh`；Dream 报告：在 Tulu 3 + SmolLM2 上 SFT）。所以这些 prompt 就是学生自身的训练分布，
+  "在 Tulu-3 上训练、在 GSM8K / MATH-500 / IFEval / HumanEval 上读数"是通行协议。它的数学子集保留（标准的 GSM8K/MATH 信号就来自这里），
+  不额外加 GSM8K train。
+- *MATH train* 是扩散语言模型上做数学 RL / 蒸馏的常用 prompt 来源（d1、TOPD 等）：对目标指标是同领域，且与 MATH-500 按构造不相交。
+- *Magicoder-OSS-Instruct* 和 *no_robots* 是标准的代码集和对话集；放进来是为了让学生在训练中持续看到代码和对话 prompt，
+  这正是 HumanEval+ / IFEval 两个 guard 检查的东西。
+- **不标准**的地方：完全不使用参考回答。标准 SFT 拟合数据集里的答案；这里数据集只提供 prompt，学生自己写回答，
+  唯一的外部信号是教师在学生不确定的步上的分布。比例（≈ ½ Tulu-3、⅓ MATH、其余代码/对话）是我们自定的，没有调过。
+
 ## 测试数据与泄漏
 测试集 = MATH-500（`HuggingFaceH4/MATH-500`，MATH **test** split 的标准 500 题子集），ids 200–499（最后 300 题，用户规则
 2026-10-12）。已检查（`tmp.md` 2026-10-16）：1 000 条训练 prompt vs 300 道测试题，文本归一化后 —
