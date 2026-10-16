@@ -64,3 +64,5 @@ rule rollout_shard:
     wildcards: st=ins, i=4
     resources: tmpdir=/tmp
 
+Will exit after finishing currently running jobs (scheduler).
+Will exit after finishing currently running jobs (scheduler).
