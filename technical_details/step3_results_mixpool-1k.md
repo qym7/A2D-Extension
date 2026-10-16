@@ -1,4 +1,4 @@
-# STEP3 results — run `step3-t1k` (MATH-500, 300 shared problems of the last 300, lockstep @1024, every row decoded by ONE model except the two gates)
+# STEP3 results — run `step3-mixpool-1k` (MATH-500, 300 shared problems of the last 300, lockstep @1024, every row decoded by ONE model except the two gates)
 
 | row | acc | finish | acc\|finished | avg len (tok) | vs Ins | vs C2 | vs M(.4,.6) | vs A(2.0) | GSM8K | HumanEval+ | IFEval | HW |
 |---|---:|---:|---:|---:|---|---|---|---|---:|---:|---:|---|

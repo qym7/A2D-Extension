@@ -1,5 +1,5 @@
 """wandb_backfill.py --train-out <ckpt dir> [--project a2d-step3] — create the W&B run for an arm trained BEFORE W&B logging existed
-(t1k runs of 2026-10-15): replays <train_out>/train_log.jsonl step by step, uploads args.json as config, writes <train_out>/wandb.json so
+(mixpool-1k runs of 2026-10-15): replays <train_out>/train_log.jsonl step by step, uploads args.json as config, writes <train_out>/wandb.json so
 code/step3/wandb_log_eval.py can append evaluations. Zero GPU; run on the login node under a memory cap."""
 import argparse, json, os
 from pathlib import Path

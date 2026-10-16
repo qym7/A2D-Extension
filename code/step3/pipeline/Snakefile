@@ -19,7 +19,7 @@ CK   = f"{I1}/outputs/checkpoints"
 LOGS = f"{I1}/outputs"
 SW   = f"bash {MOD}/submit_wait.sh"
 TAG  = config["tag"]                           # job-name suffix for this pipeline run, e.g. s3a
-PSET = config.get("prompt_set", "mix17k")      # prompt pool: mix17k = prompts.jsonl (t1k test); tulu3 = prompts_tulu3.jsonl (native Tulu-3, standard)
+PSET = config.get("prompt_set", "mix17k")      # prompt pool: mix17k = prompts.jsonl (mixpool-1k test); tulu3 = prompts_tulu3.jsonl (native Tulu-3, standard)
 PROMPTS = f"{OUT}/prompts.jsonl" if PSET == "mix17k" else f"{OUT}/prompts_{PSET}.jsonl"
 ROLL = f"{OUT}/rollouts" if PSET == "mix17k" else f"{OUT}/rollouts_{PSET}"
 N_PROMPTS = config["n_prompts"]

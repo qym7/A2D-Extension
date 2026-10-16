@@ -11,7 +11,7 @@ STEP3 把这一行为训练进单个 1× 模型。配方：`technical_details/st
    在 MATH-500 后 300 题上 50.3 vs Ins 36.7，p < 0.001；它所蒸馏的 gate 是 49.0。
 2. **起作用的是教师。** 用同样的 rollout、同样的训练器做 self-SFT（C2）停留在 Ins 水平（36.3，vs Ins 的 p = 1.0）。
 3. 增益带有门控的特征：写完率 76 → 92 % **并且** 已写完题目上的准确率 48.5 → 54.7（门控：93 % / 52.9）。
-4. **只用 Tulu-3 的 run（n1k）还没有做成** —— 2026-10-16 那次无效（两个流水线 bug，见“无效的 n1k run”），已重新排队。
+4. **只用 Tulu-3 的 run（tulu3-1k）还没有做成** —— 2026-10-16 那次无效（两个流水线 bug，见“无效的 tulu3-1k run”），已重新排队。
    它唯一可用的观察：只在 **119 条 canvas 上训 22 步** 的模型也拿到 50.3 —— 效应很早就饱和。
 
 ## 三行
@@ -28,7 +28,7 @@ conf-temp 0.1）：测试时无教师、无门控、无第二次前向。教师 
 
 超参数（M 与 C2 除损失外完全相同）：LoRA r 64 / α 128，作用于全部 attention + MLP 投影，lr 1e-4（10 % warm-up，线性
 衰减），每步 32 帧，micro-batch 4，在 1 000 个 canvas × 3 帧 = 6 000 帧上训练 2 个 epoch = 185 步，θ = 0.8。
-Checkpoint：`outputs/checkpoints/step3-t1k-{M,C2}/{lora,merged}`，日志 `train_log.jsonl`，参数 `args.json`。
+Checkpoint：`outputs/checkpoints/step3-mixpool-1k-{M,C2}/{lora,merged}`，日志 `train_log.jsonl`，参数 `args.json`。
 
 ## 训练数据（学生看到了什么）
 `outputs/step3/prompts.jsonl` ids 0–999，是从 17 k 的 STEP3 prompt 池中固定种子采样得到（`code/step3/build_prompts.py`，seed 20261015）：
@@ -62,9 +62,9 @@ Checkpoint：`outputs/checkpoints/step3-t1k-{M,C2}/{lora,merged}`，日志 `trai
 ≈ 12% 安全（wildjailbreak、wildguard、coconot）。所以额外加 MATH train、Magicoder、no_robots 是多余的（no_robots 本身就是 Tulu-3 的子集），
 而且按来源等份分层也扭曲了 Tulu 自己的比例。下一个 prompt 池是 `outputs/step3/prompts_tulu3.jsonl`（`build_prompts.py --mix tulu3-native`，现在是默认：
 从全部 Tulu-3 来源一次性均匀打乱抽 17 k，不排除任何子集，prompt ≤ 512 token；`n_prompts: N` 的 run 取 id 0–N−1，即原生比例的 N 条样本；
-`pipeline/config.yaml: prompt_set: tulu3`）。上面的 t1k 数字来自之前的 mix17k 池，保持这个标注。
+`pipeline/config.yaml: prompt_set: tulu3`）。上面的 mixpool-1k 数字来自之前的 mix17k 池，保持这个标注。
 
-**n1k run**（2026-10-16 启动）用这个池的 id 0–999：数学 415（personahub_math 179、NuminaMath-TIR 84、personas-math-grade 64、
+**tulu3-1k run**（2026-10-16 启动）用这个池的 id 0–999：数学 415（personahub_math 179、NuminaMath-TIR 84、personas-math-grade 64、
 open_math_2_gsm8k 63、intermediate-algebra 25），代码 123（evol_codealpaca 98、personahub_code 25），对话/通用 289（aya 97、wildchat 89、
 flan 85、oasst 9、no_robots 4、sciriff 3、table_gpt 2），IF 42，安全 131（wildguard 68、wildjailbreak 51、coconot 12）。数学占 41% 而不是
 原始的 36%，是因为 ≤ 512 token 的过滤去掉的长对话 prompt 比数学 prompt 多。这 1 000 条与 MATH-500 id 200–499 的泄漏检查：0 条包含、0 个共享 13-gram。
@@ -94,7 +94,7 @@ STEP0 的两个**端点基线**都在表里：best merge M(.4,.6)（convex 线�
 | M(.4,.6) best merge（端点 1） | 42.0 | 81% | 51.9 | 448 | 42/26, p=0.07 | 45/28, p=0.06 | — | 35/49, p=0.16 | B300 |
 | A(2.0) over addition（端点 2 = 教师） | 46.7 | 94% | 49.5 | 1005 | 62/32, p=0.00 | 58/27, p=0.00 | 49/35, p=0.16 | — | H200 |
 | gate Ins ⇐ A(2.0) @0.8（2×） | 49.0 | 93% | 52.9 | 795 | 62/25, p=0.00 | 64/26, p=0.00 | 51/30, p=0.03 | 40/33, p=0.48 | H200 |
-| **M** = Ins ⇐ A(2.0) 蒸馏（t1k 池），**θ = 0.8**，λ_anchor 0.3，reverse KL，lr 1e-4，2 ep，LoRA r64（1×） | **50.3** | 92% | 54.7 | 639 | 63/22, p=0.00 | 59/17, p=0.00 | 51/26, p=0.01 | 46/35, p=0.27 | H200 |
+| **M** = Ins ⇐ A(2.0) 蒸馏（mixpool-1k 池），**θ = 0.8**，λ_anchor 0.3，reverse KL，lr 1e-4，2 ep，LoRA r64（1×） | **50.3** | 92% | 54.7 | 639 | 63/22, p=0.00 | 59/17, p=0.00 | 51/26, p=0.01 | 46/35, p=0.27 | H200 |
 | **C2** = Ins 自蒸馏（对自己 rollout 的 token 做 CE，无教师），lr 1e-4，2 ep，LoRA r64（1×） | 36.3 | 80% | 45.6 | 856 | 36/37, p=1.00 | — | 28/45, p=0.06 | 27/58, p=0.00 | H200 |
 
 **M 里的 θ（阈值）**是学生的原始置信度门槛，低于它这一帧就交给教师：在采样器下一步要写的位置上，c = max_v p_S(v | state)；
@@ -109,8 +109,8 @@ rollout 时置信度 < θ 的那次写入之前）。θ = 0.8 是解码时 gate 
 3. **M ≥ 它所蒸馏的 2× gate**（50.3 vs 49.0；gate 就是我们一开始要达到的天花板）。
 4. 它具有 gate 的两个特征：写完率 76 → 91–92%（教师水平），写完题的正确率 48.5 → 55（高于教师的 49.5）。
 
-训练来源：`outputs/checkpoints/step3-t1k-{M,C2}/`（`args.json`、`train_log.jsonl`、`run.log`）；W&B 项目 `a2d-step3`，
-run `step3-t1k-M` / `step3-t1k-C2`（MATH 记为 `eval/math500_last300_*`）。注意：t1k 的 M 容器在完成前重启了两次（`run.log` 有三次启动、
+训练来源：`outputs/checkpoints/step3-mixpool-1k-{M,C2}/`（`args.json`、`train_log.jsonl`、`run.log`）；W&B 项目 `a2d-step3`，
+run `step3-mixpool-1k-M` / `step3-mixpool-1k-C2`（MATH 记为 `eval/math500_last300_*`）。注意：mixpool-1k 的 M 容器在完成前重启了两次（`run.log` 有三次启动、
 一次 `[done]`）；checkpoint 来自唯一完整的那次，日志文件里也含有中断的尝试。
 
 ## 真正有用的评测需要什么（以及我们已有哪些）
@@ -155,19 +155,19 @@ STEP1 的 lockstep 解码器做评测。新写的部分：轨迹回放作为破�
 以及合并/保存路径（`merge_lora.py`，绕过 Dream 的 `generation_config.validate`）。没有用官方 verl FSDP trainer，因为它的 loss
 （对参考答案做随机 mask CE）正是这一步要替换掉的东西，而且它需要 4 张卡。
 
-## 无效的 n1k run（2026-10-16）—— 哪里错了，还能说明什么
+## 无效的 tulu3-1k run（2026-10-16）—— 哪里错了，还能说明什么
 
 本意：同一配方跑在 1 000 条只用 Tulu-3 的 prompt 上。两个流水线 bug 让它变成了别的东西：
-1. prompt 文件路径是用环境变量传的，而环境变量到不了 job 容器 → rollout job 解码的是 **mix17k 池**（和 t1k 相同的 prompt）；
+1. prompt 文件路径是用环境变量传的，而环境变量到不了 job 容器 → rollout job 解码的是 **mix17k 池**（和 mixpool-1k 相同的 prompt）；
 2. `rollouts.jsonl` 是增量追加的，snakemake 重启后已存在的文件被当成已完成 → `all.jsonl` 只拼了 **122 行**。
-于是“M (n1k)”实际是在 **119 条 mix 池 canvas 上训了 22 个优化器步** —— 却仍在后 300 题上拿到 **50.3 / 写完 91 % / 813 token**
-（vs M(t1k) 33/33，p = 1.0）。产物移到 `trash/n1k_invalid_20261016/`（有 README）；W&B 的 `step3-n1k-M` 就是这次无效 run。
+于是“M (tulu3-1k)”实际是在 **119 条 mix 池 canvas 上训了 22 个优化器步** —— 却仍在后 300 题上拿到 **50.3 / 写完 91 % / 813 token**
+（vs M(mixpool-1k) 33/33，p = 1.0）。产物移到 `trash/n1k_invalid_20261016/`（有 README）；W&B 的 `step3-tulu3-1k-M` 就是这次无效 run。
 修复（已提交）：prompt 文件改为 runner 的显式参数；rollout shard 写 `done` 标记、Snakefile 等这个标记；MATH shard 只有 `summary.json` 存在才算完成。
 只用 Tulu-3 的 run 用修好的流水线、同一 tag 重新排队（15 个 job，≈ 20 GPU·h）。
 这次事故说明的事：MATH 增益在 ~700 帧后就到了 —— 1 k / 185 步的预算对这个指标早已过饱和。所以下一次 run 里有信息量的是 guards（代码 / IF）和长度，不是 MATH。
 
 ## 当前数字的注意事项
-- 每一行都已齐 300 题（t1k 的 merge 规则在两个重跑 shard 完成前就触发了；2026-10-16 13:30 手动合并）。
+- 每一行都已齐 300 题（mixpool-1k 的 merge 规则在两个重跑 shard 完成前就触发了；2026-10-16 13:30 手动合并）。
 - Ins 行在 **B300** 上解码（2026-09-30），M 和 C2 在 **H200·0.51** 上。规则是每张表只有一个硬件列；在对外引用任何数字之前，
   下一个要申请的任务是在 H200 上对 Ins 重跑最后 300 题。
 - C2 的输出更长且部分退化（重复 "The final answer is …"；平均 3 029 字符 vs Ins 888）；对于普通 self-SFT，lr 1e-4 偏高。
@@ -176,20 +176,20 @@ STEP1 的 lockstep 解码器做评测。新写的部分：轨迹回放作为破�
 
 ## TODO（2026-10-16，@Amel —— 请看 / 补充）
 
-**Amel 的第一个任务，优先于下面所有条目：** 在只用 Tulu-3 的池子上训练蒸馏模型（`n1k`：直接从 Tulu-3 按原生比例抽 1 000 条 prompt，不加别的），
+**Amel 的第一个任务，优先于下面所有条目：** 在只用 Tulu-3 的池子上训练蒸馏模型（`tulu3-1k`：直接从 Tulu-3 按原生比例抽 1 000 条 prompt，不加别的），
 配方原样不动（Ins ⇐ A(2.0)，θ = 0.8，λ = 0.3，2 epoch），然后在三类任务上测泛化：**数学**（MATH-500 后 300、GSM8K）、**代码**（HumanEval+）、
-**指令遵循**（IFEval）。问题只有一个：只用 Tulu 的学生是否保住 t1k 的 MATH 增益，*并且*在代码 / IF 上没有损失。流水线：`code/step3/pipeline`
-（tag `n1k`，臂 M；guards 通过 `guard_arms`）。2026-10-16 状态：还没做成 —— 第一次 n1k 训在了错误的池上（见“无效的 n1k run”）；修好的流水线可以重启。列表里其余条目都在这个答案之后。
+**指令遵循**（IFEval）。问题只有一个：只用 Tulu 的学生是否保住 mixpool-1k 的 MATH 增益，*并且*在代码 / IF 上没有损失。流水线：`code/step3/pipeline`
+（tag `tulu3-1k`，臂 M；guards 通过 `guard_arms`）。2026-10-16 状态：还没做成 —— 第一次 tulu3-1k 训在了错误的池上（见“无效的 tulu3-1k run”）；修好的流水线可以重启。列表里其余条目都在这个答案之后。
 
 按"对结论改变什么"排序。成本为 H200·0.51 GPU·h。两个大项（θ 搜索、多阶段蒸馏）在下面单独成小节。
-1. **干净训练集**（`n1k`）—— 2026-10-16 第一次尝试无效（见“无效的 n1k run”）；用修好的流水线重新排队，≈ 20 GPU·h。然后 guards。
+1. **干净训练集**（`tulu3-1k`）—— 2026-10-16 第一次尝试无效（见“无效的 tulu3-1k run”）；用修好的流水线重新排队，≈ 20 GPU·h。然后 guards。
 2. **θ 搜索** —— 见下面 §TODO-θ。≈ 8 GPU·h/点。
 3. **多阶段蒸馏** —— 见下面 §TODO-multi-stage。GPU·h 与 offline 相同，墙钟串行。
 4. **基线同硬件** —— Ins 与 M(.4,.6) 是 B300 数字；在 H200 重测（后 300，2 个 job，≈ 5 GPU·h）。
 5. **Guards** —— 对 M 跑 GSM8K / HumanEval+ / IFEval（≈ 20 GPU·h），顺便看长度（M 比 Ins 多 80% token）。
 6. **其余对照**，共用 rollout（每个 ≈ 8 GPU·h）：C1 不分裂、C3 教师 A(1.1)、C4 随机 mask、C5 forward KL；C2 换小 lr。
 7. **第二个 seed + 8 k prompts** —— 1 k 是否已是平台，50.5 是否稳定。
-8. **Trainer 断点续训** —— t1k 的 M 容器静默重启了两次；任何数小时 run 之前加周期性 LoRA + optimizer 存档。
+8. **Trainer 断点续训** —— mixpool-1k 的 M 容器静默重启了两次；任何数小时 run 之前加周期性 LoRA + optimizer 存档。
 9. **第二条学生线** —— M(.4,.6) 起点（臂 Mm），之后换模型族（DreamReasoner / LLaDA-Instruct）。
 
 ### TODO-θ：阈值搜索
@@ -215,7 +215,7 @@ Q_k = 第 k 块 prompt；p_S(·|x, j) = 模型 S 在 canvas x 位置 j 的分布
 
 第 K 轮结束后合并 S_K，评测方式与 offline 模型相同。K = 1 就精确等于 offline run。
 
-**Initial plan。** 1 000 条 Tulu-3 prompt（n1k 池），K = 4 块、每块 250，θ = 0.8，λ = 0.3，每轮 2 epoch，lr 1e-4、只在第 1 轮 warm-up；
+**Initial plan。** 1 000 条 Tulu-3 prompt（tulu3-1k 池），K = 4 块、每块 250，θ = 0.8，λ = 0.3，每轮 2 epoch，lr 1e-4、只在第 1 轮 warm-up；
 在同一 MATH 后 300（+ guards）上比较 S₄ 与 offline 的 S₁。GPU·h ≈ offline（每条 prompt 解码一次、每帧训练一次）；墙钟 ≈ 4 × (1.4 h rollout + 0.1 h 训练)。
 期望收益：从第 2 轮起，"不确定的位置"是学生*现在仍然*会错的，而不是已经修好的（TOPD 的 on-policy 论证）。代价：对照组 C1 … C5 只能共用第 1 轮的 rollout。
 

@@ -1,6 +1,6 @@
 # STEP3 pipeline config (technical_details/step3_plan_frontier_kd.md). Change `tag` for a fresh set of job names.
-tag: n1k                  # NEXT (not launched): 1k test on the native Tulu-3 pool. t1k = the 2026-10-15 run on the mix17k pool (done)
-prompt_set: tulu3         # tulu3 = outputs/step3/prompts_tulu3.jsonl (Tulu-3 only, native proportions = Dream-Instruct's own SFT distribution, user 2026-10-16); mix17k = the t1k pool
+tag: tulu3-1k                  # NEXT (not launched): 1k test on the native Tulu-3 pool. mixpool-1k = the 2026-10-15 run on the mix17k pool (done)
+prompt_set: tulu3         # tulu3 = outputs/step3/prompts_tulu3.jsonl (Tulu-3 only, native proportions = Dream-Instruct's own SFT distribution, user 2026-10-16); mix17k = the mixpool-1k pool
 n_prompts: 1000           # outputs/step3/prompts.jsonl (Tulu-3 8k incl. its math subsets, MATH train 6k, Magicoder 2k, no_robots 1k)
 rollout_shards: 5         # 1k test: 5 x 200 so shard 0 = the 200-prompt Ins smoke, reused as is
 math_shards: 6            # MATH last 300 split into this many parallel jobs
@@ -28,5 +28,5 @@ arms:
   C4: {teacher: 2.0, extra: "--corruption random"}   # random-mask corruption                  (is the replayed state needed)
   C5: {teacher: 2.0, extra: "--kl forward"} # forward KL instead of reverse                               (divergence direction)
 # C6 (RFT on GT-correct MATH rollouts) and C7 (plain SFT on reference responses) use the official Dream SFT trainer, not this one — not wired yet.
-first_wave: [M]                # user 2026-10-16: no C2 self-SFT control in n1k (cost)
+first_wave: [M]                # user 2026-10-16: no C2 self-SFT control in tulu3-1k (cost)
 guard_arms: [M]            # GSM8K / HumanEval+ / IFEval only for arms that clear the MATH bar (plan §4); add arms here after reading MATH

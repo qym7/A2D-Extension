@@ -164,7 +164,7 @@ def main():
     ap.add_argument("--max-steps", type=int, default=0, help="smoke: stop after this many optimizer steps")
     ap.add_argument("--n-canvases", type=int, default=0, help="smoke: use only the first n rollouts")
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--wandb-project", default="a2d-step3", help="W&B project; '' disables. Run name = basename of --out (e.g. step3-t1k-M); run id saved to <out>/wandb.json so eval jobs can append to the same run (code/step3/wandb_log_eval.py)")
+    ap.add_argument("--wandb-project", default="a2d-step3", help="W&B project; '' disables. Run name = basename of --out (e.g. step3-mixpool-1k-M); run id saved to <out>/wandb.json so eval jobs can append to the same run (code/step3/wandb_log_eval.py)")
     a = ap.parse_args()
     arm = ARMS[a.arm]
     if arm["target"] == "kd" and not a.teacher:

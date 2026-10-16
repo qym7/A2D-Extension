@@ -9,7 +9,7 @@ STEP3 trains that behaviour into a single 1× model. Recipe: `technical_details/
    50.3 vs Ins 36.7 on the last 300 MATH-500 problems, p < 0.001; the gate it was distilled from: 49.0.
 2. **The teacher is what matters.** Self-SFT on the same rollouts with the same trainer (C2) stays at Ins (36.3, p = 1.0 vs Ins).
 3. The gain has the gate's signature: finish rate 76 → 92 % **and** accuracy on finished problems 48.5 → 54.7 (the gate: 93 % / 52.9).
-4. **The Tulu-3-only run (n1k) is NOT done** — the 2026-10-16 attempt was invalid (two pipeline bugs, see "Invalid n1k run"); it is re-queued.
+4. **The Tulu-3-only run (tulu3-1k) is NOT done** — the 2026-10-16 attempt was invalid (two pipeline bugs, see "Invalid tulu3-1k run"); it is re-queued.
    Its one usable observation: a model trained on only **119 canvases for 22 steps** also scored 50.3 — the effect saturates very early.
 
 ## The three rows
@@ -26,7 +26,7 @@ conf-temp 0.1): no teacher, no gate, no second forward pass at test time. The te
 
 Hyper-parameters (M and C2 identical except the loss): LoRA r 64 / α 128 on all attention + MLP projections, lr 1e-4 (10 % warm-up, linear
 decay), 32 frames per step, micro-batch 4, 2 epochs over 1 000 canvases × 3 frames = 6 000 frames = 185 steps, θ = 0.8.
-Checkpoints: `outputs/checkpoints/step3-t1k-{M,C2}/{lora,merged}`, logs `train_log.jsonl`, args `args.json`.
+Checkpoints: `outputs/checkpoints/step3-mixpool-1k-{M,C2}/{lora,merged}`, logs `train_log.jsonl`, args `args.json`.
 
 ## Training data (what the students saw)
 `outputs/step3/prompts.jsonl` ids 0–999, a fixed-seed sample of the 17 k STEP3 prompt pool (`code/step3/build_prompts.py`, seed 20261015):
@@ -63,9 +63,9 @@ open_math_2_gsm8k 5.3 %, intermediate-algebra 2.1 %), ≈ 15 % code (evol_codeal
 no_robots on top were redundant (no_robots is even a Tulu-3 subset), and the equal-share stratification distorted Tulu's own mix. The next pool
 is `outputs/step3/prompts_tulu3.jsonl` (`build_prompts.py --mix tulu3-native`, now the default: one shuffled uniform draw of 17 k from all
 Tulu-3 sources, nothing excluded, prompt ≤ 512 tokens; a run with `n_prompts: N` takes ids 0–N−1, which is a native-proportion sample of size N;
-`pipeline/config.yaml: prompt_set: tulu3`). The t1k numbers above were obtained on the earlier mix17k pool and stay labelled as such.
+`pipeline/config.yaml: prompt_set: tulu3`). The mixpool-1k numbers above were obtained on the earlier mix17k pool and stay labelled as such.
 
-The **n1k run** (launched 2026-10-16) uses ids 0–999 of this pool: 415 math (personahub_math 179, NuminaMath-TIR 84, personas-math-grade 64,
+The **tulu3-1k run** (launched 2026-10-16) uses ids 0–999 of this pool: 415 math (personahub_math 179, NuminaMath-TIR 84, personas-math-grade 64,
 open_math_2_gsm8k 63, intermediate-algebra 25), 123 code (evol_codealpaca 98, personahub_code 25), 289 chat / general (aya 97, wildchat 89,
 flan 85, oasst 9, no_robots 4, sciriff 3, table_gpt 2), 42 IF, 131 safety (wildguard 68, wildjailbreak 51, coconot 12). Math is 41 % rather
 than the raw 36 % because the ≤ 512-token filter removes more long chat prompts than math prompts. Leakage check of these 1 000 prompts against
@@ -99,7 +99,7 @@ time). The two **end-point baselines** of STEP0 are in the table: the best merge
 | M(.4,.6) best merge (end point 1) | 42.0 | 81% | 51.9 | 448 | 42/26, p=0.07 | 45/28, p=0.06 | — | 35/49, p=0.16 | B300 |
 | A(2.0) over addition (end point 2 = the teacher) | 46.7 | 94% | 49.5 | 1005 | 62/32, p=0.00 | 58/27, p=0.00 | 49/35, p=0.16 | — | H200 |
 | gate Ins ⇐ A(2.0) @0.8 (2×) | 49.0 | 93% | 52.9 | 795 | 62/25, p=0.00 | 64/26, p=0.00 | 51/30, p=0.03 | 40/33, p=0.48 | H200 |
-| **M** = Ins ⇐ A(2.0) distilled (t1k pool), **θ = 0.8**, λ_anchor 0.3, reverse KL, lr 1e-4, 2 ep, LoRA r64 (1×) | **50.3** | 92% | 54.7 | 639 | 63/22, p=0.00 | 59/17, p=0.00 | 51/26, p=0.01 | 46/35, p=0.27 | H200 |
+| **M** = Ins ⇐ A(2.0) distilled (mixpool-1k pool), **θ = 0.8**, λ_anchor 0.3, reverse KL, lr 1e-4, 2 ep, LoRA r64 (1×) | **50.3** | 92% | 54.7 | 639 | 63/22, p=0.00 | 59/17, p=0.00 | 51/26, p=0.01 | 46/35, p=0.27 | H200 |
 | **C2** = Ins self-SFT (CE on its own rollout token, no teacher), lr 1e-4, 2 ep, LoRA r64 (1×) | 36.3 | 80% | 45.6 | 856 | 36/37, p=1.00 | — | 28/45, p=0.06 | 27/58, p=0.00 | H200 |
 
 **θ (the threshold) in M** is the student's raw confidence below which a frame is handed to the teacher: at the position the sampler writes next,
@@ -116,8 +116,8 @@ What the table says, in order of confidence:
 3. **M ≥ the 2× gate it was distilled from** (50.3 vs 49.0; the gate was the ceiling we set out to reach).
 4. It has the gate's two signatures: finish rate 76 → 91–92 % (teacher-level) and accuracy on finished problems 48.5 → 55 (above the teacher's 49.5).
 
-Training provenance: `outputs/checkpoints/step3-t1k-{M,C2}/` (`args.json`, `train_log.jsonl`, `run.log`); W&B project `a2d-step3`,
-runs `step3-t1k-M` / `step3-t1k-C2` (MATH logged as `eval/math500_last300_*`). Note: the t1k M job's container restarted twice before
+Training provenance: `outputs/checkpoints/step3-mixpool-1k-{M,C2}/` (`args.json`, `train_log.jsonl`, `run.log`); W&B project `a2d-step3`,
+runs `step3-mixpool-1k-M` / `step3-mixpool-1k-C2` (MATH logged as `eval/math500_last300_*`). Note: the mixpool-1k M job's container restarted twice before
 completing (`run.log` shows three starts, one `[done]`); the checkpoint is from the single complete run, the log file holds the partial attempts too.
 
 ## What a truly useful evaluation needs (and which of it we have)
@@ -163,20 +163,20 @@ for evaluation. What is new: trajectory replay as the corruption, the confidence
 micro-batch probe, and the merge/save path (`merge_lora.py`, working around Dream's `generation_config.validate`). The official verl FSDP
 trainer was not used because its loss (random-mask CE on reference answers) is exactly what this step replaces, and it needs 4 GPUs.
 
-## Invalid n1k run (2026-10-16) — what went wrong, what it still tells us
+## Invalid tulu3-1k run (2026-10-16) — what went wrong, what it still tells us
 
 Intended: the same recipe on 1 000 Tulu-3-only prompts. Two pipeline bugs made it something else:
-1. the prompt-file path was passed as an environment variable, which never reaches the job container → the rollout jobs decoded the **mix17k pool** (same prompts as t1k);
+1. the prompt-file path was passed as an environment variable, which never reaches the job container → the rollout jobs decoded the **mix17k pool** (same prompts as mixpool-1k);
 2. `rollouts.jsonl` is appended incrementally, and after a snakemake restart an existing file counted as finished → `all.jsonl` was concatenated with **122 rows**.
-So "M (n1k)" was trained on **119 mix-pool canvases for 22 optimizer steps** — and still scored **50.3 / 91 % finish / 813 tokens** on the last 300
-(vs M(t1k) 33/33, p = 1.0). Artefacts moved to `trash/n1k_invalid_20261016/` (README there); W&B run `step3-n1k-M` is that invalid run.
+So "M (tulu3-1k)" was trained on **119 mix-pool canvases for 22 optimizer steps** — and still scored **50.3 / 91 % finish / 813 tokens** on the last 300
+(vs M(mixpool-1k) 33/33, p = 1.0). Artefacts moved to `trash/n1k_invalid_20261016/` (README there); W&B run `step3-tulu3-1k-M` is that invalid run.
 Fixes (committed): prompt file is an explicit runner argument; rollout shards write a `done` marker that the Snakefile waits for; MATH shards are
 complete only when `summary.json` exists. The Tulu-3-only run is re-queued under the same tag with the fixed pipeline (15 jobs, ≈ 20 GPU·h).
 What the accident says: the MATH gain is reached after ~700 frames — the 1 k / 185-step budget is already far past saturation for this metric.
 That makes the guards (code / IF) and the length read the informative part of the next run, not MATH.
 
 ## Caveats on the current numbers
-- All 300 problems are in for every row (the t1k merge rule had fired before two re-run shards finished; merged by hand 2026-10-16 13:30).
+- All 300 problems are in for every row (the mixpool-1k merge rule had fired before two re-run shards finished; merged by hand 2026-10-16 13:30).
 - The Ins row was decoded on **B300** (2026-09-30), M and C2 on **H200·0.51**. The rule is one hardware column per table; an H200 re-run of
   Ins on the last 300 is the next job to request before any number is quoted outside.
 - C2's outputs are longer and partly degenerate (repeated "The final answer is …"; mean 3 029 characters vs Ins 888); lr 1e-4 is on the high
@@ -185,21 +185,21 @@ That makes the guards (code / IF) and the length read the informative part of th
 
 ## TODO (2026-10-16, @Amel — please read / add)
 
-**First mission (@Amel), before anything else below:** train the distilled model on the Tulu-3-only pool (`n1k`: 1 000 prompts sampled directly
+**First mission (@Amel), before anything else below:** train the distilled model on the Tulu-3-only pool (`tulu3-1k`: 1 000 prompts sampled directly
 from Tulu-3 at its native proportions, nothing else), with the recipe exactly as it is (Ins ⇐ A(2.0), θ = 0.8, λ = 0.3, 2 epochs), and then
 test generalisation on all three families: **math** (MATH-500 last 300, GSM8K), **coding** (HumanEval+), **instruction following** (IFEval).
-The question is only: does the Tulu-only student keep the MATH gain of t1k *and* lose nothing on code / IF. Pipeline: `code/step3/pipeline`
-(tag `n1k`, arm M; guards via `guard_arms`). Status 2026-10-16: not done — the first n1k attempt trained on the wrong pool (see "Invalid n1k run"); the fixed pipeline is ready to relaunch. Everything else in this list comes after that answer.
+The question is only: does the Tulu-only student keep the MATH gain of mixpool-1k *and* lose nothing on code / IF. Pipeline: `code/step3/pipeline`
+(tag `tulu3-1k`, arm M; guards via `guard_arms`). Status 2026-10-16: not done — the first tulu3-1k attempt trained on the wrong pool (see "Invalid tulu3-1k run"); the fixed pipeline is ready to relaunch. Everything else in this list comes after that answer.
 
 Ordered by what each one changes about the claim. Costs are H200·0.51 GPU·h. The two bigger items (θ search, multi-stage distillation) have their own sub-sections below.
-1. **Clean training set** (`n1k`) — first attempt 2026-10-16 invalid (see "Invalid n1k run"); re-queued with the fixed pipeline, ≈ 20 GPU·h. Then guards.
+1. **Clean training set** (`tulu3-1k`) — first attempt 2026-10-16 invalid (see "Invalid tulu3-1k run"); re-queued with the fixed pipeline, ≈ 20 GPU·h. Then guards.
 2. **θ search** — see §TODO-θ below. ≈ 8 GPU·h per point.
 3. **Multi-stage distillation** — see §TODO-multi-stage below. Same GPU·h as offline, serial wall-clock.
 4. **Same hardware for the baselines** — Ins and M(.4,.6) are B300 numbers; re-decode on H200 (last 300, 2 jobs, ≈ 5 GPU·h).
 5. **Guards** — GSM8K / HumanEval+ / IFEval on M (≈ 20 GPU·h), plus a length read (M is +80 % tokens vs Ins).
 6. **Remaining controls** on the same rollouts (≈ 8 GPU·h each): C1 no split, C3 teacher A(1.1), C4 random mask, C5 forward KL; C2 at a lower lr.
 7. **Second seed + 8 k prompts** — is 1 k the plateau, is 50.5 stable.
-8. **Trainer checkpoint / resume** — the t1k M container restarted twice silently; add periodic LoRA + optimizer saves before any multi-hour run.
+8. **Trainer checkpoint / resume** — the mixpool-1k M container restarted twice silently; add periodic LoRA + optimizer saves before any multi-hour run.
 9. **Second student line** — M(.4,.6) init (arm Mm), later a second model family (DreamReasoner / LLaDA-Instruct).
 
 ### TODO-θ: threshold search
@@ -228,7 +228,7 @@ Q_k = the k-th chunk of prompts; p_S(·|x, j) = model S's distribution at positi
 
 After round K, S_K is merged and evaluated like the offline model. K = 1 is exactly the offline run.
 
-**Initial plan.** 1 000 Tulu-3 prompts (the n1k pool), K = 4 chunks of 250, θ = 0.8, λ = 0.3, 2 epochs per round, lr 1e-4 with warm-up only in round 1;
+**Initial plan.** 1 000 Tulu-3 prompts (the tulu3-1k pool), K = 4 chunks of 250, θ = 0.8, λ = 0.3, 2 epochs per round, lr 1e-4 with warm-up only in round 1;
 compare S₄ against the offline S₁ on the same MATH last 300 (+ guards). GPU·h ≈ offline (every prompt decoded once, every frame trained once);
 wall-clock ≈ 4 × (1.4 h rollout + 0.1 h train). Expected gain: from round 2 on, the "unsure" positions are the ones the student *still* gets wrong,
 not the ones already fixed (TOPD's on-policy argument). Price: controls C1 … C5 can share only the round-1 rollouts.

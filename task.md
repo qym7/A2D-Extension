@@ -1,6 +1,6 @@
 # Idea 1 — TASK (current gate and next actions; updated 2026-10-15)
 
-**Current gate:** 1k test done on the full last 300 (2026-10-16): M(t1k) 50.3 / C2 36.3 / Ins 36.7 (`step3_distillation.md`). The n1k (Tulu-3-only) attempt was INVALID (wrong pool, 119 canvases; `trash/n1k_invalid_20261016/`) — pipeline fixed, relaunch needs user go (15 jobs ≈ 20 GPU·h). Also pending go: guards (IFEval-150 + HumanEval+) on Ins / M(.4,.6) / A(2.0) / M(t1k).
+**Current gate:** 1k test done on the full last 300 (2026-10-16): M(mixpool-1k) 50.3 / C2 36.3 / Ins 36.7 (`step3_distillation.md`). The tulu3-1k (Tulu-3-only) attempt was INVALID (wrong pool, 119 canvases; `trash/n1k_invalid_20261016/`) — pipeline fixed, relaunch needs user go (15 jobs ≈ 20 GPU·h). Also pending go: guards (IFEval-150 + HumanEval+) on Ins / M(.4,.6) / A(2.0) / M(mixpool-1k).
 
 ## Where things stand
 - STEP0–2 closed: gate established and explained (`step1_methods.md`); decode-time multi-model work closed (`step2_verdict.md`).

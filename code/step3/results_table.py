@@ -1,7 +1,7 @@
 """STEP3 results table: reference rows (the untouched student, the two end-point baselines best merge M(.4,.6) and over addition A(2.0), the
 decode-time gate) + one row per trained arm, all scored on the SAME MATH-500 problem ids (last 300 ∩ what every row has), with
 finish rate (\\boxed present), accuracy on finished problems, exact McNemar vs Ins / C2 / M(.4,.6) / A(2.0), and a hardware column.
-  python results_table.py --logs outputs --run step3-t1k --arms M C2 --out technical_details/step3_results_t1k.md
+  python results_table.py --logs outputs --run step3-mixpool-1k --arms M C2 --out technical_details/step3_results_t1k.md
 Reference runs are the step0/step1 lockstep@1024 outputs (texts.jsonl rows {id, text, ok, gold}). Guard columns are filled from
 outputs/step3/<run>-<arm>/{ifeval,humaneval,gsm8k}.done when present. Zero GPU."""
 import argparse, json, math
@@ -64,7 +64,7 @@ def guard(logs, run, arm, g):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--logs", required=True, help="idea1 outputs dir")
-    ap.add_argument("--run", default="step3-t1k")
+    ap.add_argument("--run", default="step3-mixpool-1k")
     ap.add_argument("--arms", nargs="+", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--arm-hw", default="H200")
