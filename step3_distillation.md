@@ -248,18 +248,17 @@ The question is only: does the Tulu-only student keep the MATH gain of mixpool-1
 (tag `tulu3-1k`, arm M; guards via `guard_arms`). Status 2026-10-16: not done — the first tulu3-1k attempt trained on the wrong pool (see "Invalid tulu3-1k run"); the fixed pipeline is ready to relaunch. Everything else in this list comes after that answer.
 
 Ordered by what each one changes about the claim. Costs are H200·0.51 GPU·h. The two bigger items (θ search, multi-stage distillation) have their own sub-sections below.
+0. **Fix one recipe first** (user 2026-10-16) — the current recipe (1 k prompts, 2 epochs, 1024-token sequences, θ 0.8, λ 0.3) was never tuned, and every
+   later run should use ONE unchanged recipe. Sequence length stays fixed at 1024 (the official MATH-500 setting; do not touch). Vary only the amount of
+   training, one knob at a time, same MATH last 300 + guards:
+   (a) **epochs** 2 → 4 (same rollouts; 370 steps, ≈ 0.5 h training + 7 GPU·h eval);
+   (b) **number of rollout sequences** 1 k → 2 k prompts (new rollouts, 2 epochs; ≈ 10 GPU·h rollouts + eval).
+   If neither beats 50.3 by more than noise, the 185-step recipe is final; if one does, that is the recipe. Do this before θ search and multi-stage.
 1. **Clean training set** (`tulu3-1k`) — first attempt 2026-10-16 invalid (see "Invalid tulu3-1k run"); re-queued with the fixed pipeline, ≈ 20 GPU·h. Then guards.
 2. **θ search** — see §TODO-θ below. ≈ 8 GPU·h per point.
 3. **Multi-stage distillation** — see §TODO-multi-stage below. Same GPU·h as offline, serial wall-clock.
 4. **Same hardware for the baselines** — Ins and M(.4,.6) are B300 numbers; re-decode on H200 (last 300, 2 jobs, ≈ 5 GPU·h).
 5. **Guards** — IFEval rand100 / HumanEval+ done (see "Generalisation"); still open: GSM8K, IFEval full 541, and a length read (M is +80 % tokens vs Ins).
-5b. **Fix one recipe before scaling** (user 2026-10-16) — the current recipe (1 k prompts, 2 epochs, 1024-token canvases) was never tuned. Before any multi-stage /
-   8 k run, check whether more training changes the answer, one knob at a time from the recipe table, all on the same rollouts and the same MATH last 300 + guards:
-   (a) **double the epochs** (2 → 4, 370 steps, ≈ 0.5 h training + 7 GPU·h eval) — does MATH move, does IF/code start to drop;
-   (b) **double the sequence**: rollouts and training canvases at 2048 tokens (teacher A(2.0) writes ≈ 1 000 tokens, so 1024 truncates its longer solutions;
-   new rollouts needed, ≈ 2× rollout and training cost);
-   (c) **double the frames per canvas** (3 → 6) as the cheap alternative to (a).
-   If none of (a)–(c) beats 50.3 by more than noise, the 185-step recipe is the recipe and every later run uses it unchanged.
 6. **Remaining controls** on the same rollouts (≈ 8 GPU·h each): C1 no split, C3 teacher A(1.1), C4 random mask, C5 forward KL; C2 at a lower lr.
 7. **Second seed + 8 k prompts** — is 1 k the plateau, is 50.5 stable.
 8. **Trainer checkpoint / resume** — the mixpool-1k M container restarted twice silently; add periodic LoRA + optimizer saves before any multi-hour run.
