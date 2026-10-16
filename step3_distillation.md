@@ -252,7 +252,14 @@ Ordered by what each one changes about the claim. Costs are H200·0.51 GPU·h. T
 2. **θ search** — see §TODO-θ below. ≈ 8 GPU·h per point.
 3. **Multi-stage distillation** — see §TODO-multi-stage below. Same GPU·h as offline, serial wall-clock.
 4. **Same hardware for the baselines** — Ins and M(.4,.6) are B300 numbers; re-decode on H200 (last 300, 2 jobs, ≈ 5 GPU·h).
-5. **Guards** — GSM8K / HumanEval+ / IFEval on M (≈ 20 GPU·h), plus a length read (M is +80 % tokens vs Ins).
+5. **Guards** — IFEval rand100 / HumanEval+ done (see "Generalisation"); still open: GSM8K, IFEval full 541, and a length read (M is +80 % tokens vs Ins).
+5b. **Fix one recipe before scaling** (user 2026-10-16) — the current recipe (1 k prompts, 2 epochs, 1024-token canvases) was never tuned. Before any multi-stage /
+   8 k run, check whether more training changes the answer, one knob at a time from the recipe table, all on the same rollouts and the same MATH last 300 + guards:
+   (a) **double the epochs** (2 → 4, 370 steps, ≈ 0.5 h training + 7 GPU·h eval) — does MATH move, does IF/code start to drop;
+   (b) **double the sequence**: rollouts and training canvases at 2048 tokens (teacher A(2.0) writes ≈ 1 000 tokens, so 1024 truncates its longer solutions;
+   new rollouts needed, ≈ 2× rollout and training cost);
+   (c) **double the frames per canvas** (3 → 6) as the cheap alternative to (a).
+   If none of (a)–(c) beats 50.3 by more than noise, the 185-step recipe is the recipe and every later run uses it unchanged.
 6. **Remaining controls** on the same rollouts (≈ 8 GPU·h each): C1 no split, C3 teacher A(1.1), C4 random mask, C5 forward KL; C2 at a lower lr.
 7. **Second seed + 8 k prompts** — is 1 k the plateau, is 50.5 stable.
 8. **Trainer checkpoint / resume** — the mixpool-1k M container restarted twice silently; add periodic LoRA + optimizer saves before any multi-hour run.

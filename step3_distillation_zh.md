@@ -239,7 +239,13 @@ JustOPD 把这个约束说得很明白：中间去噪态"一般不对应 AR 训�
 2. **θ 搜索** —— 见下面 §TODO-θ。≈ 8 GPU·h/点。
 3. **多阶段蒸馏** —— 见下面 §TODO-multi-stage。GPU·h 与 offline 相同，墙钟串行。
 4. **基线同硬件** —— Ins 与 M(.4,.6) 是 B300 数字；在 H200 重测（后 300，2 个 job，≈ 5 GPU·h）。
-5. **Guards** —— 对 M 跑 GSM8K / HumanEval+ / IFEval（≈ 20 GPU·h），顺便看长度（M 比 Ins 多 80% token）。
+5. **Guards** —— IFEval rand100 / HumanEval+ 已做（见“泛化”）；还没做：GSM8K、IFEval 全 541 题、长度读数（M 比 Ins 多 80% token）。
+5b. **先定一个配方再放大**（用户 2026-10-16）—— 现在的配方（1 k prompt、2 epoch、1024 token canvas）从来没调过。做多阶段 / 8 k 之前，
+   先看“多训一点”会不会改变结论，从配方表里每次只动一个旋钮，都用同一批 rollout、同样的 MATH 后 300 + guards：
+   (a) **epoch 翻倍**（2 → 4，370 步，≈ 0.5 h 训练 + 7 GPU·h 评测）—— MATH 动不动，IF/代码是否开始掉；
+   (b) **序列翻倍**：rollout 和训练 canvas 都用 2048 token（教师 A(2.0) 写 ≈ 1 000 token，1024 会截断它较长的解；需要新 rollout，rollout 和训练成本 ≈ 2×）；
+   (c) **每条 canvas 的帧数翻倍**（3 → 6），作为 (a) 的便宜替代。
+   如果 (a)–(c) 都没有比 50.3 高出噪声以上，185 步配方就是最终配方，之后所有 run 原样使用。
 6. **其余对照**，共用 rollout（每个 ≈ 8 GPU·h）：C1 不分裂、C3 教师 A(1.1)、C4 随机 mask、C5 forward KL；C2 换小 lr。
 7. **第二个 seed + 8 k prompts** —— 1 k 是否已是平台，50.5 是否稳定。
 8. **Trainer 断点续训** —— mixpool-1k 的 M 容器静默重启了两次；任何数小时 run 之前加周期性 LoRA + optimizer 存档。
