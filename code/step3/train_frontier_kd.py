@@ -22,7 +22,11 @@ from transformers import AutoModel, AutoTokenizer
 
 _KD = dict(target="kd", select=True)
 ARMS = {"M": _KD, "M06": _KD, "Mm": _KD, "Msch": _KD, "C3": _KD, "C4": _KD, "C5": _KD,     # gate-shaped loss; they differ only by flags
-        "C1": dict(target="kd", select=False), "C2": dict(target="ce", select=False)}
+        "C1": dict(target="kd", select=False), "C2": dict(target="ce", select=False),
+        # AR-teacher baseline (colleague's suggestion, user 2026-10-16): prefix-visible / suffix-masked states (an AR-style mask on the SAME rollouts),
+        # teacher = the AR instruct parent Qwen2.5-7B-Instruct scored on the clean prefix, loss at the first masked position (the only one an AR
+        # teacher has a valid conditional for). AR = gate-shaped loss exactly as M (theta split + anchor); ARall = every cut position -> teacher.
+        "AR": dict(target="kd", select=True), "ARall": dict(target="kd", select=False)}
 
 
 def wandb_init(project, out, config):
@@ -49,6 +53,15 @@ def shifted_logits(model, x, am=None):
     return torch.cat([logits[:, :1], logits[:, :-1]], dim=1)
 
 
+def teacher_logits(teacher, ttype, x, am, xc=None):
+    """Teacher distribution in the student's convention (index p predicts the token at p). dream: the masked frame x. ar: a causal LM on the CLEAN
+    sequence xc (its logits at p-1 are p(x_p | x_<p), i.e. conditioned on exactly the prefix the student sees in an l2r frame)."""
+    if ttype == "dream":
+        return shifted_logits(teacher, x, am)
+    logits = teacher(input_ids=xc, attention_mask=am).logits
+    return torch.cat([logits[:, :1], logits[:, :-1]], dim=1)
+
+
 def collate(items, pad_id):
     """items: list of (ids, masked, pos). Right-pad to the longest; returns x [B, L], am [B, L], and the per-item pos lists."""
     L = max(len(it[0]) for it in items)
@@ -58,7 +71,7 @@ def collate(items, pad_id):
     return x.cuda(), am.cuda()
 
 
-def probe_micro_batch(student, teacher, max_len, candidates=(32, 16, 8, 4, 2, 1)):
+def probe_micro_batch(student, teacher, max_len, candidates=(32, 16, 8, 4, 2, 1), ttype="dream"):
     """Largest micro-batch whose full step (student fwd+bwd with grad-ckpt, teacher fwd, LoRA-off fwd) fits at max_len. Called once at start."""
     for mb in candidates:
         try:
@@ -67,7 +80,7 @@ def probe_micro_batch(student, teacher, max_len, candidates=(32, 16, 8, 4, 2, 1)
                 ls = shifted_logits(student, x, am)[:, -4:].float()
                 with torch.no_grad():
                     if teacher is not None:
-                        shifted_logits(teacher, x, am)
+                        teacher_logits(teacher, ttype, x, am, x)
                     with student.disable_adapter():
                         shifted_logits(student, x, am)
             (ls.float().logsumexp(-1).mean()).backward()
@@ -126,6 +139,9 @@ def make_state(rec, mask_id, corruption, t, rng, max_len):
     elif corruption == "suffix":    # the STEP3-prelim corruption: prefix visible, everything to the right masked, loss on the first 4 masks
         c = rng.randint(1, L - 1) if L > 2 else 1
         masked = list(range(P + c, P + L)); pos = masked[:4]
+    elif corruption == "l2r":       # AR-style mask (AR-teacher baseline): prefix visible, suffix masked, loss on the FIRST masked position only
+        c = rng.randint(1, L - 1) if L > 2 else 1
+        masked = list(range(P + c, P + L)); pos = masked[:1]
     else:                           # random i.i.d. masking at ratio r ~ U(0,1) (control C4); loss on the 4 masked positions the student is most sure of
         r = rng.random()
         masked = [P + j for j in range(L) if rng.random() < r] or [P + rng.randint(0, L - 1)]
@@ -143,7 +159,8 @@ def main():
     ap.add_argument("--rollouts", required=True, help="rollouts.jsonl from code/step3/rollout.py")
     ap.add_argument("--prompts", required=True, help="prompts.jsonl (prompt text -> prompt_ids via the chat template)")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--corruption", choices=["replay", "suffix", "random"], default="replay")
+    ap.add_argument("--corruption", choices=["replay", "suffix", "random", "l2r"], default="replay")
+    ap.add_argument("--teacher-type", choices=["dream", "ar"], default="dream", help="ar = causal LM (Qwen2.5-7B-Instruct) scored on the clean sequence; use with --corruption l2r")
     ap.add_argument("--anchor", choices=["self", "ce", "none"], default="self", help="loss on the SURE next positions: KL to the untouched student, CE on its own token, or nothing")
     ap.add_argument("--kl", choices=["reverse", "forward", "jsd"], default="reverse",
                     help="reverse = KL(p_S||p_T) (TOPD's ablation: reverse > JSD > forward for dLLM distillation); forward = KL(p_T||p_S)")
@@ -201,7 +218,13 @@ def main():
     student = get_peft_model(student, lcfg); student.print_trainable_parameters()
     teacher = None
     if arm["target"] == "kd":
-        teacher = AutoModel.from_pretrained(a.teacher, trust_remote_code=True, torch_dtype=torch.bfloat16).cuda().eval()
+        if a.teacher_type == "ar":
+            assert a.corruption == "l2r", "an AR teacher only has a valid conditional at the first masked position of a prefix state"
+            from transformers import AutoModelForCausalLM
+            teacher = AutoModelForCausalLM.from_pretrained(a.teacher, torch_dtype=torch.bfloat16).cuda().eval()
+            assert teacher.config.vocab_size == student.config.vocab_size, (teacher.config.vocab_size, student.config.vocab_size)
+        else:
+            teacher = AutoModel.from_pretrained(a.teacher, trust_remote_code=True, torch_dtype=torch.bfloat16).cuda().eval()
         for p in teacher.parameters():
             p.requires_grad_(False)
     opt = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=a.lr, betas=(0.9, 0.95), weight_decay=0.0)
@@ -210,7 +233,7 @@ def main():
     if a.max_steps:
         total_steps = min(total_steps, a.max_steps)
     sched = torch.optim.lr_scheduler.LambdaLR(opt, lambda s: min(1.0, (s + 1) / max(1, int(0.1 * total_steps))) * max(0.0, 1 - s / total_steps))
-    mb = a.micro_batch or probe_micro_batch(student, teacher, a.max_len)
+    mb = a.micro_batch or probe_micro_batch(student, teacher, a.max_len, ttype=a.teacher_type)
     assert a.batch % mb == 0 or a.batch < mb, f"--batch {a.batch} must be a multiple of micro-batch {mb}"
     mb = min(mb, a.batch); PAD = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
     print(f"[train] micro-batch {mb}, {a.batch // mb} micro-batches per optimizer step", flush=True)
@@ -231,13 +254,18 @@ def main():
             if not items:
                 continue
             x, am = collate([st for _, st in items], PAD)
+            xc = None
+            if a.teacher_type == "ar":      # the AR teacher reads the clean sequence (causal attention = the prefix the student sees)
+                xc = x.clone()
+                for b, (i, (ids, _, _)) in enumerate(items):
+                    xc[b, :len(ids)] = torch.tensor(recs[i]["prompt_ids"] + recs[i]["resp_ids"], device="cuda")
             with torch.autocast("cuda", dtype=torch.bfloat16):
                 ls_all = shifted_logits(student, x, am)          # [B, L, V] bf16; only the loss positions are cast to float below
             need_t = arm["target"] == "kd"
             lt_all = l0_all = None
             if need_t:
                 with torch.no_grad(), torch.autocast("cuda", dtype=torch.bfloat16):
-                    lt_all = shifted_logits(teacher, x, am)
+                    lt_all = teacher_logits(teacher, a.teacher_type, x, am, xc)
                     if a.anchor == "self" and arm["select"]:
                         with student.disable_adapter():
                             l0_all = shifted_logits(student, x, am)
