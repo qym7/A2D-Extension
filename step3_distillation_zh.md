@@ -15,6 +15,9 @@ STEP3 把这一行为训练进单个 1× 模型。配方：`technical_details/st
    它唯一可用的观察：只在 **119 条 canvas 上训 22 步** 的模型也拿到 50.3 —— 效应很早就饱和。
 5. **泛化（官方 IFEval / HumanEval+ harness，IFEval 随机 100）：** 蒸馏模型保持了 Ins 水平的指令跟随（64 vs 62）和最佳合并水平的代码
    （60.4 vs 61.0），而教师 A(2.0) 自己的 IF 很差（51）。它拿到了教师的数学，没拿到教师的损伤。
+   2× gate 自己在 IFEval 上 70、HumanEval+ 上 59.8 —— gate 本身也不伤 IF / 代码。
+6. **AR 教师基线（2026-10-17）：** 在前缀 mask 的 rollout 上把 Qwen2.5-7B-Instruct 蒸馏进 Ins（同样的数据、训练器、预算），MATH 46.7
+   （diffusion over 教师 50.3），**IFEval 掉到 52**（vs 蒸馏 M p = 0.01）。diffusion 教师在两个轴上都赢。
 
 ## 三行
 
@@ -90,18 +93,29 @@ HumanEval+ Ins 为 2026-09-19 的结果）。McNemar 格：行赢/列赢（共�
 | Ins (student, untouched) | 36.7 | 34 | 62 | 57.3 | — | — | — | 9/17, p=0.17 | 13/16, p=0.71 | 10/18, p=0.18 |
 | M(.4,.6) best merge | 42.0 | 42 | 65 | 61.0 | 17/9, p=0.17 | 16/13, p=0.71 | 18/10, p=0.18 | — | — | — |
 | A(2.0) over addition (= the teacher) | 46.7 | 55 | 51 | 56.7 | 29/8, p=0.00 | 8/19, p=0.05 | 19/18, p=1.00 | 22/9, p=0.03 | 8/22, p=0.02 | 16/23, p=0.34 |
-| gate Ins ⇐ A(2.0) @0.8 (2×) | 49.0 | 51 | — | — | 22/5, p=0.00 | — | — | 18/9, p=0.12 | — | — |
+| gate Ins ⇐ A(2.0) @0.8 (2×) | 49.0 | 51 | 70 | 59.8 | 22/5, p=0.00 | 17/9, p=0.17 | 21/16, p=0.51 | 18/9, p=0.12 | 12/7, p=0.36 | 16/19, p=0.74 |
 | M distilled (mixpool-1k) | 50.3 | 58 | 64 | 60.4 | 30/6, p=0.00 | 14/12, p=0.85 | 17/12, p=0.46 | 24/8, p=0.01 | 7/8, p=1.00 | 14/17, p=0.72 |
+| AR-teacher baseline: Ins ⇐ Qwen2.5-7B-Instruct, prefix mask (mixpool-1k) | 46.7 | 51 | 52 | 57.3 | 26/9, p=0.01 | 12/22, p=0.12 | 15/15, p=1.00 | 19/10, p=0.14 | 5/18, p=0.01 | 10/18, p=0.18 |
 
 - **MATH**：蒸馏 M 在所有列都是最好的一行（后 300：50.3；全 500 随机 100：58），显著高于 Ins 和最佳合并，并达到它所蒸馏的 2× gate 的水平
   （gate 在 rand100 上 51），但只解码一次。
 - **IFEval**：教师 A(2.0) 的指令跟随**很差**（51，vs Ins p = 0.05，vs M(.4,.6) p = 0.02）—— 正是"过度"端点已知的损伤。蒸馏学生**没有**继承它：
-  64 vs Ins 62 / M(.4,.6) 65，p ≈ 1。在全 541 题上最佳合并比 Ins 高 10 分（66.5 vs 56.6，p < 0.001）；在这随机 100 题上差距只有 3 分，p = 0.71 ——
+  64 vs Ins 62 / M(.4,.6) 65，p ≈ 1。2× gate 自己拿到 **70**（vs 它的 donor A(2.0) 25/6，p < 0.001；vs Ins 17/9，p = 0.17；vs 蒸馏 M 13/7，
+  p = 0.26）—— 只把低置信 token 交给一个 IF 很差的 donor，反而得到一点 IF 增益；蒸馏模型保住了 Ins 水平，但没拿到 gate 的 70
+  （用 `code/step3/guards/gate_ifeval.py` 解码：与 gate 的 MATH 行同一段 gate 代码、argmax 取 token，官方 prompt 和打分器，不是 lm_eval 的采样解码）。在全 541 题上最佳合并比 Ins 高 10 分（66.5 vs 56.6，p < 0.001）；在这随机 100 题上差距只有 3 分，p = 0.71 ——
   100 题的子集分辨不出 10 分的 IFEval 差异，这就是为什么下面的验证集是每个任务 100 题，但任何正式结论都要上全集。
-- **HumanEval+**：蒸馏 M 60.4 ≈ 最佳合并 61.0 > Ins 57.3 > 教师 56.7；两两差异都不显著（164 题）。教师在代码上并不更强，学生也没有变差。
+- **HumanEval+**：蒸馏 M 60.4 ≈ gate 59.8 ≈ 最佳合并 61.0 > Ins 57.3 > 教师 56.7；两两差异都不显著（164 题）。教师在代码上并不更强，学生也没有变差。
+- **AR 教师基线（2026-10-17，同事的要求："直接对 rollout 做 AR 式的 mask，用 AR 模型直接蒸馏"）**：同样的 Ins rollout、同样的训练器、同样的预算
+  （每条 canvas 3 帧，185 步，0.46 h），但破坏方式是随机**前缀切分**（前缀可见、后缀全 mask，loss 只在第一个 mask 位置 = AR 模型唯一有定义的地方），
+  教师是 **Qwen/Qwen2.5-7B-Instruct**（在干净序列上取因果 logits；与 Dream 同一词表）。选择性保留（学生 p < 0.8 → 教师，否则 anchor）。它**确实**能教数学
+  —— 后 300 题 46.7，rand100 51（vs Ins 26/9，p = 0.01）—— 但不如 over-addition 的 diffusion 教师（蒸馏 M 50.3 / 58；vs AR 9/16，p = 0.23），而且**伤指令跟随**：
+  IFEval 52，vs M(.4,.6) 5/18（p = 0.01），vs 蒸馏 M 4/16（p = 0.01），尽管 Qwen2.5-7B-Instruct 本身 IF 很强。代码不变（57.3 = Ins）。训练特征也不同：
+  在前缀切分态上学生只有 17 % 的位置"不确定"（gate 回放态上是 60 %），所以 AR 教师被问到的位置少得多。只试了一个未调的配方（没有 JustOPD 那种
+  熵 top-25 % 或 L2R 学生 rollout）；全位置变体（`ARall`）和教师强度匹配的对照（一个在 MATH 上和 Qwen 一样强的 7B diffusion 教师）还没做。
 - 解读：在现有证据下，选择性损失拿到了教师的数学，把它的指令跟随 / 代码损伤留在了后面。注意：一个种子、一个训练集、IF 只有 100 题子集；
-  gate 行的 IF / 代码数字正在解码（2026-10-16，`modules/run_step3_gate_guard.sh`，与它 MATH 行同一段 gate 代码）。GSM8K 没跑。
-- 原始数据：`outputs/step3/guards/<ins|m46|a20|mixpool1k>/{ifeval_rand100,humaneval}.json`（逐题），`guards/math500_rand100_seed0_results.json`。
+  GSM8K 没跑。
+- 原始数据：`outputs/step3/guards/<ins|m46|a20|gate|mixpool1k|ar-mixpool1k>/{ifeval_rand100,humaneval}.json`（逐题），`guards/math500_rand100_seed0_results.json`；
+  AR 臂：`outputs/checkpoints/step3-mixpool-1k-AR/`（args、train_log、W&B 49u7anm9），MATH `outputs/step3/step3-mixpool-1k-AR/math500/`。
 
 ## 结果（1k 测试；表由 `code/step3/results_table.py` 生成 → `technical_details/step3_results_t1k.md`）
 
@@ -205,6 +219,11 @@ JustOPD 把这个约束说得很明白：中间去噪态"一般不对应 AR 训�
 
 可直接对比的数字：JustOPD 用 14B AR 教师把 Dream-7B 在 MATH-500 @1024 上从 36.8 推到 48.0；我们用 7B 的 over-addition 教师、1 k prompt、185 步
 把 Ins（我们后 300 上 36.7）推到 50.3。并排引用前需要在同一题集上重跑（TODO）。
+
+**我们自己也跑了（2026-10-17，`train_frontier_kd.py` 的 `AR` 臂）：** `--corruption l2r --teacher-type ar`，教师 Qwen2.5-7B-Instruct，与 M 相同的
+Ins rollout / 选择 / anchor / 预算。结果（完整一行见"泛化"）：MATH 后 300 **46.7**（M 50.3，Ins 36.7），IFEval rand100 **52**（M 64，Ins 62），
+HumanEval+ 57.3（M 60.4）。所以在我们的数据上，AR 教师教数学不如 over-addition 的 diffusion 教师，*而且*伤指令跟随，哪怕纸面上它是更强的教师。
+注意：只有一个未调的配方；AR 教师只在 17 % 的位置被问到（学生在合法前缀态上很少不确定）。
 
 ## 当前数字的注意事项
 - 每一行都已齐 300 题（mixpool-1k 的 merge 规则在两个重跑 shard 完成前就触发了；2026-10-16 13:30 手动合并）。

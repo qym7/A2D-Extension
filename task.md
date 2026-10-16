@@ -1,6 +1,6 @@
 # Idea 1 — TASK (current gate and next actions; updated 2026-10-15)
 
-**Current gate:** 1k test done on the full last 300 (2026-10-16): M(mixpool-1k) 50.3 / C2 36.3 / Ins 36.7, and the generalisation table is in (`step3_distillation.md` §Generalisation: IFEval rand100 M 64 / Ins 62 / M(.4,.6) 65 / A(2.0) 51; HumanEval+ 60.4 / 57.3 / 61.0 / 56.7). Running: IFEval rand100 + HumanEval+ for the gate row Ins ⇐ A(2.0) @0.8 (`modules/run_step3_gate_guard.sh`). The tulu3-1k (Tulu-3-only) attempt was INVALID (wrong pool; `trash/n1k_invalid_20261016/`) — pipeline fixed; relaunch and the recipe search (TODO 0) are Amel's.
+**Current gate:** 1k test done on the full last 300 (2026-10-16): M(mixpool-1k) 50.3 / C2 36.3 / Ins 36.7, and the generalisation table is in (`step3_distillation.md` §Generalisation: IFEval rand100 M 64 / Ins 62 / M(.4,.6) 65 / A(2.0) 51; HumanEval+ 60.4 / 57.3 / 61.0 / 56.7). Gate row guards in (IFEval 70 / HumanEval+ 59.8). AR-teacher baseline (Qwen2.5-7B-Instruct, prefix mask, same data/budget) in: MATH 46.7 / IFEval 52 / HE+ 57.3 — the diffusion over-teacher wins on both axes. The tulu3-1k (Tulu-3-only) attempt was INVALID (wrong pool; `trash/n1k_invalid_20261016/`) — pipeline fixed; relaunch and the recipe search (TODO 0) are Amel's.
 
 ## Where things stand
 - STEP0–2 closed: gate established and explained (`step1_methods.md`); decode-time multi-model work closed (`step2_verdict.md`).

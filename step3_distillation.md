@@ -13,6 +13,9 @@ STEP3 trains that behaviour into a single 1× model. Recipe: `technical_details/
    Its one usable observation: a model trained on only **119 canvases for 22 steps** also scored 50.3 — the effect saturates very early.
 5. **Generalisation (official IFEval / HumanEval+ harnesses, random-100 IFEval):** the distilled model keeps Ins-level instruction following (64 vs 62)
    and best-merge-level code (60.4 vs 61.0) while the teacher A(2.0) itself is bad at IF (51). It took the teacher's math, not its damage.
+   The 2× gate scores 70 on IFEval and 59.8 on HumanEval+ — the gate itself does not damage IF / code either.
+6. **AR-teacher baseline (2026-10-17):** distilling Qwen2.5-7B-Instruct into Ins on prefix-masked rollouts (same data, trainer, budget) gives
+   46.7 on MATH (vs 50.3 for the diffusion over-teacher) and **drops IFEval to 52** (p = 0.01 vs distilled M). The diffusion teacher wins on both axes.
 
 ## The three rows
 
@@ -94,20 +97,34 @@ wins-of-row / wins-of-column on the shared items, exact two-sided p.
 | Ins (student, untouched) | 36.7 | 34 | 62 | 57.3 | — | — | — | 9/17, p=0.17 | 13/16, p=0.71 | 10/18, p=0.18 |
 | M(.4,.6) best merge | 42.0 | 42 | 65 | 61.0 | 17/9, p=0.17 | 16/13, p=0.71 | 18/10, p=0.18 | — | — | — |
 | A(2.0) over addition (= the teacher) | 46.7 | 55 | 51 | 56.7 | 29/8, p=0.00 | 8/19, p=0.05 | 19/18, p=1.00 | 22/9, p=0.03 | 8/22, p=0.02 | 16/23, p=0.34 |
-| gate Ins ⇐ A(2.0) @0.8 (2×) | 49.0 | 51 | — | — | 22/5, p=0.00 | — | — | 18/9, p=0.12 | — | — |
+| gate Ins ⇐ A(2.0) @0.8 (2×) | 49.0 | 51 | 70 | 59.8 | 22/5, p=0.00 | 17/9, p=0.17 | 21/16, p=0.51 | 18/9, p=0.12 | 12/7, p=0.36 | 16/19, p=0.74 |
 | M distilled (mixpool-1k) | 50.3 | 58 | 64 | 60.4 | 30/6, p=0.00 | 14/12, p=0.85 | 17/12, p=0.46 | 24/8, p=0.01 | 7/8, p=1.00 | 14/17, p=0.72 |
+| AR-teacher baseline: Ins ⇐ Qwen2.5-7B-Instruct, prefix mask (mixpool-1k) | 46.7 | 51 | 52 | 57.3 | 26/9, p=0.01 | 12/22, p=0.12 | 15/15, p=1.00 | 19/10, p=0.14 | 5/18, p=0.01 | 10/18, p=0.18 |
 
 - **MATH**: distilled M is the best row everywhere (last 300: 50.3; rand100 of all 500: 58), significantly above Ins and above the best merge, and at
   the level of the 2× gate it was distilled from (51 on rand100) while decoding once.
 - **IFEval**: the teacher A(2.0) is **bad** at instruction following (51, p = 0.05 vs Ins, p = 0.02 vs M(.4,.6)) — exactly the "over" end point's known damage.
-  The distilled student does **not** inherit it: 64 vs Ins 62 / M(.4,.6) 65, p ≈ 1. On the full 541 set the best merge beats Ins by 10 points (66.5 vs 56.6, p < 0.001);
+  The distilled student does **not** inherit it: 64 vs Ins 62 / M(.4,.6) 65, p ≈ 1. The 2× gate itself scores **70** (25/6 vs its own donor A(2.0),
+  p < 0.001; 17/9 vs Ins, p = 0.17; 13/7 vs distilled M, p = 0.26) — handing over only the low-confidence tokens turns a bad-IF donor into a
+  small IF gain; the distilled model keeps Ins level but not the gate's 70 (decoded with `code/step3/guards/gate_ifeval.py`: same gate code and
+  argmax tokens as the gate's MATH row, official prompts and scorer, not lm_eval's sampled decode). On the full 541 set the best merge beats Ins by 10 points (66.5 vs 56.6, p < 0.001);
   on this random 100 the gap is 3 points, p = 0.71 — a 100-prompt subset cannot resolve a 10-point IFEval difference, which is why the validation
   set below is 100 **per task** but any real claim goes to the full set.
-- **HumanEval+**: distilled M 60.4 ≈ best merge 61.0 > Ins 57.3 > teacher 56.7; none of the pairwise differences is significant (164 problems). The
-  teacher is not better at code, and the student did not get worse.
+- **HumanEval+**: distilled M 60.4 ≈ gate 59.8 ≈ best merge 61.0 > Ins 57.3 > teacher 56.7; none of the pairwise differences is significant (164 problems).
+  The teacher is not better at code, and the student did not get worse.
+- **AR-teacher baseline (2026-10-17, a colleague's request: "mask the rollout AR-style and distil from the AR model directly")**: same Ins rollouts, same
+  trainer, same budget (3 frames per canvas, 185 steps, 0.46 h), but the corruption is a random **prefix cut** (prefix visible, suffix masked, loss at the
+  first masked position = the one place an AR model is defined) and the teacher is **Qwen/Qwen2.5-7B-Instruct** (causal logits on the clean sequence;
+  same vocabulary as Dream). Selection kept (student p < 0.8 → teacher, else anchor). It **does** teach math — 46.7 on the last 300, 51 on rand100 (26/9 vs
+  Ins, p = 0.01) — but less than the over-added diffusion teacher (distilled M 50.3 / 58; 9/16 vs AR, p = 0.23), and it **costs instruction following**:
+  IFEval 52, 5/18 vs M(.4,.6) (p = 0.01) and 4/16 vs distilled M (p = 0.01), although Qwen2.5-7B-Instruct itself is a strong IF model. Code unchanged
+  (57.3 = Ins). Training signature differs too: the student was "unsure" at only 17 % of the prefix-cut positions (60 % at the gate's replayed states), so
+  the AR teacher was consulted on far fewer positions. One recipe, untuned (no JustOPD-style entropy top-25 % or L2R student rollouts); the
+  all-positions variant (`ARall`) and a matched-teacher-strength control (a 7B diffusion teacher as strong as Qwen on MATH) are open.
 - Reading: the selective loss took the teacher's math and left its instruction-following / code damage behind — on this evidence. Caveats: one seed,
-  one training set, 100-prompt subsets for IF; the gate row's IF / code numbers are being decoded (2026-10-16, `modules/run_step3_gate_guard.sh`, same gate code as its MATH row). GSM8K not run.
-- Raw: `outputs/step3/guards/<ins|m46|a20|mixpool1k>/{ifeval_rand100,humaneval}.json` (per-item), `guards/math500_rand100_seed0_results.json`.
+  one training set, 100-prompt subsets for IF; GSM8K not run.
+- Raw: `outputs/step3/guards/<ins|m46|a20|gate|mixpool1k|ar-mixpool1k>/{ifeval_rand100,humaneval}.json` (per-item), `guards/math500_rand100_seed0_results.json`;
+  AR arm: `outputs/checkpoints/step3-mixpool-1k-AR/` (args, train_log, W&B 49u7anm9), MATH `outputs/step3/step3-mixpool-1k-AR/math500/`.
 
 ## Results (1k test; table regenerated by `code/step3/results_table.py` → `technical_details/step3_results_t1k.md`)
 
@@ -217,6 +234,12 @@ Sequence-level AR distillation (SFT on AR outputs) is the other option and is wh
 
 Directly comparable number: JustOPD moves Dream-7B from 36.8 to 48.0 on MATH-500 @1024 with a 14B AR teacher; we move Ins (36.7 on our last-300)
 to 50.3 with a 7B over-added teacher, 1 k prompts, 185 steps. Same problem set needed before this is quoted side by side (TODO).
+
+**We then ran it ourselves (2026-10-17, arm `AR` in `train_frontier_kd.py`):** `--corruption l2r --teacher-type ar`, teacher Qwen2.5-7B-Instruct, the same
+Ins rollouts / selection / anchor / budget as M. Result (full row in "Generalisation"): MATH last 300 **46.7** (M 50.3, Ins 36.7), IFEval rand100 **52**
+(M 64, Ins 62), HumanEval+ 57.3 (M 60.4). So on our data the AR teacher is a weaker math teacher than the over-added diffusion teacher *and* damages
+instruction following, even with a stronger-on-paper teacher. Caveat: one untuned recipe; the AR teacher was consulted on only 17 % of positions
+(student rarely unsure at a prefix-valid state).
 
 ## Caveats on the current numbers
 - All 300 problems are in for every row (the mixpool-1k merge rule had fired before two re-run shards finished; merged by hand 2026-10-16 13:30).
