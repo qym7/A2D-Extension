@@ -166,6 +166,26 @@ STEP1 的 lockstep 解码器做评测。新写的部分：轨迹回放作为破�
 只用 Tulu-3 的 run 用修好的流水线、同一 tag 重新排队（15 个 job，≈ 20 GPU·h）。
 这次事故说明的事：MATH 增益在 ~700 帧后就到了 —— 1 k / 185 步的预算对这个指标早已过饱和。所以下一次 run 里有信息量的是 guards（代码 / IF）和长度，不是 MATH。
 
+## 相关：把 AR 教师蒸馏进 diffusion 学生（为什么我们不直接这么做；2026-10-16）
+
+同事的问题：为什么不直接蒸馏 AR 模型（Qwen）？已经有人做了 —— 而且每一种方法都得退回到**合法前缀态**，因为 AR 模型只定义 p(x_j | x_<j)，
+无法以一张部分填充、任意顺序的画布为条件：
+
+| work | 怎样让 AR 教师用得上 | 结果 |
+|---|---|---|
+| JustOPD (arXiv 2610.17397) | 学生（Dream-7B）**训练时从左到右 rollout**，每个状态都是前缀；Qwen3-14B 教师在前缀上打分；只在教师熵最高的 25 % 位置算 loss；推理时恢复任意顺序 | Dream-7B MATH-500 @1024：36.8 → 48.0（JSD），43.8（reverse KL） |
+| ForkLeft (arXiv 2609.32448) | 熵优先 rollout，然后把已写部分**固定为前缀**，教师在同一前缀下监督 | Efficient-DLM-4B MATH-500 72.6 → 79.6（教师 Qwen3-30B-A3B） |
+| OPDLM (arXiv 2606.06712) | 学生是 block-diffusion；教师只看**最终序列 x₀ 的因果前缀**，从不看带 mask 的状态 | AR → DLM 转换，训练 token 少 15–7000× |
+| TIDE (arXiv 2604.26951) | 跨 tokenizer 的 chunk 级似然匹配 | 8 个 benchmark 平均 +1.5 |
+| Distilled DLMs / Target Concrete Score（ICLR'25 投稿） | 用 AR 模型构造 target concrete score | 早期 |
+
+JustOPD 把这个约束说得很明白：中间去噪态"一般不对应 AR 训练分布下的合法前缀"。我们的教师 A(2.0) 本身就是 diffusion 模型，所以它能在
+**学生真正会到达的状态**（gate 的状态，置信度顺序，双向上下文）上、在 gate 选出的位置上监督学生 —— 这是 AR 教师做不到的。序列级 AR 蒸馏
+（对 AR 输出做 SFT）是另一条路，A2D 的失败清单和我们计划中的 C7 对照覆盖它。
+
+可直接对比的数字：JustOPD 用 14B AR 教师把 Dream-7B 在 MATH-500 @1024 上从 36.8 推到 48.0；我们用 7B 的 over-addition 教师、1 k prompt、185 步
+把 Ins（我们后 300 上 36.7）推到 50.3。并排引用前需要在同一题集上重跑（TODO）。
+
 ## 当前数字的注意事项
 - 每一行都已齐 300 题（mixpool-1k 的 merge 规则在两个重跑 shard 完成前就触发了；2026-10-16 13:30 手动合并）。
 - Ins 行在 **B300** 上解码（2026-09-30），M 和 C2 在 **H200·0.51** 上。规则是每张表只有一个硬件列；在对外引用任何数字之前，

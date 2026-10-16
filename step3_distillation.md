@@ -175,6 +175,27 @@ complete only when `summary.json` exists. The Tulu-3-only run is re-queued under
 What the accident says: the MATH gain is reached after ~700 frames — the 1 k / 185-step budget is already far past saturation for this metric.
 That makes the guards (code / IF) and the length read the informative part of the next run, not MATH.
 
+## Related: distilling an AR teacher into a diffusion student (why we do not just do that; 2026-10-16)
+
+A colleague's question: why not distil the AR model (Qwen) directly? It has been tried — and every method has to retreat to **prefix-valid
+states**, because an AR model defines p(x_j | x_<j) only and cannot condition on a partially filled, any-order canvas:
+
+| work | how the AR teacher is made to fit | result |
+|---|---|---|
+| JustOPD (arXiv 2610.17397) | student (Dream-7B) rolls out **left-to-right during training** so every state is a prefix; Qwen3-14B teacher scored on the prefix; loss on the 25 % highest-teacher-entropy positions; any-order decoding restored at inference | Dream-7B MATH-500 @1024: 36.8 → 48.0 (JSD), 43.8 (reverse KL) |
+| ForkLeft (arXiv 2609.32448) | entropy-first rollout, then the written part is **fixed as a prefix** and the teacher supervises under that shared prefix | Efficient-DLM-4B MATH-500 72.6 → 79.6 (teacher Qwen3-30B-A3B) |
+| OPDLM (arXiv 2606.06712) | student is block-diffusion; teacher scores only the **causal prefix of the final sequence x₀**, never a masked state | AR → DLM conversion with 15–7000× fewer tokens |
+| TIDE (arXiv 2604.26951) | cross-tokenizer chunk-level likelihood matching | +1.5 avg over 8 benchmarks |
+| Distilled DLMs / Target Concrete Score (ICLR'25 submission) | AR model used to form a target concrete score | early |
+
+JustOPD states the constraint explicitly: intermediate denoising states "do not generally correspond to valid prefixes under the ARM's
+training distribution". Our teacher A(2.0) is itself a diffusion model, so it supervises the student on the **states the student actually
+visits** (the gate's states, confidence order, both-sided context) and at the positions the gate selects — the thing an AR teacher cannot do.
+Sequence-level AR distillation (SFT on AR outputs) is the other option and is what A2D's failed-transfer list and our planned C7 control cover.
+
+Directly comparable number: JustOPD moves Dream-7B from 36.8 to 48.0 on MATH-500 @1024 with a 14B AR teacher; we move Ins (36.7 on our last-300)
+to 50.3 with a 7B over-added teacher, 1 k prompts, 185 steps. Same problem set needed before this is quoted side by side (TODO).
+
 ## Caveats on the current numbers
 - All 300 problems are in for every row (the mixpool-1k merge rule had fired before two re-run shards finished; merged by hand 2026-10-16 13:30).
 - The Ins row was decoded on **B300** (2026-09-30), M and C2 on **H200·0.51**. The rule is one hardware column per table; an H200 re-run of
