@@ -1,3 +1,0 @@
-NameError in file /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/code/step3/pipeline/Snakefile, line 44:
-name 'arm' is not defined
-  File "/mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/code/step3/pipeline/Snakefile", line 44, in <module>

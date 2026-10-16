@@ -3,3 +3,4 @@
 outputs/
 trash/
 commands_gen/
+code/step3/pipeline/.snakemake/
