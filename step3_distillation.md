@@ -252,8 +252,12 @@ Ordered by what each one changes about the claim. Costs are H200·0.51 GPU·h. T
    later run should use ONE unchanged recipe. Sequence length stays fixed at 1024 (the official MATH-500 setting; do not touch). Vary only the amount of
    training, one knob at a time, same MATH last 300 + guards:
    (a) **epochs** 2 → 4 (same rollouts; 370 steps, ≈ 0.5 h training + 7 GPU·h eval);
-   (b) **number of rollout sequences** 1 k → 2 k prompts (new rollouts, 2 epochs; ≈ 10 GPU·h rollouts + eval).
-   If neither beats 50.3 by more than noise, the 185-step recipe is final; if one does, that is the recipe. Do this before θ search and multi-stage.
+   (b) **number of rollout sequences** 1 k → 2 k prompts (new rollouts, 2 epochs; ≈ 10 GPU·h rollouts + eval);
+   (c) **frames per rollout** 3 → 6. A rollout is not trained on as one sequence: from its 512 denoising steps we pick 3 intermediate states ("frames":
+   2 just before a low-confidence commit + 1 uniform) and each frame is one training example. Doubling it = more examples from the same rollouts,
+   no new decoding (`--low-frames 4 --uniform-frames 2`, ≈ 0.5 h training + 7 GPU·h eval).
+   Amel decides the order / which of (a)–(c) to run. If none beats 50.3 by more than noise, the 185-step recipe is final; if one does, that is the recipe.
+   Do this before θ search and multi-stage.
 1. **Clean training set** (`tulu3-1k`) — first attempt 2026-10-16 invalid (see "Invalid tulu3-1k run"); re-queued with the fixed pipeline, ≈ 20 GPU·h. Then guards.
 2. **θ search** — see §TODO-θ below. ≈ 8 GPU·h per point.
 3. **Multi-stage distillation** — see §TODO-multi-stage below. Same GPU·h as offline, serial wall-clock.
