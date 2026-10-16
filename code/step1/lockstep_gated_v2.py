@@ -121,6 +121,7 @@ STATS: dict = {"n_committed": 0, "n_differ": 0, "n_substituted": 0,
                "n_steps_with_sub": 0,
                "n_mean_lowconf": 0, "n_vote_differs": 0, "n_mean_eq_last_teacher": 0, "n_mean_eq_student": 0,   # content_mean diagnostics
                "n_maxconf_lowconf": 0, "maxconf_wins": [], "n_maxconf_teachers_agree": 0, "n_teacher_calls": 0}   # content_maxconf (2026-10-14): wins[i] = steps teacher i was the most confident; teacher forwards are LAZY (only at low-confidence steps)          # steps where >= 1 committed token came from the donor
+IDS: list | None = None                # --ids FILE: run only these math500 ids (json list; 2026-10-16, random-100 fill-ins)
 START: int = 0                         # --start S: skip math500 ids < S (2026-10-12, user: run only the last 300); decode is argmax-deterministic, so ids >= S are identical to a full run
 OUTDIR: Path | None = None             # per-problem gate counts go to OUTDIR/gate_per_item.jsonl (2026-10-09)
 
@@ -334,7 +335,7 @@ def run_gated(driver, other, x, mask_id, *, mode, steps, eps, top_p, conf_temp, 
         tf = OUTDIR / "texts.jsonl"
         done = {json.loads(l)["id"] for l in open(tf)} if tf.exists() else set()
         pf = OUTDIR / "gate_per_item.jsonl"
-        item["id"] = min(k for k in range(START, 10**6) if k not in done)  # a crashed problem may log twice: keep the last
+        item["id"] = min(k for k in (IDS if IDS else range(START, 10**6)) if k not in done)  # a crashed problem may log twice: keep the last
         with open(pf, "a") as f:
             f.write(json.dumps(item) + "\n")
     return x, recs
@@ -384,7 +385,12 @@ def main(argv=None):
     if GATED_MODE in ("content_random", "content_random_uncond") and RAND_FRAC is None:
         raise SystemExit("--rand-frac is required with --mode content_random")
 
-    global OUTDIR, START
+    global OUTDIR, START, IDS
+    if "--ids" in argv:
+        i = argv.index("--ids")
+        IDS = sorted(json.load(open(argv[i + 1]))); del argv[i:i + 2]
+        _lp0 = LP.load_prompts; _ids = set(IDS)
+        LP.load_prompts = lambda b, p, n: [it for it in _lp0(b, p, n) if it["id"] in _ids]
     if "--start" in argv:
         i = argv.index("--start")
         START = int(argv[i + 1])
