@@ -159,28 +159,47 @@ STEP1 的 lockstep 解码器做评测。新写的部分：轨迹回放作为破�
 rollout 共用，每个点 = 0.5 h 训练 + 7 GPU·h MATH。看：acc、写完率、平均长度、`unsure_rate`（交给教师的位置占比）—— 后者告诉我们更低的 θ 是否真的意味着更少教师。
 
 ### TODO-multi-stage：online 蒸馏（用更新后的学生 rollout）
-**设定**
-- S₀ = Ins（学生起点），T = A(2.0)（教师，冻结），θ 固定（取 TODO-θ 的结果），λ = 0.3。
-- 一个 LoRA Δ 跨轮延续；Δ₀ = 0，所以 S_k = S₀ + Δ_k。
-- prompt 切成互不相交的块 Q₁ … Q_K（如 1 k run 切成 K = 4 × 250）。
 
-**第 k = 1 … K 轮**
-- (a) 用当前学生 rollout：D_k = { Sample(S_{k−1}, q) : q ∈ Q_k }。每个样本 = (y, s, κ)：canvas、每个位置的写入步与写入时置信度。
-- (b) 取帧：F_k = { (x(t), NEXT(t)) : τ ∈ D_k, t ∈ frames(τ, θ) } —— 同现在：2 帧取自低 κ 写入之前 + 1 帧均匀。
-- (c) 从 Δ_{k−1} 出发更新 Δ：
-  S_k = argmin_Δ E_{(x,j)∈F_k} [ 1[c_j < θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_T(·|x,j) ) + λ · 1[c_j ≥ θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_{S₀}(·|x,j) ) ]
-  其中 c_j = max_v p_{S₀+Δ}(v | x, j) 是*当前*学生的置信度；anchor 始终是原始 S₀。
+**一句话。** 现在（offline）：Ins 把 1 000 条 prompt 全部 rollout 一次，然后训练一次。Online：把 1 000 条切成 K 块；
+第 1 块用 Ins rollout，训练 → S₁；第 2 块**用 S₁** rollout，接着训练 → S₂；…… 教师、损失、阈值都不变，
+变的只有*谁来写轨迹*：是现在的学生，而不是一开始的学生。
 
-**性质**
-- K = 1 就是我们现在的 offline run。
-- 每个 prompt 只 rollout 一次 → GPU·h 与 offline 相同；墙钟变串行（K × (rollout + 训练)）。
-- 为什么应当有用：帧是学生当前的状态，第 k 轮修好的错误不会在第 k+1 轮从陈旧前缀里再学回来（TOPD 的 on-policy 论证）。
-- 代价：第 1 轮之后对照组不能再共用 rollout。
+**符号**
+
+| symbol | meaning |
+|---|---|
+| S₀ | 未动过的学生（Ins） |
+| Δ | LoRA 权重，唯一被训练的东西；S₀ + Δ 是当前学生 |
+| S_k = S₀ + Δ_k | 第 k 轮之后的学生；S₀ 同时也是每一轮的 anchor |
+| T | 教师 A(2.0)，从不更新 |
+| θ, λ | 交接阈值与 anchor 权重，固定（θ 取 TODO-θ 的结果，λ = 0.3） |
+| Q_k | 第 k 块 prompt（互不相交；如 K = 4 块、每块 250） |
+| (y, s, κ) | 一条 rollout：最终 canvas y，以及每个位置的写入步 s 和写入那一刻的置信度 κ |
+| x(t), NEXT(t) | 采样第 t 步之后的 canvas（s ≤ t 的位置已填，其余 [MASK]）以及第 t+1 步要填的位置 |
+| c_j | 当前学生在帧的位置 j 的置信度，max_v p_{S₀+Δ}(v \| x, j) |
+
+**第 k = 1, …, K 轮**（从 Δ₀ = 0 开始）
+
+1. **Rollout。** 用当前学生 S_{k−1}、官方采样器（512 token / 512 步）解码 Q_k 里的每条 prompt，记录 (y, s, κ)。这些 prompt 只在这里解码一次。
+2. **取帧。** 每条 rollout 取 3 个训练状态：2 个取在某次 κ < θ 的写入之前的那一步（gate 本来会交接的地方），1 个取在均匀随机的一步。一帧 = (x(t), NEXT(t))。
+3. **训练。** 从 Δ_{k−1} 出发，用与 offline 完全相同的损失在这些帧上继续训练 Δ：
+
+   S_k = argmin_Δ  E_{帧} Σ_{j ∈ NEXT(t)} [ 1[c_j < θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_T(·|x,j) )  +  λ · 1[c_j ≥ θ] · KL( p_{S₀+Δ}(·|x,j) ‖ p_{S₀}(·|x,j) ) ]
+
+   两项的含义：当前学生不确定的位置（c_j < θ）被拉向教师；确定的位置（c_j ≥ θ）被按在原始 Ins 上，防止漂移。c_j 和第一个分布都用*当前*的 Δ；anchor 分布用 Δ = 0。
+
+K 轮结束后 LoRA 合并一次，评测方式与 offline 模型完全相同。
+
+**变了什么、没变什么**
+- K = 1 就精确等于现在的 offline run。
+- GPU·h：与 offline 相同（每条 prompt 解码一次，每帧训练一次）。墙钟：串行，K × (rollout + 训练)。
+- 期望收益：第 k ≥ 2 轮的帧来自学生当前的行为，所以"不确定的位置"是它*现在仍然*会错的，而不是第 k−1 轮已经修好的（TOPD 的 on-policy 论证）。
+- 代价：对照组（C1 … C5）只能共用第 1 轮的 rollout。
 
 **以后 / 需要**
 - 变体：移动教师 T_k = 在 S_k 之上重新施加 over 步。
-- 可选：与 θ 计划 θ_k（TODO-θ）叠加，但先分开测。
-- 代码：`rollout.py --lora`、trainer 的 `--resume-lora`、Snakefile 按轮依赖。
+- 可选：与递减的 θ_k（TODO-θ）叠加；先分开测。
+- 代码：`rollout.py --lora`（带 adapter 解码）、trainer 的 `--resume-lora`、Snakefile 按轮依赖。
 
 ## 下一步
 1. 完成 300 题（自动）。2. Ins 在 H200 上跑最后 300 题（一个任务）。3. 对 M 跑 guard。4. 8 k 离线 vs 4 × 2 k 在线轮次（`tmp.md` 2026-10-15 计划），
