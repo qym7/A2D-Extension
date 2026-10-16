@@ -25,6 +25,22 @@ ARMS = {"M": _KD, "M06": _KD, "Mm": _KD, "Msch": _KD, "C3": _KD, "C4": _KD, "C5"
         "C1": dict(target="kd", select=False), "C2": dict(target="ce", select=False)}
 
 
+def wandb_init(project, out, config):
+    """W&B run named after the output dir; falls back to offline if the container has no network. Returns the run or None."""
+    if not project:
+        return None
+    import os, wandb
+    os.environ.setdefault("WANDB_DIR", str(Path(out).parent / "wandb"))
+    try:
+        run = wandb.init(project=project, name=Path(out).name, config=config, dir=os.environ["WANDB_DIR"], settings=wandb.Settings(init_timeout=60))
+    except Exception as e:
+        print("[wandb] online init failed, going offline:", e, flush=True)
+        os.environ["WANDB_MODE"] = "offline"
+        run = wandb.init(project=project, name=Path(out).name, config=config, dir=os.environ["WANDB_DIR"])
+    json.dump(dict(project=project, id=run.id, name=run.name, mode=os.environ.get("WANDB_MODE", "online")), open(Path(out) / "wandb.json", "w"))
+    return run
+
+
 def shifted_logits(model, x, am=None):
     """x [B, L]; am [B, L] 1 = real token (right padding). Keys-only mask: pad keys invisible to everyone, pad queries still see the real keys
     (no all-False SDPA row -> no NaN that could leak into backward). Returns logits shifted so index p predicts the token at position p."""
@@ -148,12 +164,14 @@ def main():
     ap.add_argument("--max-steps", type=int, default=0, help="smoke: stop after this many optimizer steps")
     ap.add_argument("--n-canvases", type=int, default=0, help="smoke: use only the first n rollouts")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--wandb-project", default="a2d-step3", help="W&B project; '' disables. Run name = basename of --out (e.g. step3-t1k-M); run id saved to <out>/wandb.json so eval jobs can append to the same run (code/step3/wandb_log_eval.py)")
     a = ap.parse_args()
     arm = ARMS[a.arm]
     if arm["target"] == "kd" and not a.teacher:
         raise SystemExit("kd arm needs --teacher")
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
     rng = random.Random(a.seed); torch.manual_seed(a.seed)
+    wb = wandb_init(a.wandb_project, out, vars(a))
 
     tok = AutoTokenizer.from_pretrained(a.student, trust_remote_code=True)
     MASK = tok.convert_tokens_to_ids("<|mask|>")
@@ -263,6 +281,7 @@ def main():
                            theta=theta_now(), lr=sched.get_last_lr()[0], s_per_frame=(time.time() - t0) / (step * a.batch),
                            peak_gb=round(torch.cuda.max_memory_allocated() / 2**30, 1))
                 log.write(json.dumps(rec) + "\n"); log.flush()
+                if wb: wb.log({f"train/{k}": v for k, v in rec.items() if k != "step"}, step=step)
                 if step % 10 == 1 or step == total_steps:
                     print("[train]", json.dumps(rec), flush=True)
                 acc = zero()
@@ -274,6 +293,7 @@ def main():
     from merge_lora import save_merged
     save_merged(student.merge_and_unload(), tok, a.student, out / "merged")
     json.dump(vars(a), open(out / "args.json", "w"), indent=1)
+    if wb: wb.summary["train/steps"] = step; wb.summary["train/hours"] = (time.time() - t0) / 3600; wb.finish()
     print(f"[done] {step} steps in {(time.time() - t0) / 3600:.2f} h -> {out / 'merged'}", flush=True)
 
 

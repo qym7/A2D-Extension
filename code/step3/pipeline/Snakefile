@@ -95,7 +95,8 @@ rule eval_math_shard:
 rule eval_math_merge:
     input: expand(f"{LOGS}/step3/{RUN}-{{{{arm}}}}/math500/free-last300-s{{s}}", s=range(N_MATH))
     output: f"{LOGS}/step3/{RUN}-{{arm}}/math500/free-last300-merged/summary.json"
-    shell: "export PYTHONPATH=; source {MOD}/jobenv.sh mdlm-math-b300 && python {I1}/code/step3/merge_math_shards.py --shards {input} --out $(dirname {output})"
+    shell: "export PYTHONPATH={MOD}/pydeps_wandb; source {MOD}/jobenv.sh mdlm-math-b300 && python {I1}/code/step3/merge_math_shards.py --shards {input} --out $(dirname {output}) "
+           "&& python {I1}/code/step3/wandb_log_eval.py --train-out {CK}/{RUN}-{wildcards.arm} --summary {output} --prefix math500_last300"
 
 # ---------- guards: official harnesses from dream_study (zsh wrappers; labels keyed by arm) ----------
 DS_EVAL = "/mnt/lts4/scratch/home/yqin/DllmAR/dream_study/step2_instruct/scripts/eval"

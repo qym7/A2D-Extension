@@ -68,6 +68,53 @@ correct option."，出现在两道不同的题上（train 875 vs test 255）。M
   是否在别处**有所损失**。它们在 MATH 读数之后、在过了 MATH 门槛的那个 arm 上运行。
 - 尚未展示：第二个种子 / 第二个模型家族；以及用于判断 1 k 是否已是平台期的 8 k / 在线运行。
 
+## 结果（1k 测试；表由 `code/step3/results_table.py` 生成 → `technical_details/step3_results_t1k.md`）
+
+下表每一行都是**单模型**在同一批 MATH-500 题上解码（后 300 ∩ 所有行都有的题；M 的最后两个 shard 还在跑，目前是 200 题），
+只有两行 gate 是 2×（解码时两个模型）。STEP0 的两个**端点基线**都在表里：best merge M(.4,.6)（convex 线）和 over addition A(2.0)
+（addition 线；它同时也是教师）。McNemar = 行赢次数 / 列赢次数，精确 p。
+
+| row | acc | finish | acc\|finished | vs Ins | vs C2 | vs M(.4,.6) | vs A(2.0) | HW |
+|---|---:|---:|---:|---|---|---|---|---|
+| Ins（学生，未改动） | 38.5 | 77% | 50.0 | — | 26/25, p=1.00 | 17/26, p=0.22 | 22/41, p=0.02 | B300 |
+| M(.4,.6) best merge（端点 1） | 43.0 | 84% | 50.9 | 26/17, p=0.22 | 28/18, p=0.18 | — | 23/33, p=0.23 | B300 |
+| A(2.0) over addition（端点 2 = 教师） | 48.0 | 94% | 50.8 | 41/22, p=0.02 | 36/16, p=0.01 | 33/23, p=0.23 | — | H200 |
+| gate Ins ⇐ A(2.0) @0.8（2×） | 50.5 | 93% | 54.3 | 38/14, p=0.00 | 40/15, p=0.00 | 30/15, p=0.04 | 27/22, p=0.57 | H200 |
+| gate M(.4,.6) ⇐ A(2.0) @0.8（2×） | 53.0 | 91% | 58.2 | 41/12, p=0.00 | 41/11, p=0.00 | 30/10, p=0.00 | 27/17, p=0.17 | H200 |
+| **M = 蒸馏后的 Ins（1×）** | **50.5** | **94%** | **54.0** | 39/15, p=0.00 | 40/15, p=0.00 | 32/17, p=0.04 | 28/23, p=0.58 | H200 |
+| **C2 = Ins 自蒸馏（1×）** | 38.0 | 81% | 46.9 | 25/26, p=1.00 | — | 18/28, p=0.18 | 16/36, p=0.01 | H200 |
+
+按可信度排序，这张表说明：
+1. **M ≫ Ins，M ≫ C2**（都是 p < 0.001，39–40 赢 vs 15）：蒸馏后的 1× 模型优于起点，原因是教师（自蒸馏什么都没带来）。
+2. **M ≥ 两个端点。** M 胜过 best merge（32/17，p = 0.04），与 over addition / 教师至少持平（28/23，p = 0.58），
+   而它只是 Ins 权重 + 一个 LoRA 的 1× 模型——测试时没有 merge、没有向量运算。
+3. **M = 它所蒸馏的 2× gate**（50.5 vs 50.5；gate 就是我们一开始要达到的天花板）。merge 起点的 gate（53.0）是下一个目标（臂 Mm）。
+4. 它具有 gate 的两个特征：写完率 77 → 94%（教师水平），写完题的正确率 50 → 54（高于教师的 50.8）。
+
+这两次训练的来源：`outputs/checkpoints/step3-t1k-{M,C2}/{args.json,train_log.jsonl,run.log}`；W&B 项目 `a2d-step3`，
+run `step3-t1k-M` / `step3-t1k-C2`（由日志回填）。注意：M 的容器在完成前重启了两次（`run.log` 有三次启动、一次 `[done]`）；
+checkpoint 来自唯一完整的那次，日志文件里也含有中断的尝试。
+
+## 真正有用的评测需要什么（以及我们已有哪些）
+| 要求 | 现状 | 动作 |
+|---|---|---|
+| 每行同一硬件 | Ins 和 M(.4,.6) 是 B300 的数（2026-09-30）；STEP3 各行是 H200 | 在 H200 上重测 Ins 和 M(.4,.6) 的后 300（2 个 job，≈ 5 GPU·h） |
+| 整 300 题而不是 200 | M 的 shard 0、2 在跑 | 自动；表会重新生成 |
+| 模型没有在别处变差 | 未测 | 对 M 跑 GSM8K、HumanEval+、IFEval 官方 harness（`guard_arms`），≈ 20 GPU·h |
+| 不是 seed 的偶然 | 一个 seed | M 换一个训练 seed（0.5 h + 7 GPU·h 评测） |
+| 不是 1k 的偶然 | 一个数据量 | 8k offline（或 4 × 2k online）——同时回答 1k 是否已到平台 |
+| 统计尊重配对 | 已做：相同题 id 上的精确 McNemar | 保持；不同题集之间永远不比 acc |
+| 无泄漏 | 已查（上一节） | prompt 池一变就重查 |
+| 能杀掉其他解释的对照 | C2（需要教师吗）已做；C1（需要选择吗）、C3（需要 over 吗）、C4（需要回放态吗）、C5（KL 方向）未跑 | guards 之后在同一批 rollout 上跑（每个 0.5 h 训练） |
+
+## 训练代码是怎么来的
+为这一步专门写的，不是改自某个 trainer：`code/step3/train_frontier_kd.py` 约 300 行纯 PyTorch + HF `transformers` + `peft`（LoRA），
+单卡，没有 Lightning、没有 verl、没有 accelerate。原样复用的部分：Dream 官方采样器做 rollout（`diffusion_generate`，与 MATH-500 协议同设置）、
+Dream 的 logit 约定（位置 p 由隐层 p−1 预测，与官方 SFT trainer 和我们的解码器一致）、peft 的 LoRA 用法与官方 `run_sft_tulu3.sh` 相同、
+STEP1 的 lockstep 解码器做评测。新写的部分：轨迹回放作为破坏方式、按置信度分流的 loss、self-anchor、帧采样器、OOM micro-batch 探测、
+以及合并/保存路径（`merge_lora.py`，绕过 Dream 的 `generation_config.validate`）。没有用官方 verl FSDP trainer，因为它的 loss
+（对参考答案做随机 mask CE）正是这一步要替换掉的东西，而且它需要 4 张卡。
+
 ## 当前数字的注意事项
 - 300 题中已有 200 题（M 的 shard 0 和 2 因一个任务跟踪 bug 正在重跑，2026-10-16 上午）；完整 300 列和
   `technical_details/step3_results_t1k.md` 随后给出。
