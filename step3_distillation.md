@@ -185,6 +185,16 @@ That makes the guards (code / IF) and the length read the informative part of th
 
 ## TODO (2026-10-16, @Amel — please read / add)
 
+**Suggestion 0 (@Amel, before any official training job): fix a validation set.** Every number so far is a test number (MATH-500 last 300;
+IFEval / HumanEval+ guards). Before the real runs we need a *validation* set that hyper-parameters (θ, λ, lr, epochs, pool) are chosen on,
+and the test sets are then touched once. Proposal: three random subsets of 100 from standard datasets, fixed seed, disjoint from every test
+set we report — **100 math** (e.g. MATH train or MATH-500 ids 0–199, which we never score), **100 instruction following** (e.g. IFEval prompts
+not in the reported subset, or IFBench), **100 coding** (e.g. MBPP+ or HumanEval+ problems held out of the reported ones). Running all 300
+costs ≈ 3 GPU·h per checkpoint, so it can be run after every training run. Please pick the datasets, write the three id lists under
+`code/step3/guards/` and say in this doc which test sets stay untouched. A handful of hand-written sanity prompts (one per family) next to the
+subsets is also worth having — cheap to read by eye after each run. The `ifeval_rand100` task / `score_ifeval_subset.py` in `code/step3/guards/`
+show how a fixed random subset is wired into the official harness.
+
 **First mission (@Amel), before anything else below:** train the distilled model on the Tulu-3-only pool (`tulu3-1k`: 1 000 prompts sampled directly
 from Tulu-3 at its native proportions, nothing else), with the recipe exactly as it is (Ins ⇐ A(2.0), θ = 0.8, λ = 0.3, 2 epochs), and then
 test generalisation on all three families: **math** (MATH-500 last 300, GSM8K), **coding** (HumanEval+), **instruction following** (IFEval).

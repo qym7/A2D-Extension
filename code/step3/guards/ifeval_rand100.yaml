@@ -1,0 +1,32 @@
+# IFEval, random 100 of the 541 prompts (seed 0, fixed for every model -> paired comparison). Everything else = the official ifeval.yaml
+# of dream_official_eval/eval_instruct/lm_eval/tasks/ifeval (lm_eval 0.4.8). Use: --tasks ifeval_rand100 --include_path <this dir>. 2026-10-16.
+task: ifeval_rand100
+dataset_path: google/IFEval
+dataset_name: null
+output_type: generate_until
+test_split: train
+process_docs: !function rand100_utils.select_rand100
+num_fewshot: 0
+doc_to_text: prompt
+doc_to_target: 0
+generation_kwargs:
+  until: []
+  do_sample: false
+  temperature: 0.0
+  max_gen_toks: 1280
+process_results: !function rand100_utils.process_results
+metric_list:
+  - metric: prompt_level_strict_acc
+    aggregation: mean
+    higher_is_better: true
+  - metric: inst_level_strict_acc
+    aggregation: !function rand100_utils.agg_inst_level_acc
+    higher_is_better: true
+  - metric: prompt_level_loose_acc
+    aggregation: mean
+    higher_is_better: true
+  - metric: inst_level_loose_acc
+    aggregation: !function rand100_utils.agg_inst_level_acc
+    higher_is_better: true
+metadata:
+  version: 4.0
