@@ -148,6 +148,35 @@ trainer was not used because its loss (random-mask CE on reference answers) is e
   side for plain self-SFT. It does not change its accuracy (38.0) but it means C2 is a conservative control, not a tuned one.
 - Reading rule from the plan still applies: success = ≥ Ins + 6 **and** > C2 + 3 **and** no guard regression.
 
+## TODO (2026-10-16, @Amel — please read / add)
+Ordered by what each one changes about the claim. Costs are H200·0.51 GPU·h.
+
+1. **Redo on the clean training set** (running: `n1k`). t1k used an ad-hoc Tulu + MATH-train + code mix; n1k uses Tulu-3 only at its native
+   proportions (the recipe Dream-Instruct itself was trained with). Same 1 k, same M, MATH last 300. ≈ 20 GPU·h. Pass = M ≥ Ins + 6 again.
+2. **Threshold θ** — we used the gate's 0.8; the distilled model may want less (or more) teacher. Grid in steps of 0.2 (0.1 was too expensive at
+   decode time; here each point is 0.5 h training + 7 GPU·h eval): θ ∈ {0.4, 0.6, 0.8}, plus the decaying schedule 0.8 → 0.5 (`--theta-end`).
+   Same rollouts, so ≈ 8 GPU·h per point. Read: accuracy, finish rate, avg length, `unsure_rate` (share of frames that went to the teacher).
+3. **Multi-stage (online) distillation** — keep the student moving and roll out with the updated student. Let S₀ = Ins, T = A(2.0) fixed,
+   prompts split into disjoint chunks Q₁ … Q_K (2 k each). For round k = 1 … K:
+
+   (a) rollouts with the current student:  D_k = { τ = Sample(S_{k−1}, q) : q ∈ Q_k },  τ = (y, s, κ) = canvas, commit steps, commit confidences
+   (b) frames:  F_k = { (x(t), NEXT(t)) : τ ∈ D_k, t ∈ frames(τ, θ_k) }   (2 frames before a commit with κ < θ_k + 1 uniform, as now)
+   (c) update:  S_k = argmin_{Δ, init Δ_{k−1}}  E_{(x,j) ∈ F_k} [ 1[c_j < θ_k] · KL( p_{S_{k−1}+Δ}(·|x,j) ‖ p_T(·|x,j) ) + λ · 1[c_j ≥ θ_k] · KL( p_{S_{k−1}+Δ}(·|x,j) ‖ p_{S₀}(·|x,j) ) ],
+       c_j = max_v p_{S_{k−1}+Δ}(v | x, j)  (the current student's confidence), θ_k decreasing with k (e.g. 0.8 → 0.5), one LoRA Δ carried across rounds, anchor always the original S₀.
+
+   What it buys: every prompt is still rolled out once (same rollout cost as offline), but the states the student is trained on are its *current*
+   states, so errors fixed in round k are not re-learned from stale prefixes in round k+1 (TOPD's on-policy argument). Cost: same GPU·h as
+   offline for one arm; serial wall-clock (K × (rollout + train)); controls (C2 …) can no longer share rollouts after round 1.
+   Variant to try later: a moving teacher T_k = S_k + (τ_D + 2 τ_A) − (τ_D + τ_A)... i.e. re-apply the over step on the current student's line.
+   Needs: `rollout.py --lora` (decode with the adapter without merging), `--resume-lora` in the trainer, Snakefile rounds.
+4. **Same hardware for the baselines** — Ins and M(.4,.6) were decoded on B300; re-decode on H200 (last 300, 2 jobs, ≈ 5 GPU·h) before any number is quoted.
+5. **Guards** — GSM8K, HumanEval+, IFEval on M (official harnesses, ≈ 20 GPU·h): did it lose anything? Also a length/verbosity read (M is +80 % tokens vs Ins).
+6. **Remaining controls** on the same rollouts (0.5 h training + 7 GPU·h each): C1 no θ split (is selection needed), C3 teacher A(1.1) (is "over"
+   needed), C4 random-mask states (is the replayed state needed), C5 forward KL. C2 at a lower lr (its outputs degenerated at 1e-4).
+7. **Second seed** of M and **data scale** (8 k offline): is 1 k the plateau, is 50.5 stable.
+8. **Trainer robustness**: the t1k M container restarted twice silently → add periodic LoRA + optimizer checkpoint and auto-resume before any multi-hour run.
+9. **Second student line** once the above holds: M(.4,.6) init (arm Mm, gate ceiling 53) and, later, a second model family (DreamReasoner / LLaDA-Instruct) to show the recipe is not Dream-specific.
+
 ## Next
 1. Finish the 300 (automatic). 2. Ins on H200, last 300 (one job). 3. Guards on M. 4. 8 k offline vs 4 × 2 k online rounds (`tmp.md` 2026-10-15 plan),
 M06 (θ 0.6) and Mm (M(.4,.6) init) as the next arms.

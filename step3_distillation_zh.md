@@ -141,6 +141,33 @@ STEP1 的 lockstep 解码器做评测。新写的部分：轨迹回放作为破�
   这不改变其准确率（38.0），但意味着 C2 是一个保守的对照，而非调优过的对照。
 - 计划中的读数规则仍然适用：成功 = ≥ Ins + 6 **且** > C2 + 3 **且** 无 guard 回退。
 
+## TODO（2026-10-16，@Amel —— 请看 / 补充）
+按"对结论改变什么"排序。成本为 H200·0.51 GPU·h。
+
+1. **在干净的训练集上重做**（进行中：`n1k`）。t1k 用的是临时拼的 Tulu + MATH-train + 代码混合；n1k 只用 Tulu-3、原生比例（Dream-Instruct 自己的
+   训练配方）。同样 1 k、同样的 M、MATH 后 300。≈ 20 GPU·h。通过 = M 再次 ≥ Ins + 6。
+2. **阈值 θ** —— 目前沿用 gate 的 0.8，蒸馏模型可能需要更少（或更多）教师。按 0.2 的步长扫（解码时 0.1 太贵；这里每个点 0.5 h 训练 + 7 GPU·h 评测）：
+   θ ∈ {0.4, 0.6, 0.8}，再加衰减计划 0.8 → 0.5（`--theta-end`）。共用 rollout，≈ 8 GPU·h/点。看：acc、写完率、平均长度、`unsure_rate`（交给教师的帧占比）。
+3. **多阶段（online）蒸馏** —— 让学生不断更新，并用更新后的学生做 rollout。记 S₀ = Ins，T = A(2.0) 固定，prompt 切成互不相交的块 Q₁ … Q_K（每块 2 k）。
+   第 k = 1 … K 轮：
+
+   (a) 用当前学生 rollout：D_k = { τ = Sample(S_{k−1}, q) : q ∈ Q_k }，τ = (y, s, κ) = canvas、写入步、写入时置信度
+   (b) 帧：F_k = { (x(t), NEXT(t)) : τ ∈ D_k, t ∈ frames(τ, θ_k) }（同现在：2 帧取自 κ < θ_k 的写入之前 + 1 帧均匀）
+   (c) 更新：S_k = argmin_{Δ, 初始化为 Δ_{k−1}} E_{(x,j) ∈ F_k} [ 1[c_j < θ_k] · KL( p_{S_{k−1}+Δ}(·|x,j) ‖ p_T(·|x,j) ) + λ · 1[c_j ≥ θ_k] · KL( p_{S_{k−1}+Δ}(·|x,j) ‖ p_{S₀}(·|x,j) ) ]，
+       c_j = max_v p_{S_{k−1}+Δ}(v | x, j)（当前学生的置信度），θ_k 随 k 递减（如 0.8 → 0.5），一个 LoRA Δ 跨轮延续，anchor 始终是原始 S₀。
+
+   好处：每个 prompt 仍只 rollout 一次（rollout 成本与 offline 相同），但训练用的是学生*当前*的状态，第 k 轮修好的错误不会在第 k+1 轮从陈旧前缀里
+   再学回来（TOPD 的 on-policy 论证）。成本：单臂 GPU·h 与 offline 相同；墙钟串行（K × (rollout + 训练)）；第 1 轮之后对照组（C2 …）不能再共用 rollout。
+   以后可试的变体：移动教师 T_k = 在当前学生的线上重新施加 over 步（S_k 加上 (τ_D + 2τ_A) 与 (τ_D + τ_A) 之差）。
+   需要：`rollout.py --lora`（不合并直接带 adapter 解码）、trainer 的 `--resume-lora`、Snakefile 按轮依赖。
+4. **基线同硬件** —— Ins 和 M(.4,.6) 是 B300 上解码的；在 H200 上重测（后 300，2 个 job，≈ 5 GPU·h），之后才能引用任何数字。
+5. **Guards** —— 对 M 跑 GSM8K、HumanEval+、IFEval（官方 harness，≈ 20 GPU·h）：有没有在别处变差？同时看长度/啰嗦（M 比 Ins 多 80% token）。
+6. **其余对照**，共用 rollout（每个 0.5 h 训练 + 7 GPU·h）：C1 不分 θ（需要选择吗）、C3 教师 A(1.1)（需要 "over" 吗）、C4 随机 mask 状态（需要回放态吗）、
+   C5 forward KL。C2 换更小的 lr（1e-4 时输出退化）。
+7. **M 的第二个 seed** 和 **数据规模**（8 k offline）：1 k 是否已是平台，50.5 是否稳定。
+8. **Trainer 健壮性**：t1k 的 M 容器静默重启了两次 → 任何数小时的 run 之前加周期性 LoRA + optimizer 存档和自动续训。
+9. **第二条学生线**（上面成立之后）：M(.4,.6) 起点（臂 Mm，gate 天花板 53），再往后换一个模型族（DreamReasoner / LLaDA-Instruct）证明配方不是 Dream 专属。
+
 ## 下一步
 1. 完成 300 题（自动）。2. Ins 在 H200 上跑最后 300 题（一个任务）。3. 对 M 跑 guard。4. 8 k 离线 vs 4 × 2 k 在线轮次（`tmp.md` 2026-10-15 计划），
 M06（θ 0.6）和 Mm（M(.4,.6) 初始化）作为下一批 arm。

@@ -64,3 +64,6 @@ rule rollout_shard:
     wildcards: st=ins, i=4
     resources: tmpdir=/tmp
 
+[Fri Oct 16 11:57:55 2026]
+Finished job 8.
+1 of 15 steps (7%) done
