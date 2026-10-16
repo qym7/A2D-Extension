@@ -158,11 +158,12 @@ def main():
     tok = AutoTokenizer.from_pretrained(a.student, trust_remote_code=True)
     MASK = tok.convert_tokens_to_ids("<|mask|>")
     ptext = {json.loads(l)["id"]: json.loads(l)["prompt"] for l in open(a.prompts)}
-    recs = []
+    recs = []; seen = set()
     for l in open(a.rollouts):
         r = json.loads(l)
-        if r["resp_len"] < 4 or len(set(r["commit_step"])) < 2:
+        if r["id"] in seen or r["resp_len"] < 4 or len(set(r["commit_step"])) < 2:   # a resumed rollout job can append a duplicate id
             continue
+        seen.add(r["id"])
         r["prompt_ids"] = tok.apply_chat_template([{"role": "user", "content": ptext[r["id"]]}], add_generation_prompt=True)
         assert len(r["prompt_ids"]) == r["prompt_len"], (r["id"], len(r["prompt_ids"]), r["prompt_len"])
         recs.append(r)

@@ -1,6 +1,6 @@
 """Merge the 3 last-300 MATH-500 shards of one STEP3 arm (lockstep @1024, student alone) into <out>/{texts.jsonl,summary.json}.
 Generic version of scripts/step1/merge_shards.py (that one has a hard-coded arm map). Zero GPU.
-texts.jsonl rows: {id, text, ok, gen_len, gold}; finished = gen_len < 1024 (the decoder's cap)."""
+texts.jsonl rows: {id, text, ok, gen_len, gold}; finished = \\boxed present in the text (step1 convention; gen_len is always the 1024 canvas)."""
 import argparse, json
 from pathlib import Path
 
@@ -22,7 +22,7 @@ def main():
         for i in sorted(rows):
             f.write(json.dumps(rows[i], ensure_ascii=False) + "\n")
     ids = sorted(rows)
-    fin = [i for i in ids if rows[i]["gen_len"] < a.cap]
+    fin = [i for i in ids if "\\boxed" in rows[i]["text"]]
     summ = dict(n=len(ids), ids=[ids[0], ids[-1]] if ids else None, acc=100 * sum(rows[i]["ok"] for i in ids) / max(1, len(ids)),
                 finish=100 * len(fin) / max(1, len(ids)), acc_on_finished=100 * sum(rows[i]["ok"] for i in fin) / max(1, len(fin)),
                 ok_ids=[i for i in ids if rows[i]["ok"]])

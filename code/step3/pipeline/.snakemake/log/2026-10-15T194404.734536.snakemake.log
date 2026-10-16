@@ -54,3 +54,288 @@ rule rollout_shard:
     wildcards: st=ins, i=4
     resources: tmpdir=/tmp
 
+[Thu Oct 15 20:46:13 2026]
+Finished job 7.
+1 of 22 steps (5%) done
+[Thu Oct 15 20:48:12 2026]
+Finished job 9.
+2 of 22 steps (9%) done
+[Thu Oct 15 20:48:12 2026]
+Finished job 8.
+3 of 22 steps (14%) done
+[Thu Oct 15 20:54:13 2026]
+Finished job 10.
+4 of 22 steps (18%) done
+Select jobs to execute...
+
+[Thu Oct 15 20:54:13 2026]
+rule rollouts_merged:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/s0/rollouts.jsonl, /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/s1/rollouts.jsonl, /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/s2/rollouts.jsonl, /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/s3/rollouts.jsonl, /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/s4/rollouts.jsonl
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/all.jsonl
+    jobid: 4
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/all.jsonl; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/s2/rollouts.jsonl, /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/s1/rollouts.jsonl, /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/s4/rollouts.jsonl, /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/s3/rollouts.jsonl
+    wildcards: st=ins
+    resources: tmpdir=/tmp
+
+[Thu Oct 15 20:54:14 2026]
+Finished job 4.
+5 of 22 steps (23%) done
+Select jobs to execute...
+
+[Thu Oct 15 20:54:14 2026]
+rule train:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/all.jsonl
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    jobid: 19
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/all.jsonl
+    wildcards: arm=C2
+    resources: tmpdir=/tmp
+
+
+[Thu Oct 15 20:54:14 2026]
+rule train:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/all.jsonl, /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/add-a10-b20/merge_manifest.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    jobid: 3
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/rollouts/ins/all.jsonl
+    wildcards: arm=M
+    resources: tmpdir=/tmp
+
+[Thu Oct 15 21:10:17 2026]
+Finished job 19.
+6 of 22 steps (27%) done
+Select jobs to execute...
+
+[Thu Oct 15 21:10:17 2026]
+rule eval_math_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s1
+    jobid: 20
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s1; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    wildcards: arm=C2, s=1
+    resources: tmpdir=/tmp
+
+
+[Thu Oct 15 21:10:17 2026]
+rule eval_math_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s2
+    jobid: 21
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s2; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    wildcards: arm=C2, s=2
+    resources: tmpdir=/tmp
+
+
+[Thu Oct 15 21:10:17 2026]
+rule eval_math_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s4
+    jobid: 23
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s4; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    wildcards: arm=C2, s=4
+    resources: tmpdir=/tmp
+
+
+[Thu Oct 15 21:10:17 2026]
+rule eval_math_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s3
+    jobid: 22
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s3; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    wildcards: arm=C2, s=3
+    resources: tmpdir=/tmp
+
+
+[Thu Oct 15 21:10:17 2026]
+rule eval_math_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s5
+    jobid: 24
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s5; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    wildcards: arm=C2, s=5
+    resources: tmpdir=/tmp
+
+
+[Thu Oct 15 21:10:17 2026]
+rule eval_math_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s0
+    jobid: 18
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s0; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    wildcards: arm=C2, s=0
+    resources: tmpdir=/tmp
+
+[Thu Oct 15 21:12:18 2026]
+[Thu Oct 15 21:12:18 2026]
+Error in rule eval_math_shard:
+    jobid: 23
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s4
+    shell:
+        bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/submit_wait.sh yqin-i1-s3m500-c2-s4-t1k-h200f051 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s4/run.log bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/run_gated_shard5.sh /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged none free 400 450 free-last300-s4 0
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error in rule eval_math_shard:
+    jobid: 20
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s1
+    shell:
+        bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/submit_wait.sh yqin-i1-s3m500-c2-s1-t1k-h200f051 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s1/run.log bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/run_gated_shard5.sh /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged none free 250 300 free-last300-s1 0
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Thu Oct 15 21:12:18 2026]
+Error in rule eval_math_shard:
+    jobid: 21
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s2
+    shell:
+        bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/submit_wait.sh yqin-i1-s3m500-c2-s2-t1k-h200f051 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s2/run.log bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/run_gated_shard5.sh /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged none free 300 350 free-last300-s2 0
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Thu Oct 15 21:12:18 2026]
+Error in rule eval_math_shard:
+    jobid: 18
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s0
+    shell:
+        bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/submit_wait.sh yqin-i1-s3m500-c2-s0-t1k-h200f051 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s0/run.log bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/run_gated_shard5.sh /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged none free 200 250 free-last300-s0 0
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Thu Oct 15 21:12:18 2026]
+Error in rule eval_math_shard:
+    jobid: 24
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s5
+    shell:
+        bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/submit_wait.sh yqin-i1-s3m500-c2-s5-t1k-h200f051 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s5/run.log bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/run_gated_shard5.sh /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged none free 450 500 free-last300-s5 0
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Thu Oct 15 21:12:18 2026]
+Error in rule eval_math_shard:
+    jobid: 22
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s3
+    shell:
+        bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/submit_wait.sh yqin-i1-s3m500-c2-s3-t1k-h200f051 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s3/run.log bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/run_gated_shard5.sh /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-C2/merged none free 350 400 free-last300-s3 0
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Thu Oct 15 21:32:19 2026]
+Finished job 3.
+7 of 22 steps (32%) done
+Select jobs to execute...
+
+[Thu Oct 15 21:32:19 2026]
+rule eval_math_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s2
+    jobid: 13
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s2; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    wildcards: arm=M, s=2
+    resources: tmpdir=/tmp
+
+
+[Thu Oct 15 21:32:19 2026]
+rule eval_math_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s0
+    jobid: 2
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s0; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    wildcards: arm=M, s=0
+    resources: tmpdir=/tmp
+
+
+[Thu Oct 15 21:32:19 2026]
+rule eval_math_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s4
+    jobid: 15
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s4; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    wildcards: arm=M, s=4
+    resources: tmpdir=/tmp
+
+
+[Thu Oct 15 21:32:19 2026]
+rule eval_math_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s1
+    jobid: 12
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s1; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    wildcards: arm=M, s=1
+    resources: tmpdir=/tmp
+
+
+[Thu Oct 15 21:32:19 2026]
+rule eval_math_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s3
+    jobid: 14
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s3; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    wildcards: arm=M, s=3
+    resources: tmpdir=/tmp
+
+
+[Thu Oct 15 21:32:19 2026]
+rule eval_math_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s5
+    jobid: 16
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s5; Input files updated by another job: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    wildcards: arm=M, s=5
+    resources: tmpdir=/tmp
+
+[Thu Oct 15 21:34:20 2026]
+Error in rule eval_math_shard:
+    jobid: 16
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s5
+    shell:
+        bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/submit_wait.sh yqin-i1-s3m500-m-s5-t1k-h200f051 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s5/run.log bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/run_gated_shard5.sh /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged none free 450 500 free-last300-s5 0
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Thu Oct 15 21:34:20 2026]
+Error in rule eval_math_shard:
+    jobid: 14
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s3
+    shell:
+        bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/submit_wait.sh yqin-i1-s3m500-m-s3-t1k-h200f051 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s3/run.log bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/run_gated_shard5.sh /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged none free 350 400 free-last300-s3 0
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Thu Oct 15 21:34:20 2026]
+Error in rule eval_math_shard:
+    jobid: 15
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s4
+    shell:
+        bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/submit_wait.sh yqin-i1-s3m500-m-s4-t1k-h200f051 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s4/run.log bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/run_gated_shard5.sh /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged none free 400 450 free-last300-s4 0
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Thu Oct 15 21:34:20 2026]
+Error in rule eval_math_shard:
+    jobid: 12
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s1
+    shell:
+        bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/submit_wait.sh yqin-i1-s3m500-m-s1-t1k-h200f051 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s1/run.log bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/run_gated_shard5.sh /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged none free 250 300 free-last300-s1 0
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Thu Oct 15 21:34:30 2026]
+Error in rule eval_math_shard:
+    jobid: 2
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s0
+    shell:
+        bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/submit_wait.sh yqin-i1-s3m500-m-s0-t1k-h200f051 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s0/run.log bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/run_gated_shard5.sh /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged none free 200 250 free-last300-s0 0
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+[Thu Oct 15 21:34:30 2026]
+Error in rule eval_math_shard:
+    jobid: 13
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s2
+    shell:
+        bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/submit_wait.sh yqin-i1-s3m500-m-s2-t1k-h200f051 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s2/run.log bash /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/modules/run_gated_shard5.sh /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500 /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged none free 300 350 free-last300-s2 0
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Exiting because a job execution failed. Look above for error message
+Complete log: .snakemake/log/2026-10-15T194404.734536.snakemake.log

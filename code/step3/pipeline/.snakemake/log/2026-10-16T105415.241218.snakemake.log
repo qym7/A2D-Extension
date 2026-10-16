@@ -1,0 +1,46 @@
+Building DAG of jobs...
+Using shell: /usr/bin/bash
+Provided cores: 12
+Rules claiming more threads will be scaled down.
+Job stats:
+job                count
+---------------  -------
+eval_math_merge        2
+eval_math_shard        2
+first_wave             1
+total                  5
+
+Select jobs to execute...
+
+[Fri Oct 16 10:54:15 2026]
+rule eval_math_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s2
+    jobid: 13
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s2
+    wildcards: arm=M, s=2
+    resources: tmpdir=/tmp
+
+
+[Fri Oct 16 10:54:15 2026]
+rule eval_math_shard:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/checkpoints/step3-t1k-M/merged/config.json
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s0
+    jobid: 2
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-M/math500/free-last300-s0
+    wildcards: arm=M, s=0
+    resources: tmpdir=/tmp
+
+
+[Fri Oct 16 10:54:15 2026]
+rule eval_math_merge:
+    input: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s0, /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s1, /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s2, /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s3, /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s4, /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-s5
+    output: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-merged/summary.json
+    jobid: 17
+    reason: Missing output files: /mnt/lts4/scratch/home/yqin/DllmAR/new_ideas/idea1_selective_distill/outputs/step3/step3-t1k-C2/math500/free-last300-merged/summary.json
+    wildcards: arm=C2
+    resources: tmpdir=/tmp
+
+[Fri Oct 16 10:54:27 2026]
+Finished job 17.
+1 of 5 steps (20%) done
