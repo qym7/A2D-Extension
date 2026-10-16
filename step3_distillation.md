@@ -185,17 +185,18 @@ That makes the guards (code / IF) and the length read the informative part of th
 
 ## TODO (2026-10-16, @Amel — please read / add)
 
-**Suggestion 0 (@Amel, before any official training job): fix a validation set.** Every number so far is a test number (MATH-500 last 300;
-IFEval / HumanEval+ guards). Before the real runs we need a *validation* set that hyper-parameters (θ, λ, lr, epochs, pool) are chosen on,
-and the test sets are then touched once. Proposal (user 2026-10-16: **always a random 100 with a fixed seed, never the first or last 100**): three random subsets of 100 from standard
-datasets, disjoint from every test set we report — **100 math** (random 100 of MATH-500 ids 0–199, the half we never score; seed 0),
-**100 instruction following** (random 100 of IFEval = the existing `ifeval_rand100` task, seed 0), **100 coding** (random 100 of MBPP+, so that
-HumanEval+ stays an untouched test set). Rule: a model that already has an official full-set run (Ins, M(.4,.6) on IFEval / HumanEval+) is never
-re-run — its subset score is read out of the existing per-sample log (`score_ifeval_subset.py`). Running all 300
-costs ≈ 3 GPU·h per checkpoint, so it can be run after every training run. Please pick the datasets, write the three id lists under
-`code/step3/guards/` and say in this doc which test sets stay untouched. A handful of hand-written sanity prompts (one per family) next to the
-subsets is also worth having — cheap to read by eye after each run. The `ifeval_rand100` task / `score_ifeval_subset.py` in `code/step3/guards/`
-show how a fixed random subset is wired into the official harness.
+**Validation set — DONE 2026-10-16 (user: "we need validation data to confirm whether each multi-stage round is meaningful").**
+Three fixed random-100 lists in `code/step3/guards/`, all disjoint from every reported test set; one checkpoint = 3 parallel jobs,
+`modules/submit_step3_validation.sh <ckpt> <label>` (≈ 6.5 GPU·h ≈ 3.3 CHF), results in `outputs/step3/validation/<label>/{math,ifeval,mbpp}.json`:
+
+| family | list | protocol | GPU·h |
+|---|---|---|---:|
+| math | `val_math500_first200_rand100_seed0.json` — random 100 of MATH-500 ids 0–199 (the half we never report) | the test decoder (lockstep free @1024) | 2.3 |
+| instruction following | `val_ifeval_rand100_seed1_disjoint.json` — random 100 of the 441 IFEval prompts not in the reported `ifeval_rand100` | official 1280/1280, task `ifeval_val100` | 3.5 |
+| coding | `val_mbppplus_rand100_seed0.json` — random 100 of the 378 MBPP+ tasks (HumanEval+ stays a test set) | official evalplus dllm 512/512, `evalplus_subset.py` | 0.6 |
+
+Free reference points on the math validation 100 (existing step0/step1 decodes): Ins 46 (B300), M(.4,.6) 51 (B300), A(2.0) 61, gate 65 (H200).
+Not used for anything yet: GSM8K (too easy, moves in the wrong direction under merging). Hand-written sanity prompts: still to add.
 
 **First mission (@Amel), before anything else below:** train the distilled model on the Tulu-3-only pool (`tulu3-1k`: 1 000 prompts sampled directly
 from Tulu-3 at its native proportions, nothing else), with the recipe exactly as it is (Ins ⇐ A(2.0), θ = 0.8, λ = 0.3, 2 epochs), and then
@@ -244,6 +245,10 @@ After round K, S_K is merged and evaluated like the offline model. K = 1 is exac
 compare S₄ against the offline S₁ on the same MATH last 300 (+ guards). GPU·h ≈ offline (every prompt decoded once, every frame trained once);
 wall-clock ≈ 4 × (1.4 h rollout + 0.1 h train). Expected gain: from round 2 on, the "unsure" positions are the ones the student *still* gets wrong,
 not the ones already fixed (TOPD's on-policy argument). Price: controls C1 … C5 can share only the round-1 rollouts.
+
+**Validation gate per round (user 2026-10-16).** After every round k, run the validation set on S_k (`submit_step3_validation.sh`, ≈ 6.5 GPU·h).
+Continue to round k+1 only if MATH-val(S_k) ≥ MATH-val(S_{k−1}) and neither IFEval-val nor MBPP+-val dropped by more than 3 points; otherwise
+stop and keep S_{k−1}. The test sets are touched once, with the round that validation picked.
 
 **Later / needed**
 - Variant: moving teacher T_k = over step re-applied on top of S_k.

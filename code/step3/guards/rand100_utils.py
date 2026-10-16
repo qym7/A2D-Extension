@@ -11,3 +11,13 @@ IDS = sorted(random.Random(SEED).sample(range(N_TOTAL), N_SUB))
 def select_rand100(dataset):
     assert len(dataset) == N_TOTAL, len(dataset)
     return dataset.select(IDS)
+
+# validation twin (2026-10-16): random 100 of the 441 prompts not in IDS, seed 1 — file val_ifeval_rand100_seed1_disjoint.json next to this module
+import json as _json, os as _os
+IDS_VAL = _json.load(open(_os.path.join(_os.path.dirname(__file__), "val_ifeval_rand100_seed1_disjoint.json")))
+assert not set(IDS_VAL) & set(IDS) and len(IDS_VAL) == N_SUB
+
+
+def select_val100(dataset):
+    assert len(dataset) == N_TOTAL, len(dataset)
+    return dataset.select(IDS_VAL)

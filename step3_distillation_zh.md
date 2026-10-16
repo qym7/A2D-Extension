@@ -176,13 +176,18 @@ STEP1 的 lockstep 解码器做评测。新写的部分：轨迹回放作为破�
 
 ## TODO（2026-10-16，@Amel —— 请看 / 补充）
 
-**建议 0（@Amel，先于任何正式训练 job）：固定一个 validation set。** 目前所有数字都是测试集数字（MATH-500 后 300；IFEval / HumanEval+ guards）。
-正式跑之前需要一个 *validation* 集来选超参（θ、λ、lr、epoch、训练池），测试集之后只碰一次。建议（用户 2026-10-16：**一律固定 seed 随机抽 100，不要前 100 或后 100**）：从标准数据集里各随机抽 100 条、与所有要报告的测试集不相交 ——
-**100 数学**（从我们从不评分的 MATH-500 id 0–199 里随机 100，seed 0）、**100 指令遵循**（IFEval 随机 100 = 现成的 `ifeval_rand100` task，seed 0）、
-**100 代码**（MBPP+ 随机 100，让 HumanEval+ 保持为不动的测试集）。规则：已经有官方全集结果的模型（Ins、M(.4,.6) 的 IFEval / HumanEval+）
-一律不重跑 —— 子集分数从现成的逐题记录里读出来（`score_ifeval_subset.py`）。300 条全跑一次每个 checkpoint ≈ 3 GPU·h，所以每次训练后都能跑。
-请选定数据集、把三份 id 列表放到 `code/step3/guards/` 下，并在本文档里写明哪些测试集保持不动。子集旁边再放几条手写的 sanity prompt（每类一条）
-也值得 —— 每次训练后肉眼看一眼很便宜。`code/step3/guards/` 里的 `ifeval_rand100` task / `score_ifeval_subset.py` 展示了固定随机子集怎样接进官方 harness。
+**Validation set —— 已完成 2026-10-16（用户："需要 validation 数据来确认多阶段每一轮是否有意义"）。**
+三份固定的随机 100 id 列表在 `code/step3/guards/`，全部与报告用的测试集不相交；一个 checkpoint = 3 个并行 job，
+`modules/submit_step3_validation.sh <ckpt> <label>`（≈ 6.5 GPU·h ≈ 3.3 CHF），结果在 `outputs/step3/validation/<label>/{math,ifeval,mbpp}.json`：
+
+| family | list | protocol | GPU·h |
+|---|---|---|---:|
+| 数学 | `val_math500_first200_rand100_seed0.json` —— MATH-500 id 0–199（从不报告的那一半）里随机 100 | 测试用的同一解码器（lockstep free @1024） | 2.3 |
+| 指令遵循 | `val_ifeval_rand100_seed1_disjoint.json` —— 不在报告用 `ifeval_rand100` 里的 441 题中随机 100 | 官方 1280/1280，task `ifeval_val100` | 3.5 |
+| 代码 | `val_mbppplus_rand100_seed0.json` —— MBPP+ 378 题中随机 100（HumanEval+ 保持为测试集） | 官方 evalplus dllm 512/512，`evalplus_subset.py` | 0.6 |
+
+数学 validation 100 上免费得到的参考点（step0/step1 已有解码）：Ins 46（B300）、M(.4,.6) 51（B300）、A(2.0) 61、gate 65（H200）。
+没有采用：GSM8K（太简单，merge 下反向变化）。手写 sanity prompt：待加。
 
 **Amel 的第一个任务，优先于下面所有条目：** 在只用 Tulu-3 的池子上训练蒸馏模型（`tulu3-1k`：直接从 Tulu-3 按原生比例抽 1 000 条 prompt，不加别的），
 配方原样不动（Ins ⇐ A(2.0)，θ = 0.8，λ = 0.3，2 epoch），然后在三类任务上测泛化：**数学**（MATH-500 后 300、GSM8K）、**代码**（HumanEval+）、
@@ -226,6 +231,10 @@ Q_k = 第 k 块 prompt；p_S(·|x, j) = 模型 S 在 canvas x 位置 j 的分布
 **Initial plan。** 1 000 条 Tulu-3 prompt（tulu3-1k 池），K = 4 块、每块 250，θ = 0.8，λ = 0.3，每轮 2 epoch，lr 1e-4、只在第 1 轮 warm-up；
 在同一 MATH 后 300（+ guards）上比较 S₄ 与 offline 的 S₁。GPU·h ≈ offline（每条 prompt 解码一次、每帧训练一次）；墙钟 ≈ 4 × (1.4 h rollout + 0.1 h 训练)。
 期望收益：从第 2 轮起，"不确定的位置"是学生*现在仍然*会错的，而不是已经修好的（TOPD 的 on-policy 论证）。代价：对照组 C1 … C5 只能共用第 1 轮的 rollout。
+
+**每轮的 validation 关卡（用户 2026-10-16）。** 每一轮 k 结束后对 S_k 跑 validation（`submit_step3_validation.sh`，≈ 6.5 GPU·h）。
+只有当 MATH-val(S_k) ≥ MATH-val(S_{k−1}) 且 IFEval-val、MBPP+-val 都没掉超过 3 分，才进入第 k+1 轮；否则停下、保留 S_{k−1}。
+测试集只碰一次，用 validation 选出的那一轮。
 
 **以后 / 需要**
 - 变体：移动教师 T_k = 在 S_k 之上重新施加 over 步。
