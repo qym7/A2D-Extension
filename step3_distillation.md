@@ -138,6 +138,22 @@ wins-of-row / wins-of-column on the shared items, exact two-sided p.
   cannot teach — the stall happens mid-canvas in any-order decoding. On IFEval the lost instructions are constraint types (no_comma 5, start/end
   quotation 3, repeat-prompt 3, placeholders 3, response language 1): the answers read as generic Qwen-style text that ignores the prompt's format
   clause. Consequence: a **joint** (diffusion + AR teacher) distillation has no complementary signal to combine on this evidence — not planned.
+- **Is "accuracy on finished problems" an illusion for the gate / distilled M too? No (matched check, last 300, user question 2026-10-17).** On the problems
+  that BOTH the row and Ins finish, the row's accuracy vs Ins's on the same problems:
+
+  | row | finish | both finish with Ins (n) | Ins there | row there | row finishes, Ins does not (n) | row there |
+  |---|---:|---:|---:|---:|---:|---:|
+  | M(.4,.6) best merge | 81 % | 197 | 51.8 | 51.8 | 46 | 52.2 |
+  | A(2.0) teacher | 94 % | 218 | 49.5 | 51.4 | 65 | 43.1 |
+  | gate Ins ⇐ A(2.0) @0.8 | 93 % | 215 | 49.8 | **56.3** | 63 | 41.3 |
+  | M distilled | 92 % | 211 | 50.2 | **57.3** | 65 | 46.2 |
+  | AR-teacher baseline | 75 % | 178 | 53.4 | 61.8 | 48 | 62.5 |
+
+  The gate and distilled M are +6.5 / +7 points on the *same* problems Ins also finishes — a real per-problem gain, on top of finishing 63–65 harder
+  problems (41–46 % there). The best merge gains nothing on matched problems (51.8 = 51.8): its +5 is all finish rate. The AR baseline is +8 on its
+  matched set, i.e. it did learn per-problem accuracy (equal to distilled M on the problems both finish, 62.8 = 62.8) — what it lacks is only the finish
+  rate (75 % = Ins), and it even fails 49 problems Ins finishes. So the earlier sentence "the AR teacher taught nothing the diffusion teacher did not"
+  stands as *nothing beyond M*, not as *nothing at all*.
 - Reading: the selective loss took the teacher's math and left its instruction-following / code damage behind — on this evidence. Caveats: one seed,
   one training set, 100-prompt subsets for IF; GSM8K not run.
 - Raw: `outputs/step3/guards/<ins|m46|a20|gate|mixpool1k|ar-mixpool1k>/{ifeval_rand100,humaneval}.json` (per-item), `guards/math500_rand100_seed0_results.json`;
