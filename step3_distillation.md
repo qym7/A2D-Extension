@@ -121,6 +121,23 @@ wins-of-row / wins-of-column on the shared items, exact two-sided p.
   (57.3 = Ins). Training signature differs too: the student was "unsure" at only 17 % of the prefix-cut positions (60 % at the gate's replayed states), so
   the AR teacher was consulted on far fewer positions. One recipe, untuned (no JustOPD-style entropy top-25 % or L2R student rollouts); the
   all-positions variant (`ARall`) and a matched-teacher-strength control (a 7B diffusion teacher as strong as Qwen on MATH) are open.
+- **Where the AR baseline loses (2026-10-17 read).** Finish rate, accuracy on finished problems and length on the last 300; IFEval length on the rand100:
+
+  | row | MATH rand100 | MATH finish | acc \| finished | MATH len (tok) | IFEval rand100 | IFEval len (chars) | HumanEval+ |
+  |---|---:|---:|---:|---:|---:|---:|---:|
+  | Ins | 34 | 76 % | 48.5 | 375 | 62 | 1622 | 57.3 |
+  | M(.4,.6) best merge | 42 | 81 % | 51.9 | 448 | 65 | 1753 | 61.0 |
+  | A(2.0) teacher | 55 | 94 % | 49.5 | 1005 | 51 | 4627 | 56.7 |
+  | gate Ins ⇐ A(2.0) @0.8 (2×) | 51 | 93 % | 52.9 | 795 | 70 | 2375 | 59.8 |
+  | M distilled (mixpool-1k) | 58 | 92 % | 54.7 | 639 | 64 | 2826 | 60.4 |
+  | AR-teacher baseline | 51 | **75 %** | 61.9 | 664 | **52** | 2381 | 57.3 |
+
+  The AR baseline's finish rate is Ins's (75 vs 76 %); its high accuracy-on-finished is a **selection effect**, not better math: on the 218 problems
+  that both it and distilled M finish, both score **62.8**; on the 58 problems M finishes and the AR baseline does not, M gets 24 % (the hard ones).
+  So the AR teacher taught nothing the diffusion teacher did not, and the gate's main gain (finishing: 76 → 92 %) is exactly what prefix-valid states
+  cannot teach — the stall happens mid-canvas in any-order decoding. On IFEval the lost instructions are constraint types (no_comma 5, start/end
+  quotation 3, repeat-prompt 3, placeholders 3, response language 1): the answers read as generic Qwen-style text that ignores the prompt's format
+  clause. Consequence: a **joint** (diffusion + AR teacher) distillation has no complementary signal to combine on this evidence — not planned.
 - Reading: the selective loss took the teacher's math and left its instruction-following / code damage behind — on this evidence. Caveats: one seed,
   one training set, 100-prompt subsets for IF; GSM8K not run.
 - Raw: `outputs/step3/guards/<ins|m46|a20|gate|mixpool1k|ar-mixpool1k>/{ifeval_rand100,humaneval}.json` (per-item), `guards/math500_rand100_seed0_results.json`;
