@@ -274,11 +274,13 @@ Three fixed random-100 lists in `code/step3/guards/`, all disjoint from every re
 
 | family | list | protocol | GPU·h |
 |---|---|---|---:|
-| math | `val_math500_first200_rand100_seed0.json` — random 100 of MATH-500 ids 0–199 (the half we never report) | the test decoder (lockstep free @1024) | 2.3 |
+| math | `val_math_test_minus500_rand500_seed0.jsonl` rows 0–99 — random 100 of the **MATH test split minus MATH-500** (4 500 problems; MATH-500 is a uniform random subset of that split, so the difficulty profile is the same: L1–L5 = 9/18/21/26/27 % vs the pool's 10/19/21/25/25 %; disjoint from every reported id and from the rollout pool, which is MATH *train*). Built by `build_math_val.py` (official minerva gold extraction, checked on all 500 MATH-500 answers; official prompt template byte-for-byte). **Replaces** the MATH-500 ids 0–199 list of 2026-10-16, rejected by the user on 2026-10-17 because the rand100-of-500 test column also draws from ids 0–199 (`trash/val_math500_first200_rejected_20261017/`) | the test decoder (lockstep free @1024), `modules/run_math_val.sh` | 1.5 |
 | instruction following | `val_ifeval_rand100_seed1_disjoint.json` — random 100 of the 441 IFEval prompts not in the reported `ifeval_rand100` | official 1280/1280, task `ifeval_val100` | 3.5 |
 | coding | `val_mbppplus_rand100_seed0.json` — random 100 of the 378 MBPP+ tasks (HumanEval+ stays a test set) | official evalplus dllm 512/512, `evalplus_subset.py` | 0.6 |
 
-Free reference points on the math validation 100 (existing step0/step1 decodes): Ins 46 (B300), M(.4,.6) 51 (B300), A(2.0) 61, gate 65 (H200).
+Reference points on the new math val100 are being decoded (Ins, distilled M; 2026-10-17); the old list's free numbers (Ins 46, M(.4,.6) 51, A(2.0) 61, gate 65) no longer apply.
+**Recipe search runs on this validation set only** (2026-10-17, `modules/submit_step3_recipe.sh` = train + validation): one knob each vs M — epochs 4, random half of the
+rollouts (500, seed 0), θ 0.6, θ 0.4. The test sets are touched once, with the recipe validation picks.
 Not used for anything yet: GSM8K (too easy, moves in the wrong direction under merging). Hand-written sanity prompts: still to add.
 
 **First mission (@Amel), before anything else below:** train the distilled model on the Tulu-3-only pool (`tulu3-1k`: 1 000 prompts sampled directly

@@ -257,11 +257,12 @@ HumanEval+ 57.3（M 60.4）。所以在我们的数据上，AR 教师教数学�
 
 | family | list | protocol | GPU·h |
 |---|---|---|---:|
-| 数学 | `val_math500_first200_rand100_seed0.json` —— MATH-500 id 0–199（从不报告的那一半）里随机 100 | 测试用的同一解码器（lockstep free @1024） | 2.3 |
+| 数学 | `val_math_test_minus500_rand500_seed0.jsonl` 第 0–99 行 —— **MATH test 集去掉 MATH-500**（4 500 题；MATH-500 本来就是从这个 split 均匀随机抽的，难度分布一样：L1–L5 = 9/18/21/26/27 % vs 池子的 10/19/21/25/25 %；和所有报告过的题目、和 rollout 池（MATH *train*）都不交叉）里随机 100。由 `build_math_val.py` 生成（官方 minerva gold 抽取，在 MATH-500 全部 500 题上核对过；prompt 模板与官方逐字节一致）。**替代** 2026-10-16 的 MATH-500 id 0–199 列表 —— 用户 2026-10-17 否决，因为 rand100-of-500 测试列也抽到 id 0–199（`trash/val_math500_first200_rejected_20261017/`） | 测试用的同一解码器（lockstep free @1024），`modules/run_math_val.sh` | 1.5 |
 | 指令遵循 | `val_ifeval_rand100_seed1_disjoint.json` —— 不在报告用 `ifeval_rand100` 里的 441 题中随机 100 | 官方 1280/1280，task `ifeval_val100` | 3.5 |
 | 代码 | `val_mbppplus_rand100_seed0.json` —— MBPP+ 378 题中随机 100（HumanEval+ 保持为测试集） | 官方 evalplus dllm 512/512，`evalplus_subset.py` | 0.6 |
 
-数学 validation 100 上免费得到的参考点（step0/step1 已有解码）：Ins 46（B300）、M(.4,.6) 51（B300）、A(2.0) 61、gate 65（H200）。
+新 math val100 上的参考点正在解码（Ins、蒸馏 M；2026-10-17）；旧列表上的免费数字（Ins 46、M(.4,.6) 51、A(2.0) 61、gate 65）不再适用。
+**配方搜索只在这套 validation 上做**（2026-10-17，`modules/submit_step3_recipe.sh` = 训练 + validation）：每次相对 M 只改一处 —— epoch 4、随机一半 rollout（500，seed 0）、θ 0.6、θ 0.4。测试集只在 validation 选定配方后碰一次。
 没有采用：GSM8K（太简单，merge 下反向变化）。手写 sanity prompt：待加。
 
 **Amel 的第一个任务，优先于下面所有条目：** 在只用 Tulu-3 的池子上训练蒸馏模型（`tulu3-1k`：直接从 Tulu-3 按原生比例抽 1 000 条 prompt，不加别的），
