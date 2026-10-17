@@ -279,7 +279,7 @@ Three fixed random-100 lists in `code/step3/guards/`, all disjoint from every re
 | coding | `val_mbppplus_rand100_seed0.json` — random 100 of the 378 MBPP+ tasks (HumanEval+ stays a test set) | official evalplus dllm 512/512, `evalplus_subset.py` | 0.6 |
 
 Reference points on the new math val100 are being decoded (Ins, distilled M; 2026-10-17); the old list's free numbers (Ins 46, M(.4,.6) 51, A(2.0) 61, gate 65) no longer apply.
-**Recipe search runs on this validation set only** (2026-10-17, `modules/submit_step3_recipe.sh` = train + validation): one knob each vs M — epochs 4, random half of the
+**Rule (user 2026-10-17): every training variant from now on is tuned on this validation set only — recipe search, θ, frames, multi-stage rounds, tulu3-1k, controls.** Recipe search (2026-10-17, `modules/submit_step3_recipe.sh` = train + validation): one knob each vs M — epochs 4, random half of the
 rollouts (500, seed 0), θ 0.6, θ 0.4. The test sets are touched once, with the recipe validation picks.
 Not used for anything yet: GSM8K (too easy, moves in the wrong direction under merging). Hand-written sanity prompts: still to add.
 
