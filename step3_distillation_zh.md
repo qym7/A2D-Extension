@@ -262,7 +262,7 @@ HumanEval+ 57.3（M 60.4）。所以在我们的数据上，AR 教师教数学�
 | 代码 | `val_mbppplus_rand100_seed0.json` —— MBPP+ 378 题中随机 100（HumanEval+ 保持为测试集） | 官方 evalplus dllm 512/512，`evalplus_subset.py` | 0.6 |
 
 新 math val100 上的参考点正在解码（Ins、蒸馏 M；2026-10-17）；旧列表上的免费数字（Ins 46、M(.4,.6) 51、A(2.0) 61、gate 65）不再适用。
-**规则（用户 2026-10-17）：以后所有训练变体都只在这套 validation 上调 —— 配方搜索、θ、帧数、多阶段每一轮、tulu3-1k、对照。** 配方搜索（2026-10-17，`modules/submit_step3_recipe.sh` = 训练 + validation）：每次相对 M 只改一处 —— epoch 4、随机一半 rollout（500，seed 0）、θ 0.6、θ 0.4。测试集只在 validation 选定配方后碰一次。
+**规则（用户 2026-10-17）：以后所有训练变体都只在这套 validation 上调 —— 配方搜索、θ、帧数、多阶段每一轮、tulu3-1k、对照。每个变体不必三组全跑：先 math val100（+ 便宜的 MBPP+ 100）；IFEval val100 只给 math 选出的那个变体和 Ins / M 参考点。** 配方搜索（2026-10-17，`modules/submit_step3_recipe.sh` = 训练 + validation）：每次相对 M 只改一处 —— epoch 4、随机一半 rollout（500，seed 0）、θ 0.6、θ 0.4。测试集只在 validation 选定配方后碰一次。
 没有采用：GSM8K（太简单，merge 下反向变化）。手写 sanity prompt：待加。
 
 **Amel 的第一个任务，优先于下面所有条目：** 在只用 Tulu-3 的池子上训练蒸馏模型（`tulu3-1k`：直接从 Tulu-3 按原生比例抽 1 000 条 prompt，不加别的），
